@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+// Le package correspond maintenant au nom de ton projet : fvc
+package fvc;
+
+// Option mise à jour pour que le code Go généré se place dans le bon dossier
+option go_package = "./proto";
+
+// Import officiel de Google pour les dates et heures
+import "google/protobuf/timestamp.proto";
+
+// Le service est renommé FvcService (consommé par fvc, implémenter par fvcd)
+service FvcService {
+    // Phase 1 & 5 : Lance une microVM
+    rpc Run(RunRequest) returns (RunResponse);
+
+    // Phase 5 : Arrête proprement une microVM
+    rpc Stop(StopRequest) returns (StopResponse);
+
+    // Phase 1 & 5 : Liste toutes les microVMs
+    rpc Ps(PsRequest) returns (PsResponse);
+
+    // Phase 5 : Stream les logs textuels en temps réel
+    rpc StreamLogs(LogsRequest) returns (stream LogsResponse);
+}
+
+// --- Messages pour la commande RUN ---
+message RunRequest {
+    string source = 1; // Le chemin du Vmfile ou le nom de l'image
+}
+
+message RunResponse {
+    string vm_id = 1;         // L'identifiant unique généré (ex: vm-fvc-999)
+    string status = 2;        // Statut initial
+    string error_message = 3; // Message d'erreur si échec
+}
+
+// --- Messages pour la commande STOP ---
+message StopRequest {
+    string vm_id = 1;
+    int32 timeout_seconds = 2;
+}
+
+message StopResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// --- Messages pour la commande PS ---
+message PsRequest {
+    bool all = 1;
+}
+
+message VmConfig {
+    int32 cpus = 1;
+    int32 memory_mb = 2;
+    repeated string ports = 3;
+}
+
+message VmDetails {
+    string vm_id = 1;
+    string status = 2;
+    string image = 3;
+    VmConfig config = 4;
+    google.protobuf.Timestamp created_at = 5;
+}
+
+message PsResponse {
+    repeated VmDetails vms = 1; // La liste de toutes les microVMs
+}
+
+// --- Messages pour la commande LOGS ---
+message LogsRequest {
+    string vm_id = 1;
+    bool follow = 2;
+    int32 tail = 3;
+}
+
+message LogsResponse {
+    string line = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}
