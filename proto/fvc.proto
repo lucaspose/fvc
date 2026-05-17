@@ -14,8 +14,20 @@ service FvcService {
     // Phase 1 & 5 : Lance une microVM
     rpc Run(RunRequest) returns (RunResponse);
 
+    // Lance une microVM en streamant les étapes de préparation
+    rpc RunStream(RunRequest) returns (stream RunEvent);
+
     // Phase 5 : Arrête proprement une microVM
     rpc Stop(StopRequest) returns (StopResponse);
+
+    // Relance une microVM stoppée
+    rpc Start(StartRequest) returns (StartResponse);
+
+    // Supprime une microVM stoppée et ses fichiers locaux
+    rpc Rm(RmRequest) returns (RmResponse);
+
+    // Retourne les chemins locaux nécessaires à la console série
+    rpc ConsoleInfo(ConsoleInfoRequest) returns (ConsoleInfoResponse);
 
     // Phase 1 & 5 : Liste toutes les microVMs
     rpc Ps(PsRequest) returns (PsResponse);
@@ -36,6 +48,14 @@ message RunResponse {
     string error_message = 3; // Message d'erreur si échec
 }
 
+message RunEvent {
+    string stage = 1;
+    string status = 2;
+    string message = 3;
+    string vm_id = 4;
+    string error_message = 5;
+}
+
 // --- Messages pour la commande STOP ---
 message StopRequest {
     string vm_id = 1;
@@ -45,6 +65,36 @@ message StopRequest {
 message StopResponse {
     bool success = 1;
     string message = 2;
+}
+
+message StartRequest {
+    string vm_id = 1;
+}
+
+message StartResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message RmRequest {
+    string vm_id = 1;
+}
+
+message RmResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message ConsoleInfoRequest {
+    string vm_id = 1;
+}
+
+message ConsoleInfoResponse {
+    bool success = 1;
+    string message = 2;
+    string vm_id = 3;
+    string log_path = 4;
+    string input_path = 5;
 }
 
 // --- Messages pour la commande PS ---
@@ -65,6 +115,9 @@ message VmDetails {
     string image = 4;
     VmConfig config = 5;
     google.protobuf.Timestamp created_at = 6;
+    string guest_ip = 7;
+    string mac_address = 8;
+    string tap_name = 9;
 }
 
 message PsResponse {

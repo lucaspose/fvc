@@ -11,6 +11,8 @@ func TestLoadConfigUsesFVCHome(t *testing.T) {
 	t.Setenv("FVC_FIRECRACKER_PATH", "")
 	t.Setenv("FVC_KERNEL_PATH", "")
 	t.Setenv("FVC_IMAGE_BASE_URL", "")
+	t.Setenv("FVC_NETWORK_ENABLED", "")
+	t.Setenv("FVC_RUNTIME_GROUP", "")
 
 	cfg := LoadConfig()
 
@@ -22,5 +24,11 @@ func TestLoadConfigUsesFVCHome(t *testing.T) {
 	}
 	if cfg.KernelPath != filepath.Join("/tmp/fvc-test", "vmlinux.bin") {
 		t.Fatalf("expected kernel inside base dir, got %q", cfg.KernelPath)
+	}
+	if !cfg.NetworkEnabled {
+		t.Fatal("expected network to be enabled by default")
+	}
+	if cfg.RuntimeGroup != "" {
+		t.Fatalf("expected empty runtime group by default, got %q", cfg.RuntimeGroup)
 	}
 }

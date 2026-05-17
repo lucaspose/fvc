@@ -5,9 +5,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/lucaspose/fvc/internal"
@@ -17,6 +19,22 @@ import (
 )
 
 type commandFunc func(client proto.FvcServiceClient, args []string) error
+
+const (
+	colorReset = "\033[0m"
+	colorBold  = "\033[1m"
+	colorDim   = "\033[2m"
+	colorRed   = "\033[31m"
+	colorGreen = "\033[32m"
+	colorCyan  = "\033[36m"
+	colorGray  = "\033[90m"
+)
+
+type progressLine struct {
+	active bool
+	label  string
+	done   chan struct{}
+}
 
 type VMSection struct {
 	Name string `toml:"name"`
@@ -152,8 +170,12 @@ func executeRun(client proto.FvcServiceClient, args []string) error {
 		return fmt.Errorf("invalid resources: %w", err)
 	}
 
-	fmt.Printf("Config: image=%s cpu=%d ram=%dMB\n", finalImage, finalCPU, finalRAM)
-	res, err := client.Run(context.Background(), &proto.RunRequest{
+	printStep("CONFIG", "Resolving configuration")
+	printKV("image", finalImage)
+	printKV("cpu", fmt.Sprintf("%d", finalCPU))
+	printKV("ram", fmt.Sprintf("%d MB", finalRAM))
+
+	stream, err := client.RunStream(context.Background(), &proto.RunRequest{
 		Source: finalImage,
 		Config: &proto.VmConfig{
 			Cpus:     int32(finalCPU),
@@ -161,12 +183,33 @@ func executeRun(client proto.FvcServiceClient, args []string) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to run microVM via daemon: %w", err)
+		return fmt.Errorf("daemon request failed: %w", err)
 	}
-	if res.Status == "failed" {
-		return fmt.Errorf("daemon failed to start the microVM: %s", res.ErrorMessage)
+
+	var vmID string
+	progress := &progressLine{}
+	defer progress.finish()
+	for {
+		event, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("run stream failed: %w", err)
+		}
+		if event.GetVmId() != "" {
+			vmID = event.GetVmId()
+		}
+		printRunEvent(progress, event)
+		if event.GetStatus() == "error" {
+			return fmt.Errorf("microVM start failed: %s", event.GetErrorMessage())
+		}
 	}
-	fmt.Printf("MicroVM started successfully. ID: %s (status: %s)\n", res.VmId, res.Status)
+	if vmID == "" {
+		return errors.New("microVM start failed: daemon did not return a VM ID")
+	}
+	printSuccess(fmt.Sprintf("microVM started: %s", vmID))
+	printKV("status", "running")
 	return nil
 }
 
@@ -178,7 +221,7 @@ func executeStop(client proto.FvcServiceClient, args []string) error {
 		return err
 	}
 	if len(fs.Args()) < 1 {
-		return errors.New("stop requires a microVM ID. Example: fvc stop <id>")
+		return errors.New("stop requires a microVM ID. Example: fvc stop --timeout 10 <id>")
 	}
 
 	res, err := client.Stop(context.Background(), &proto.StopRequest{
@@ -186,12 +229,54 @@ func executeStop(client proto.FvcServiceClient, args []string) error {
 		TimeoutSeconds: int32(*timeout),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to communicate with daemon: %w", err)
+		return fmt.Errorf("daemon request failed: %w", err)
 	}
 	if !res.Success {
-		return fmt.Errorf("cannot stop VM: %s", res.Message)
+		return fmt.Errorf("microVM stop failed: %s", res.Message)
 	}
-	fmt.Printf("Success: %s\n", res.Message)
+	printSuccess(res.Message)
+	return nil
+}
+
+func executeStart(client proto.FvcServiceClient, args []string) error {
+	fs := flag.NewFlagSet("start", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if len(fs.Args()) < 1 {
+		return errors.New("start requires a microVM ID. Example: fvc start <id>")
+	}
+
+	res, err := client.Start(context.Background(), &proto.StartRequest{VmId: fs.Args()[0]})
+	if err != nil {
+		return fmt.Errorf("daemon request failed: %w", err)
+	}
+	if !res.Success {
+		return fmt.Errorf("microVM start failed: %s", res.Message)
+	}
+	printSuccess(res.Message)
+	return nil
+}
+
+func executeRm(client proto.FvcServiceClient, args []string) error {
+	fs := flag.NewFlagSet("rm", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if len(fs.Args()) < 1 {
+		return errors.New("rm requires a microVM ID. Example: fvc rm <id>")
+	}
+
+	res, err := client.Rm(context.Background(), &proto.RmRequest{VmId: fs.Args()[0]})
+	if err != nil {
+		return fmt.Errorf("daemon request failed: %w", err)
+	}
+	if !res.Success {
+		return fmt.Errorf("microVM remove failed: %s", res.Message)
+	}
+	printSuccess(res.Message)
 	return nil
 }
 
@@ -205,15 +290,11 @@ func executePs(client proto.FvcServiceClient, args []string) error {
 
 	res, err := client.Ps(context.Background(), &proto.PsRequest{All: *all})
 	if err != nil {
-		return fmt.Errorf("cannot retrieve microVM list: %w", err)
-	}
-	if len(res.Vms) == 0 {
-		fmt.Println("No microVMs found.")
-		return nil
+		return fmt.Errorf("daemon request failed: %w", err)
 	}
 
-	fmt.Printf("%-38s %-8s %-12s %-20s %-8s %-8s\n", "VM ID", "PID", "STATUS", "IMAGE", "CPU", "RAM")
-	fmt.Println("------------------------------------------------------------------------------------------------")
+	fmt.Printf("%s%-38s %-8s %-12s %-18s %-8s %-8s %-15s%s\n", color(colorBold+colorCyan), "VM ID", "PID", "STATUS", "IMAGE", "CPU", "RAM", "IP", color(colorReset))
+	fmt.Println(color(colorGray) + "----------------------------------------------------------------------------------------------------------" + color(colorReset))
 
 	for _, vm := range res.Vms {
 		cpus := int32(0)
@@ -222,9 +303,144 @@ func executePs(client proto.FvcServiceClient, args []string) error {
 			cpus = vm.Config.Cpus
 			memory = vm.Config.MemoryMb
 		}
-		fmt.Printf("%-38s %-8d %-12s %-20s %-8d %-8d\n", vm.VmId, vm.Pid, vm.Status, vm.Image, cpus, memory)
+		fmt.Printf("%-38s %-8d %-12s %-18s %-8d %-8d %-15s\n", vm.VmId, vm.Pid, vm.Status, vm.Image, cpus, memory, vm.GuestIp)
 	}
 	return nil
+}
+
+func executeConsole(client proto.FvcServiceClient, args []string) error {
+	fs := flag.NewFlagSet("console", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if len(fs.Args()) < 1 {
+		return errors.New("console requires a microVM ID. Example: fvc console <id>")
+	}
+
+	vmID := fs.Args()[0]
+	info, err := client.ConsoleInfo(context.Background(), &proto.ConsoleInfoRequest{VmId: vmID})
+	if err != nil {
+		return fmt.Errorf("daemon request failed: %w", err)
+	}
+	if !info.Success {
+		return fmt.Errorf("console unavailable: %s", info.Message)
+	}
+
+	printStep("CONSOLE", fmt.Sprintf("Attaching to %s", vmID))
+	printKV("exit", "Ctrl-C")
+	return attachConsole(info.LogPath, info.InputPath)
+}
+
+func executeLogs(client proto.FvcServiceClient, args []string) error {
+	fs := flag.NewFlagSet("logs", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	follow := fs.Bool("follow", false, "Follow log output")
+	tail := fs.Int("tail", 100, "Number of lines to show")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if len(fs.Args()) < 1 {
+		return errors.New("logs requires a microVM ID. Example: fvc logs --tail 100 <id>")
+	}
+	if *tail < 0 {
+		return errors.New("tail must be zero or greater")
+	}
+
+	stream, err := client.StreamLogs(context.Background(), &proto.LogsRequest{
+		VmId:   fs.Args()[0],
+		Follow: *follow,
+		Tail:   int32(*tail),
+	})
+	if err != nil {
+		return fmt.Errorf("daemon request failed: %w", err)
+	}
+	for {
+		line, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("log stream failed: %w", err)
+		}
+		fmt.Println(line.Line)
+	}
+}
+
+func printStep(label, message string) {
+	fmt.Printf("%s %s\n", colorLabel(label, colorCyan), message)
+}
+
+func printSuccess(message string) {
+	fmt.Printf("%s %s\n", colorLabel("OK", colorGreen), message)
+}
+
+func printFailure(message string) {
+	fmt.Printf("%s %s\n", colorLabel("ERR", colorRed), message)
+}
+
+func printKV(key, value string) {
+	fmt.Printf("  %s%-8s%s %s\n", color(colorDim), key+":", color(colorReset), value)
+}
+
+func printRunEvent(progress *progressLine, event *proto.RunEvent) {
+	switch event.GetStatus() {
+	case "complete":
+		if event.GetStage() == "done" {
+			progress.finish()
+			return
+		}
+		progress.finish()
+		printSuccess(event.GetMessage())
+	case "error":
+		progress.finish()
+		printFailure(event.GetMessage())
+	default:
+		progress.start(strings.ToUpper(event.GetStage()), event.GetMessage())
+	}
+}
+
+func (p *progressLine) start(label, message string) {
+	p.finish()
+	p.active = true
+	p.label = label
+	p.done = make(chan struct{})
+	go func(done <-chan struct{}) {
+		frames := []string{"-", "\\", "|", "/"}
+		ticker := time.NewTicker(120 * time.Millisecond)
+		defer ticker.Stop()
+		i := 0
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				fmt.Printf("\r%s %s %s", colorLabel(label, colorCyan), message, color(colorGray)+frames[i%len(frames)]+color(colorReset))
+				i++
+			}
+		}
+	}(p.done)
+	fmt.Printf("%s %s %s", colorLabel(label, colorCyan), message, color(colorGray)+"-"+color(colorReset))
+}
+
+func (p *progressLine) finish() {
+	if !p.active {
+		return
+	}
+	close(p.done)
+	fmt.Print("\r\033[2K")
+	p.active = false
+}
+
+func colorLabel(label, code string) string {
+	return fmt.Sprintf("%s[%s]%s", color(code), label, color(colorReset))
+}
+
+func color(code string) string {
+	if os.Getenv("NO_COLOR") != "" {
+		return ""
+	}
+	return code
 }
 
 func usage() {
@@ -233,14 +449,22 @@ func usage() {
 	fmt.Println("Commands:")
 	fmt.Println("  run [path] [--image name] [--cpu n] [--ram mb]")
 	fmt.Println("  ps [--all]")
-	fmt.Println("  stop <id> [--timeout seconds]")
+	fmt.Println("  stop [--timeout seconds] <id>")
+	fmt.Println("  start <id>")
+	fmt.Println("  rm <id>")
+	fmt.Println("  console <id>")
+	fmt.Println("  logs [--tail n] [--follow] <id>")
 }
 
 func main() {
 	commands := map[string]commandFunc{
-		"run":  executeRun,
-		"ps":   executePs,
-		"stop": executeStop,
+		"run":     executeRun,
+		"ps":      executePs,
+		"stop":    executeStop,
+		"start":   executeStart,
+		"rm":      executeRm,
+		"console": executeConsole,
+		"logs":    executeLogs,
 	}
 
 	if len(os.Args) < 2 {
@@ -252,20 +476,20 @@ func main() {
 
 	function, exists := commands[cmdName]
 	if !exists {
-		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", cmdName)
+		fmt.Fprintf(os.Stderr, "%s unknown command %q\n\n", colorLabel("ERR", colorRed), cmdName)
 		usage()
 		os.Exit(1)
 	}
 
 	client, conn, err := newClient()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s %v\n", colorLabel("ERR", colorRed), err)
 		os.Exit(1)
 	}
 	defer conn.Close()
 
 	if err := function(client, cmdArgs); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s %v\n", colorLabel("ERR", colorRed), err)
 		os.Exit(1)
 	}
 }

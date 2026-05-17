@@ -38,7 +38,7 @@ func NewImageStore(cfg DaemonConfig) *ImageStore {
 func (s *ImageStore) Init() error {
 	for _, dir := range []string{s.baseDir, s.cacheDir, s.activeDir} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("impossible de creer le dossier systeme %s (as-tu les droits sudo ?) : %v", dir, err)
+			return fmt.Errorf("storage directory setup failed for %s: %v", dir, err)
 		}
 	}
 	return nil
@@ -54,15 +54,13 @@ func (s *ImageStore) PullImageIfNeeded(imageName string) (string, error) {
 		return localPath, nil
 	}
 
-	fmt.Printf("Pulling image %s...\n", imageName)
 	remoteURL, err := s.imageURL(imageName)
 	if err != nil {
 		return "", err
 	}
 	if err := downloadAtomic(remoteURL, localPath); err != nil {
-		return "", err
+		return "", fmt.Errorf("cannot download image %q from %s: %w", imageName, remoteURL, err)
 	}
-	fmt.Printf("Image %s telechargee avec succes et mise en cache.\n", imageName)
 	return localPath, nil
 }
 
@@ -79,19 +77,19 @@ func (s *ImageStore) CloneImage(imageName, vmID string) (string, error) {
 
 	src, err := os.Open(sourcePath)
 	if err != nil {
-		return "", fmt.Errorf("impossible d'ouvrir l'image source: %v", err)
+		return "", fmt.Errorf("cached image open failed: %v", err)
 	}
 	defer src.Close()
 
 	dst, err := os.Create(destPath)
 	if err != nil {
-		return "", fmt.Errorf("impossible de creer le clone ephemere: %v", err)
+		return "", fmt.Errorf("ephemeral clone create failed: %v", err)
 	}
 	defer dst.Close()
 
 	_, err = io.Copy(dst, src)
 	if err != nil {
-		return "", fmt.Errorf("echec du clonage: %v", err)
+		return "", fmt.Errorf("ephemeral clone copy failed: %v", err)
 	}
 
 	return destPath, nil
@@ -105,18 +103,16 @@ func (s *ImageStore) PullKernelIfNeeded() (string, error) {
 	}
 
 	if err := os.MkdirAll(filepath.Dir(localPath), 0755); err != nil {
-		return "", fmt.Errorf("impossible de creer le dossier du noyau: %v", err)
+		return "", fmt.Errorf("kernel directory setup failed: %v", err)
 	}
 
-	fmt.Println("Kernel vmlinux.bin manquant. Telechargement...")
 	remoteURL, err := s.kernelURL()
 	if err != nil {
 		return "", err
 	}
 	if err := downloadAtomic(remoteURL, localPath); err != nil {
-		return "", err
+		return "", fmt.Errorf("cannot download kernel from %s: %w", remoteURL, err)
 	}
-	fmt.Println("Noyau vmlinux.bin telecharge et configure avec succes.")
 	return localPath, nil
 }
 
@@ -149,20 +145,20 @@ func downloadAtomic(remoteURL, destPath string) error {
 	client := http.Client{Timeout: 10 * time.Minute}
 	resp, err := client.Get(remoteURL)
 	if err != nil {
-		return fmt.Errorf("echec de la requete HTTP: %v", err)
+		return fmt.Errorf("http request failed: %v", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("fichier distant introuvable (Status: %s)", resp.Status)
+		return fmt.Errorf("remote file unavailable: %s", resp.Status)
 	}
 
 	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-		return fmt.Errorf("impossible de creer le dossier destination: %v", err)
+		return fmt.Errorf("destination directory setup failed: %v", err)
 	}
 
 	tmp, err := os.CreateTemp(filepath.Dir(destPath), "."+filepath.Base(destPath)+".tmp-*")
 	if err != nil {
-		return fmt.Errorf("impossible de creer le fichier temporaire: %v", err)
+		return fmt.Errorf("temporary file create failed: %v", err)
 	}
 	tmpPath := tmp.Name()
 	defer func() {
@@ -174,17 +170,17 @@ func downloadAtomic(remoteURL, destPath string) error {
 		err = closeErr
 	}
 	if err != nil {
-		return fmt.Errorf("erreur pendant le telechargement: %v", err)
+		return fmt.Errorf("download copy failed: %v", err)
 	}
 	if written == 0 {
-		return fmt.Errorf("fichier distant vide")
+		return fmt.Errorf("remote file is empty")
 	}
 	if written > maxDownloadBytes {
-		return fmt.Errorf("fichier distant trop volumineux")
+		return fmt.Errorf("remote file exceeds maximum size")
 	}
 
 	if err := os.Rename(tmpPath, destPath); err != nil {
-		return fmt.Errorf("impossible de publier le fichier telecharge: %v", err)
+		return fmt.Errorf("download publish failed: %v", err)
 	}
 	return nil
 }

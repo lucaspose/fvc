@@ -137,6 +137,82 @@ func (x *RunResponse) GetErrorMessage() string {
 	return ""
 }
 
+type RunEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Stage         string                 `protobuf:"bytes,1,opt,name=stage,proto3" json:"stage,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	VmId          string                 `protobuf:"bytes,4,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RunEvent) Reset() {
+	*x = RunEvent{}
+	mi := &file_proto_fvc_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RunEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunEvent) ProtoMessage() {}
+
+func (x *RunEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunEvent.ProtoReflect.Descriptor instead.
+func (*RunEvent) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *RunEvent) GetStage() string {
+	if x != nil {
+		return x.Stage
+	}
+	return ""
+}
+
+func (x *RunEvent) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *RunEvent) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *RunEvent) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+func (x *RunEvent) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 // --- Messages pour la commande STOP ---
 type StopRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
@@ -148,7 +224,7 @@ type StopRequest struct {
 
 func (x *StopRequest) Reset() {
 	*x = StopRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[2]
+	mi := &file_proto_fvc_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -160,7 +236,7 @@ func (x *StopRequest) String() string {
 func (*StopRequest) ProtoMessage() {}
 
 func (x *StopRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[2]
+	mi := &file_proto_fvc_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -173,7 +249,7 @@ func (x *StopRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopRequest.ProtoReflect.Descriptor instead.
 func (*StopRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{2}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *StopRequest) GetVmId() string {
@@ -200,7 +276,7 @@ type StopResponse struct {
 
 func (x *StopResponse) Reset() {
 	*x = StopResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[3]
+	mi := &file_proto_fvc_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -212,7 +288,7 @@ func (x *StopResponse) String() string {
 func (*StopResponse) ProtoMessage() {}
 
 func (x *StopResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[3]
+	mi := &file_proto_fvc_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -225,7 +301,7 @@ func (x *StopResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopResponse.ProtoReflect.Descriptor instead.
 func (*StopResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{3}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *StopResponse) GetSuccess() bool {
@@ -242,6 +318,318 @@ func (x *StopResponse) GetMessage() string {
 	return ""
 }
 
+type StartRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartRequest) Reset() {
+	*x = StartRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartRequest) ProtoMessage() {}
+
+func (x *StartRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartRequest.ProtoReflect.Descriptor instead.
+func (*StartRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *StartRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+type StartResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartResponse) Reset() {
+	*x = StartResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartResponse) ProtoMessage() {}
+
+func (x *StartResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartResponse.ProtoReflect.Descriptor instead.
+func (*StartResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *StartResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *StartResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type RmRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RmRequest) Reset() {
+	*x = RmRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RmRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RmRequest) ProtoMessage() {}
+
+func (x *RmRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RmRequest.ProtoReflect.Descriptor instead.
+func (*RmRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *RmRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+type RmResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RmResponse) Reset() {
+	*x = RmResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RmResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RmResponse) ProtoMessage() {}
+
+func (x *RmResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RmResponse.ProtoReflect.Descriptor instead.
+func (*RmResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *RmResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *RmResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type ConsoleInfoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConsoleInfoRequest) Reset() {
+	*x = ConsoleInfoRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsoleInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsoleInfoRequest) ProtoMessage() {}
+
+func (x *ConsoleInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsoleInfoRequest.ProtoReflect.Descriptor instead.
+func (*ConsoleInfoRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ConsoleInfoRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+type ConsoleInfoResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	VmId          string                 `protobuf:"bytes,3,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	LogPath       string                 `protobuf:"bytes,4,opt,name=log_path,json=logPath,proto3" json:"log_path,omitempty"`
+	InputPath     string                 `protobuf:"bytes,5,opt,name=input_path,json=inputPath,proto3" json:"input_path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConsoleInfoResponse) Reset() {
+	*x = ConsoleInfoResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsoleInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsoleInfoResponse) ProtoMessage() {}
+
+func (x *ConsoleInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsoleInfoResponse.ProtoReflect.Descriptor instead.
+func (*ConsoleInfoResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ConsoleInfoResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ConsoleInfoResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ConsoleInfoResponse) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+func (x *ConsoleInfoResponse) GetLogPath() string {
+	if x != nil {
+		return x.LogPath
+	}
+	return ""
+}
+
+func (x *ConsoleInfoResponse) GetInputPath() string {
+	if x != nil {
+		return x.InputPath
+	}
+	return ""
+}
+
 // --- Messages pour la commande PS ---
 type PsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -252,7 +640,7 @@ type PsRequest struct {
 
 func (x *PsRequest) Reset() {
 	*x = PsRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[4]
+	mi := &file_proto_fvc_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -264,7 +652,7 @@ func (x *PsRequest) String() string {
 func (*PsRequest) ProtoMessage() {}
 
 func (x *PsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[4]
+	mi := &file_proto_fvc_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -277,7 +665,7 @@ func (x *PsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PsRequest.ProtoReflect.Descriptor instead.
 func (*PsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{4}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *PsRequest) GetAll() bool {
@@ -298,7 +686,7 @@ type VmConfig struct {
 
 func (x *VmConfig) Reset() {
 	*x = VmConfig{}
-	mi := &file_proto_fvc_proto_msgTypes[5]
+	mi := &file_proto_fvc_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -310,7 +698,7 @@ func (x *VmConfig) String() string {
 func (*VmConfig) ProtoMessage() {}
 
 func (x *VmConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[5]
+	mi := &file_proto_fvc_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -323,7 +711,7 @@ func (x *VmConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VmConfig.ProtoReflect.Descriptor instead.
 func (*VmConfig) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{5}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *VmConfig) GetCpus() int32 {
@@ -355,13 +743,16 @@ type VmDetails struct {
 	Image         string                 `protobuf:"bytes,4,opt,name=image,proto3" json:"image,omitempty"`
 	Config        *VmConfig              `protobuf:"bytes,5,opt,name=config,proto3" json:"config,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	GuestIp       string                 `protobuf:"bytes,7,opt,name=guest_ip,json=guestIp,proto3" json:"guest_ip,omitempty"`
+	MacAddress    string                 `protobuf:"bytes,8,opt,name=mac_address,json=macAddress,proto3" json:"mac_address,omitempty"`
+	TapName       string                 `protobuf:"bytes,9,opt,name=tap_name,json=tapName,proto3" json:"tap_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VmDetails) Reset() {
 	*x = VmDetails{}
-	mi := &file_proto_fvc_proto_msgTypes[6]
+	mi := &file_proto_fvc_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -373,7 +764,7 @@ func (x *VmDetails) String() string {
 func (*VmDetails) ProtoMessage() {}
 
 func (x *VmDetails) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[6]
+	mi := &file_proto_fvc_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -386,7 +777,7 @@ func (x *VmDetails) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VmDetails.ProtoReflect.Descriptor instead.
 func (*VmDetails) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{6}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *VmDetails) GetVmId() string {
@@ -431,6 +822,27 @@ func (x *VmDetails) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *VmDetails) GetGuestIp() string {
+	if x != nil {
+		return x.GuestIp
+	}
+	return ""
+}
+
+func (x *VmDetails) GetMacAddress() string {
+	if x != nil {
+		return x.MacAddress
+	}
+	return ""
+}
+
+func (x *VmDetails) GetTapName() string {
+	if x != nil {
+		return x.TapName
+	}
+	return ""
+}
+
 type PsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Vms           []*VmDetails           `protobuf:"bytes,1,rep,name=vms,proto3" json:"vms,omitempty"` // La liste de toutes les microVMs
@@ -440,7 +852,7 @@ type PsResponse struct {
 
 func (x *PsResponse) Reset() {
 	*x = PsResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[7]
+	mi := &file_proto_fvc_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -452,7 +864,7 @@ func (x *PsResponse) String() string {
 func (*PsResponse) ProtoMessage() {}
 
 func (x *PsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[7]
+	mi := &file_proto_fvc_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -465,7 +877,7 @@ func (x *PsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PsResponse.ProtoReflect.Descriptor instead.
 func (*PsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{7}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *PsResponse) GetVms() []*VmDetails {
@@ -487,7 +899,7 @@ type LogsRequest struct {
 
 func (x *LogsRequest) Reset() {
 	*x = LogsRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[8]
+	mi := &file_proto_fvc_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -499,7 +911,7 @@ func (x *LogsRequest) String() string {
 func (*LogsRequest) ProtoMessage() {}
 
 func (x *LogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[8]
+	mi := &file_proto_fvc_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -512,7 +924,7 @@ func (x *LogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogsRequest.ProtoReflect.Descriptor instead.
 func (*LogsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{8}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *LogsRequest) GetVmId() string {
@@ -546,7 +958,7 @@ type LogsResponse struct {
 
 func (x *LogsResponse) Reset() {
 	*x = LogsResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[9]
+	mi := &file_proto_fvc_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -558,7 +970,7 @@ func (x *LogsResponse) String() string {
 func (*LogsResponse) ProtoMessage() {}
 
 func (x *LogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[9]
+	mi := &file_proto_fvc_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -571,7 +983,7 @@ func (x *LogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogsResponse.ProtoReflect.Descriptor instead.
 func (*LogsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{9}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *LogsResponse) GetLine() string {
@@ -600,19 +1012,45 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\vRunResponse\x12\x13\n" +
 	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"K\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\x8c\x01\n" +
+	"\bRunEvent\x12\x14\n" +
+	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12\x13\n" +
+	"\x05vm_id\x18\x04 \x01(\tR\x04vmId\x12#\n" +
+	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\"K\n" +
 	"\vStopRequest\x12\x13\n" +
 	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12'\n" +
 	"\x0ftimeout_seconds\x18\x02 \x01(\x05R\x0etimeoutSeconds\"B\n" +
 	"\fStopResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"\x1d\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"#\n" +
+	"\fStartRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\"C\n" +
+	"\rStartResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\" \n" +
+	"\tRmRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\"@\n" +
+	"\n" +
+	"RmResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\")\n" +
+	"\x12ConsoleInfoRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\"\x98\x01\n" +
+	"\x13ConsoleInfoResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x13\n" +
+	"\x05vm_id\x18\x03 \x01(\tR\x04vmId\x12\x19\n" +
+	"\blog_path\x18\x04 \x01(\tR\alogPath\x12\x1d\n" +
+	"\n" +
+	"input_path\x18\x05 \x01(\tR\tinputPath\"\x1d\n" +
 	"\tPsRequest\x12\x10\n" +
 	"\x03all\x18\x01 \x01(\bR\x03all\"Q\n" +
 	"\bVmConfig\x12\x12\n" +
 	"\x04cpus\x18\x01 \x01(\x05R\x04cpus\x12\x1b\n" +
 	"\tmemory_mb\x18\x02 \x01(\x05R\bmemoryMb\x12\x14\n" +
-	"\x05ports\x18\x03 \x03(\tR\x05ports\"\xc2\x01\n" +
+	"\x05ports\x18\x03 \x03(\tR\x05ports\"\x99\x02\n" +
 	"\tVmDetails\x12\x13\n" +
 	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x10\n" +
 	"\x03pid\x18\x02 \x01(\x05R\x03pid\x12\x16\n" +
@@ -620,7 +1058,11 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\x05image\x18\x04 \x01(\tR\x05image\x12%\n" +
 	"\x06config\x18\x05 \x01(\v2\r.fvc.VmConfigR\x06config\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\".\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x19\n" +
+	"\bguest_ip\x18\a \x01(\tR\aguestIp\x12\x1f\n" +
+	"\vmac_address\x18\b \x01(\tR\n" +
+	"macAddress\x12\x19\n" +
+	"\btap_name\x18\t \x01(\tR\atapName\".\n" +
 	"\n" +
 	"PsResponse\x12 \n" +
 	"\x03vms\x18\x01 \x03(\v2\x0e.fvc.VmDetailsR\x03vms\"N\n" +
@@ -630,11 +1072,15 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\x04tail\x18\x03 \x01(\x05R\x04tail\"\\\n" +
 	"\fLogsResponse\x12\x12\n" +
 	"\x04line\x18\x01 \x01(\tR\x04line\x128\n" +
-	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp2\xbf\x01\n" +
+	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp2\x87\x03\n" +
 	"\n" +
 	"FvcService\x12(\n" +
-	"\x03Run\x12\x0f.fvc.RunRequest\x1a\x10.fvc.RunResponse\x12+\n" +
-	"\x04Stop\x12\x10.fvc.StopRequest\x1a\x11.fvc.StopResponse\x12%\n" +
+	"\x03Run\x12\x0f.fvc.RunRequest\x1a\x10.fvc.RunResponse\x12-\n" +
+	"\tRunStream\x12\x0f.fvc.RunRequest\x1a\r.fvc.RunEvent0\x01\x12+\n" +
+	"\x04Stop\x12\x10.fvc.StopRequest\x1a\x11.fvc.StopResponse\x12.\n" +
+	"\x05Start\x12\x11.fvc.StartRequest\x1a\x12.fvc.StartResponse\x12%\n" +
+	"\x02Rm\x12\x0e.fvc.RmRequest\x1a\x0f.fvc.RmResponse\x12@\n" +
+	"\vConsoleInfo\x12\x17.fvc.ConsoleInfoRequest\x1a\x18.fvc.ConsoleInfoResponse\x12%\n" +
 	"\x02Ps\x12\x0e.fvc.PsRequest\x1a\x0f.fvc.PsResponse\x123\n" +
 	"\n" +
 	"StreamLogs\x12\x10.fvc.LogsRequest\x1a\x11.fvc.LogsResponse0\x01B\tZ\a./protob\x06proto3"
@@ -651,36 +1097,51 @@ func file_proto_fvc_proto_rawDescGZIP() []byte {
 	return file_proto_fvc_proto_rawDescData
 }
 
-var file_proto_fvc_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_proto_fvc_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_proto_fvc_proto_goTypes = []any{
 	(*RunRequest)(nil),            // 0: fvc.RunRequest
 	(*RunResponse)(nil),           // 1: fvc.RunResponse
-	(*StopRequest)(nil),           // 2: fvc.StopRequest
-	(*StopResponse)(nil),          // 3: fvc.StopResponse
-	(*PsRequest)(nil),             // 4: fvc.PsRequest
-	(*VmConfig)(nil),              // 5: fvc.VmConfig
-	(*VmDetails)(nil),             // 6: fvc.VmDetails
-	(*PsResponse)(nil),            // 7: fvc.PsResponse
-	(*LogsRequest)(nil),           // 8: fvc.LogsRequest
-	(*LogsResponse)(nil),          // 9: fvc.LogsResponse
-	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
+	(*RunEvent)(nil),              // 2: fvc.RunEvent
+	(*StopRequest)(nil),           // 3: fvc.StopRequest
+	(*StopResponse)(nil),          // 4: fvc.StopResponse
+	(*StartRequest)(nil),          // 5: fvc.StartRequest
+	(*StartResponse)(nil),         // 6: fvc.StartResponse
+	(*RmRequest)(nil),             // 7: fvc.RmRequest
+	(*RmResponse)(nil),            // 8: fvc.RmResponse
+	(*ConsoleInfoRequest)(nil),    // 9: fvc.ConsoleInfoRequest
+	(*ConsoleInfoResponse)(nil),   // 10: fvc.ConsoleInfoResponse
+	(*PsRequest)(nil),             // 11: fvc.PsRequest
+	(*VmConfig)(nil),              // 12: fvc.VmConfig
+	(*VmDetails)(nil),             // 13: fvc.VmDetails
+	(*PsResponse)(nil),            // 14: fvc.PsResponse
+	(*LogsRequest)(nil),           // 15: fvc.LogsRequest
+	(*LogsResponse)(nil),          // 16: fvc.LogsResponse
+	(*timestamppb.Timestamp)(nil), // 17: google.protobuf.Timestamp
 }
 var file_proto_fvc_proto_depIdxs = []int32{
-	5,  // 0: fvc.RunRequest.config:type_name -> fvc.VmConfig
-	5,  // 1: fvc.VmDetails.config:type_name -> fvc.VmConfig
-	10, // 2: fvc.VmDetails.created_at:type_name -> google.protobuf.Timestamp
-	6,  // 3: fvc.PsResponse.vms:type_name -> fvc.VmDetails
-	10, // 4: fvc.LogsResponse.timestamp:type_name -> google.protobuf.Timestamp
+	12, // 0: fvc.RunRequest.config:type_name -> fvc.VmConfig
+	12, // 1: fvc.VmDetails.config:type_name -> fvc.VmConfig
+	17, // 2: fvc.VmDetails.created_at:type_name -> google.protobuf.Timestamp
+	13, // 3: fvc.PsResponse.vms:type_name -> fvc.VmDetails
+	17, // 4: fvc.LogsResponse.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 5: fvc.FvcService.Run:input_type -> fvc.RunRequest
-	2,  // 6: fvc.FvcService.Stop:input_type -> fvc.StopRequest
-	4,  // 7: fvc.FvcService.Ps:input_type -> fvc.PsRequest
-	8,  // 8: fvc.FvcService.StreamLogs:input_type -> fvc.LogsRequest
-	1,  // 9: fvc.FvcService.Run:output_type -> fvc.RunResponse
-	3,  // 10: fvc.FvcService.Stop:output_type -> fvc.StopResponse
-	7,  // 11: fvc.FvcService.Ps:output_type -> fvc.PsResponse
-	9,  // 12: fvc.FvcService.StreamLogs:output_type -> fvc.LogsResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
+	0,  // 6: fvc.FvcService.RunStream:input_type -> fvc.RunRequest
+	3,  // 7: fvc.FvcService.Stop:input_type -> fvc.StopRequest
+	5,  // 8: fvc.FvcService.Start:input_type -> fvc.StartRequest
+	7,  // 9: fvc.FvcService.Rm:input_type -> fvc.RmRequest
+	9,  // 10: fvc.FvcService.ConsoleInfo:input_type -> fvc.ConsoleInfoRequest
+	11, // 11: fvc.FvcService.Ps:input_type -> fvc.PsRequest
+	15, // 12: fvc.FvcService.StreamLogs:input_type -> fvc.LogsRequest
+	1,  // 13: fvc.FvcService.Run:output_type -> fvc.RunResponse
+	2,  // 14: fvc.FvcService.RunStream:output_type -> fvc.RunEvent
+	4,  // 15: fvc.FvcService.Stop:output_type -> fvc.StopResponse
+	6,  // 16: fvc.FvcService.Start:output_type -> fvc.StartResponse
+	8,  // 17: fvc.FvcService.Rm:output_type -> fvc.RmResponse
+	10, // 18: fvc.FvcService.ConsoleInfo:output_type -> fvc.ConsoleInfoResponse
+	14, // 19: fvc.FvcService.Ps:output_type -> fvc.PsResponse
+	16, // 20: fvc.FvcService.StreamLogs:output_type -> fvc.LogsResponse
+	13, // [13:21] is the sub-list for method output_type
+	5,  // [5:13] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -697,7 +1158,7 @@ func file_proto_fvc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_fvc_proto_rawDesc), len(file_proto_fvc_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

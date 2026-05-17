@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type DaemonConfig struct {
@@ -15,6 +16,8 @@ type DaemonConfig struct {
 	FirecrackerPath string
 	KernelPath      string
 	ImageBaseURL    string
+	NetworkEnabled  bool
+	RuntimeGroup    string
 }
 
 func LoadConfig() DaemonConfig {
@@ -29,6 +32,8 @@ func LoadConfig() DaemonConfig {
 		GRPCAddr:        envOrDefault("FVC_GRPC_ADDR", "127.0.0.1:50051"),
 		FirecrackerPath: envOrDefault("FVC_FIRECRACKER_PATH", "/usr/local/bin/firecracker"),
 		ImageBaseURL:    envOrDefault("FVC_IMAGE_BASE_URL", "https://fvchubstorage.blob.core.windows.net/images"),
+		NetworkEnabled:  envBoolOrDefault("FVC_NETWORK_ENABLED", true),
+		RuntimeGroup:    envOrDefault("FVC_RUNTIME_GROUP", ""),
 	}
 	cfg.KernelPath = envOrDefault("FVC_KERNEL_PATH", filepath.Join(baseDir, "vmlinux.bin"))
 
@@ -40,4 +45,12 @@ func envOrDefault(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func envBoolOrDefault(key string, fallback bool) bool {
+	value := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+	if value == "" {
+		return fallback
+	}
+	return value == "1" || value == "true" || value == "yes" || value == "on"
 }

@@ -21,10 +21,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FvcService_Run_FullMethodName        = "/fvc.FvcService/Run"
-	FvcService_Stop_FullMethodName       = "/fvc.FvcService/Stop"
-	FvcService_Ps_FullMethodName         = "/fvc.FvcService/Ps"
-	FvcService_StreamLogs_FullMethodName = "/fvc.FvcService/StreamLogs"
+	FvcService_Run_FullMethodName         = "/fvc.FvcService/Run"
+	FvcService_RunStream_FullMethodName   = "/fvc.FvcService/RunStream"
+	FvcService_Stop_FullMethodName        = "/fvc.FvcService/Stop"
+	FvcService_Start_FullMethodName       = "/fvc.FvcService/Start"
+	FvcService_Rm_FullMethodName          = "/fvc.FvcService/Rm"
+	FvcService_ConsoleInfo_FullMethodName = "/fvc.FvcService/ConsoleInfo"
+	FvcService_Ps_FullMethodName          = "/fvc.FvcService/Ps"
+	FvcService_StreamLogs_FullMethodName  = "/fvc.FvcService/StreamLogs"
 )
 
 // FvcServiceClient is the client API for FvcService service.
@@ -35,8 +39,16 @@ const (
 type FvcServiceClient interface {
 	// Phase 1 & 5 : Lance une microVM
 	Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*RunResponse, error)
+	// Lance une microVM en streamant les étapes de préparation
+	RunStream(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RunEvent], error)
 	// Phase 5 : Arrête proprement une microVM
 	Stop(ctx context.Context, in *StopRequest, opts ...grpc.CallOption) (*StopResponse, error)
+	// Relance une microVM stoppée
+	Start(ctx context.Context, in *StartRequest, opts ...grpc.CallOption) (*StartResponse, error)
+	// Supprime une microVM stoppée et ses fichiers locaux
+	Rm(ctx context.Context, in *RmRequest, opts ...grpc.CallOption) (*RmResponse, error)
+	// Retourne les chemins locaux nécessaires à la console série
+	ConsoleInfo(ctx context.Context, in *ConsoleInfoRequest, opts ...grpc.CallOption) (*ConsoleInfoResponse, error)
 	// Phase 1 & 5 : Liste toutes les microVMs
 	Ps(ctx context.Context, in *PsRequest, opts ...grpc.CallOption) (*PsResponse, error)
 	// Phase 5 : Stream les logs textuels en temps réel
@@ -61,10 +73,59 @@ func (c *fvcServiceClient) Run(ctx context.Context, in *RunRequest, opts ...grpc
 	return out, nil
 }
 
+func (c *fvcServiceClient) RunStream(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RunEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &FvcService_ServiceDesc.Streams[0], FvcService_RunStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[RunRequest, RunEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FvcService_RunStreamClient = grpc.ServerStreamingClient[RunEvent]
+
 func (c *fvcServiceClient) Stop(ctx context.Context, in *StopRequest, opts ...grpc.CallOption) (*StopResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(StopResponse)
 	err := c.cc.Invoke(ctx, FvcService_Stop_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) Start(ctx context.Context, in *StartRequest, opts ...grpc.CallOption) (*StartResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StartResponse)
+	err := c.cc.Invoke(ctx, FvcService_Start_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) Rm(ctx context.Context, in *RmRequest, opts ...grpc.CallOption) (*RmResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RmResponse)
+	err := c.cc.Invoke(ctx, FvcService_Rm_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) ConsoleInfo(ctx context.Context, in *ConsoleInfoRequest, opts ...grpc.CallOption) (*ConsoleInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConsoleInfoResponse)
+	err := c.cc.Invoke(ctx, FvcService_ConsoleInfo_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +144,7 @@ func (c *fvcServiceClient) Ps(ctx context.Context, in *PsRequest, opts ...grpc.C
 
 func (c *fvcServiceClient) StreamLogs(ctx context.Context, in *LogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogsResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &FvcService_ServiceDesc.Streams[0], FvcService_StreamLogs_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &FvcService_ServiceDesc.Streams[1], FvcService_StreamLogs_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +169,16 @@ type FvcService_StreamLogsClient = grpc.ServerStreamingClient[LogsResponse]
 type FvcServiceServer interface {
 	// Phase 1 & 5 : Lance une microVM
 	Run(context.Context, *RunRequest) (*RunResponse, error)
+	// Lance une microVM en streamant les étapes de préparation
+	RunStream(*RunRequest, grpc.ServerStreamingServer[RunEvent]) error
 	// Phase 5 : Arrête proprement une microVM
 	Stop(context.Context, *StopRequest) (*StopResponse, error)
+	// Relance une microVM stoppée
+	Start(context.Context, *StartRequest) (*StartResponse, error)
+	// Supprime une microVM stoppée et ses fichiers locaux
+	Rm(context.Context, *RmRequest) (*RmResponse, error)
+	// Retourne les chemins locaux nécessaires à la console série
+	ConsoleInfo(context.Context, *ConsoleInfoRequest) (*ConsoleInfoResponse, error)
 	// Phase 1 & 5 : Liste toutes les microVMs
 	Ps(context.Context, *PsRequest) (*PsResponse, error)
 	// Phase 5 : Stream les logs textuels en temps réel
@@ -127,8 +196,20 @@ type UnimplementedFvcServiceServer struct{}
 func (UnimplementedFvcServiceServer) Run(context.Context, *RunRequest) (*RunResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Run not implemented")
 }
+func (UnimplementedFvcServiceServer) RunStream(*RunRequest, grpc.ServerStreamingServer[RunEvent]) error {
+	return status.Error(codes.Unimplemented, "method RunStream not implemented")
+}
 func (UnimplementedFvcServiceServer) Stop(context.Context, *StopRequest) (*StopResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Stop not implemented")
+}
+func (UnimplementedFvcServiceServer) Start(context.Context, *StartRequest) (*StartResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Start not implemented")
+}
+func (UnimplementedFvcServiceServer) Rm(context.Context, *RmRequest) (*RmResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Rm not implemented")
+}
+func (UnimplementedFvcServiceServer) ConsoleInfo(context.Context, *ConsoleInfoRequest) (*ConsoleInfoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConsoleInfo not implemented")
 }
 func (UnimplementedFvcServiceServer) Ps(context.Context, *PsRequest) (*PsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Ps not implemented")
@@ -175,6 +256,17 @@ func _FvcService_Run_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FvcService_RunStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RunRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FvcServiceServer).RunStream(m, &grpc.GenericServerStream[RunRequest, RunEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FvcService_RunStreamServer = grpc.ServerStreamingServer[RunEvent]
+
 func _FvcService_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StopRequest)
 	if err := dec(in); err != nil {
@@ -189,6 +281,60 @@ func _FvcService_Stop_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(FvcServiceServer).Stop(ctx, req.(*StopRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_Start_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).Start(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_Start_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).Start(ctx, req.(*StartRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_Rm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RmRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).Rm(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_Rm_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).Rm(ctx, req.(*RmRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_ConsoleInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConsoleInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).ConsoleInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_ConsoleInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).ConsoleInfo(ctx, req.(*ConsoleInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -238,11 +384,28 @@ var FvcService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FvcService_Stop_Handler,
 		},
 		{
+			MethodName: "Start",
+			Handler:    _FvcService_Start_Handler,
+		},
+		{
+			MethodName: "Rm",
+			Handler:    _FvcService_Rm_Handler,
+		},
+		{
+			MethodName: "ConsoleInfo",
+			Handler:    _FvcService_ConsoleInfo_Handler,
+		},
+		{
 			MethodName: "Ps",
 			Handler:    _FvcService_Ps_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "RunStream",
+			Handler:       _FvcService_RunStream_Handler,
+			ServerStreams: true,
+		},
 		{
 			StreamName:    "StreamLogs",
 			Handler:       _FvcService_StreamLogs_Handler,
