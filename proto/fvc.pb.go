@@ -28,6 +28,7 @@ const (
 type RunRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Source        string                 `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"` // Le chemin du Vmfile ou le nom de l'image
+	Config        *VmConfig              `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -67,6 +68,13 @@ func (x *RunRequest) GetSource() string {
 		return x.Source
 	}
 	return ""
+}
+
+func (x *RunRequest) GetConfig() *VmConfig {
+	if x != nil {
+		return x.Config
+	}
+	return nil
 }
 
 type RunResponse struct {
@@ -342,10 +350,11 @@ func (x *VmConfig) GetPorts() []string {
 type VmDetails struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	Image         string                 `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
-	Config        *VmConfig              `protobuf:"bytes,4,opt,name=config,proto3" json:"config,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Pid           int32                  `protobuf:"varint,2,opt,name=pid,proto3" json:"pid,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	Image         string                 `protobuf:"bytes,4,opt,name=image,proto3" json:"image,omitempty"`
+	Config        *VmConfig              `protobuf:"bytes,5,opt,name=config,proto3" json:"config,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -385,6 +394,13 @@ func (x *VmDetails) GetVmId() string {
 		return x.VmId
 	}
 	return ""
+}
+
+func (x *VmDetails) GetPid() int32 {
+	if x != nil {
+		return x.Pid
+	}
+	return 0
 }
 
 func (x *VmDetails) GetStatus() string {
@@ -576,10 +592,11 @@ var File_proto_fvc_proto protoreflect.FileDescriptor
 
 const file_proto_fvc_proto_rawDesc = "" +
 	"\n" +
-	"\x0fproto/fvc.proto\x12\x03fvc\x1a\x1fgoogle/protobuf/timestamp.proto\"$\n" +
+	"\x0fproto/fvc.proto\x12\x03fvc\x1a\x1fgoogle/protobuf/timestamp.proto\"K\n" +
 	"\n" +
 	"RunRequest\x12\x16\n" +
-	"\x06source\x18\x01 \x01(\tR\x06source\"_\n" +
+	"\x06source\x18\x01 \x01(\tR\x06source\x12%\n" +
+	"\x06config\x18\x02 \x01(\v2\r.fvc.VmConfigR\x06config\"_\n" +
 	"\vRunResponse\x12\x13\n" +
 	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12#\n" +
@@ -595,14 +612,15 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\bVmConfig\x12\x12\n" +
 	"\x04cpus\x18\x01 \x01(\x05R\x04cpus\x12\x1b\n" +
 	"\tmemory_mb\x18\x02 \x01(\x05R\bmemoryMb\x12\x14\n" +
-	"\x05ports\x18\x03 \x03(\tR\x05ports\"\xb0\x01\n" +
+	"\x05ports\x18\x03 \x03(\tR\x05ports\"\xc2\x01\n" +
 	"\tVmDetails\x12\x13\n" +
-	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x16\n" +
-	"\x06status\x18\x02 \x01(\tR\x06status\x12\x14\n" +
-	"\x05image\x18\x03 \x01(\tR\x05image\x12%\n" +
-	"\x06config\x18\x04 \x01(\v2\r.fvc.VmConfigR\x06config\x129\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x10\n" +
+	"\x03pid\x18\x02 \x01(\x05R\x03pid\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x14\n" +
+	"\x05image\x18\x04 \x01(\tR\x05image\x12%\n" +
+	"\x06config\x18\x05 \x01(\v2\r.fvc.VmConfigR\x06config\x129\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\".\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\".\n" +
 	"\n" +
 	"PsResponse\x12 \n" +
 	"\x03vms\x18\x01 \x03(\v2\x0e.fvc.VmDetailsR\x03vms\"N\n" +
@@ -648,23 +666,24 @@ var file_proto_fvc_proto_goTypes = []any{
 	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
 }
 var file_proto_fvc_proto_depIdxs = []int32{
-	5,  // 0: fvc.VmDetails.config:type_name -> fvc.VmConfig
-	10, // 1: fvc.VmDetails.created_at:type_name -> google.protobuf.Timestamp
-	6,  // 2: fvc.PsResponse.vms:type_name -> fvc.VmDetails
-	10, // 3: fvc.LogsResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 4: fvc.FvcService.Run:input_type -> fvc.RunRequest
-	2,  // 5: fvc.FvcService.Stop:input_type -> fvc.StopRequest
-	4,  // 6: fvc.FvcService.Ps:input_type -> fvc.PsRequest
-	8,  // 7: fvc.FvcService.StreamLogs:input_type -> fvc.LogsRequest
-	1,  // 8: fvc.FvcService.Run:output_type -> fvc.RunResponse
-	3,  // 9: fvc.FvcService.Stop:output_type -> fvc.StopResponse
-	7,  // 10: fvc.FvcService.Ps:output_type -> fvc.PsResponse
-	9,  // 11: fvc.FvcService.StreamLogs:output_type -> fvc.LogsResponse
-	8,  // [8:12] is the sub-list for method output_type
-	4,  // [4:8] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	5,  // 0: fvc.RunRequest.config:type_name -> fvc.VmConfig
+	5,  // 1: fvc.VmDetails.config:type_name -> fvc.VmConfig
+	10, // 2: fvc.VmDetails.created_at:type_name -> google.protobuf.Timestamp
+	6,  // 3: fvc.PsResponse.vms:type_name -> fvc.VmDetails
+	10, // 4: fvc.LogsResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 5: fvc.FvcService.Run:input_type -> fvc.RunRequest
+	2,  // 6: fvc.FvcService.Stop:input_type -> fvc.StopRequest
+	4,  // 7: fvc.FvcService.Ps:input_type -> fvc.PsRequest
+	8,  // 8: fvc.FvcService.StreamLogs:input_type -> fvc.LogsRequest
+	1,  // 9: fvc.FvcService.Run:output_type -> fvc.RunResponse
+	3,  // 10: fvc.FvcService.Stop:output_type -> fvc.StopResponse
+	7,  // 11: fvc.FvcService.Ps:output_type -> fvc.PsResponse
+	9,  // 12: fvc.FvcService.StreamLogs:output_type -> fvc.LogsResponse
+	9,  // [9:13] is the sub-list for method output_type
+	5,  // [5:9] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_proto_fvc_proto_init() }

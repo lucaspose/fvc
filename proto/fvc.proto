@@ -27,6 +27,7 @@ service FvcService {
 // --- Messages pour la commande RUN ---
 message RunRequest {
     string source = 1; // Le chemin du Vmfile ou le nom de l'image
+    VmConfig config = 2;
 }
 
 message RunResponse {
@@ -59,10 +60,11 @@ message VmConfig {
 
 message VmDetails {
     string vm_id = 1;
-    string status = 2;
-    string image = 3;
-    VmConfig config = 4;
-    google.protobuf.Timestamp created_at = 5;
+    int32 pid = 2;
+    string status = 3;
+    string image = 4;
+    VmConfig config = 5;
+    google.protobuf.Timestamp created_at = 6;
 }
 
 message PsResponse {

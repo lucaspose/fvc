@@ -1,9 +1,8 @@
 IMAGE := fvc
-BINARY := fvc
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
 
-.PHONY: build run clean
+.PHONY: build docker-build clean
 
 build:
 	@docker build \
@@ -13,5 +12,12 @@ build:
 		--output type=local,dest=. \
 		.
 
+docker-build:
+	@docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg COMMIT=$(COMMIT) \
+		-t $(IMAGE):$(VERSION) \
+		.
+
 clean:
-	@rm -f $(BINARY)
+	@rm -f fvc fvcd
