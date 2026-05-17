@@ -10,6 +10,8 @@ type DaemonConfig struct {
 	BaseDir         string
 	CacheDir        string
 	ActiveDir       string
+	SnapshotDir     string
+	RuntimeDir      string
 	LogDir          string
 	DBPath          string
 	GRPCAddr        string
@@ -27,6 +29,8 @@ func LoadConfig() DaemonConfig {
 		BaseDir:         baseDir,
 		CacheDir:        filepath.Join(baseDir, "cache"),
 		ActiveDir:       filepath.Join(baseDir, "active"),
+		SnapshotDir:     filepath.Join(baseDir, "snapshots"),
+		RuntimeDir:      envOrDefault("FVC_RUNTIME_DIR", "/run/fvc"),
 		LogDir:          filepath.Join(baseDir, "logs"),
 		DBPath:          filepath.Join(baseDir, "fvc.db"),
 		GRPCAddr:        envOrDefault("FVC_GRPC_ADDR", "127.0.0.1:50051"),

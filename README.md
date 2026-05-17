@@ -7,9 +7,19 @@ The current milestone is focused on making the foundation reliable before adding
 ## Current Scope
 
 - `fvc run`: starts a Firecracker microVM from an image reference or a `Vmfile`.
+- `fvc build`: builds a local image from a TOML `Fvcfile`.
+- `fvc pull`: downloads an image into the local cache.
+- `fvc images`: lists locally cached images.
+- `fvc image`: inspects, tags, imports, exports, removes, and prunes local images.
+- `fvc prune`: removes unused local resources left behind by older cache formats or interrupted runs.
+- `fvc stats`: shows host-side CPU, memory usage/limit, PID, status, and uptime for microVMs.
 - `fvc ps`: lists known microVMs.
+- `fvc inspect`: prints detailed state for one microVM.
 - `fvc stop`: stops a microVM by ID.
 - `fvc start`: restarts a stopped microVM if its local drive still exists.
+- `fvc wait`: waits until a microVM stops.
+- `fvc kill`: force-kills a running microVM and cleans host resources.
+- `fvc snapshot`: creates, lists, restores, and removes stopped microVM disk snapshots.
 - `fvc rm`: removes a stopped microVM and its local files.
 - `fvc console`: opens an interactive serial console to a running microVM.
 - `fvc logs`: prints VM logs, with `--tail` and `--follow`.
@@ -17,7 +27,7 @@ The current milestone is focused on making the foundation reliable before adding
 - Image cache with validated image references and atomic downloads.
 - Server-side validation for run requests.
 
-Not implemented yet: networking, port publishing, exec, snapshots, stats, image build, and a real registry protocol.
+Not implemented yet: port publishing, exec, `RUN` during image build, and a real registry protocol.
 
 ## Development
 
@@ -103,6 +113,7 @@ While a step is running, the spinner stays on that same line. When the daemon re
 - `FVC_KERNEL_PATH`: kernel path, defaults to `$FVC_HOME/vmlinux.bin`.
 - `FVC_IMAGE_BASE_URL`: base URL for images and kernel downloads.
 - `FVC_NETWORK_ENABLED`: automatic TAP/NAT networking, defaults to `true`.
+- `FVC_RUNTIME_DIR`: runtime socket and console FIFO directory, defaults to `/run/fvc`.
 - `FVC_RUNTIME_GROUP`: optional group that can access runtime logs and console FIFOs.
 
 For local development, use a writable data directory:
@@ -139,6 +150,69 @@ FVC_IMAGE_BASE_URL=http://127.0.0.1:8080 FVC_HOME=/tmp/fvc-dev fvcd
 
 The daemon caches images under `FVC_HOME/cache` using encoded filenames, so prefer changing `FVC_IMAGE_BASE_URL` over manually writing cache files.
 
+Preload an image:
+
+```sh
+fvc pull ubuntu
+```
+
+List cached images:
+
+```sh
+fvc images
+```
+
+Inspect an image:
+
+```sh
+fvc image inspect ubuntu
+```
+
+Tag an image:
+
+```sh
+fvc image tag ubuntu ubuntu-copy
+```
+
+Import or export an ext4 root filesystem:
+
+```sh
+fvc image import ./rootfs.ext4 custom-image
+fvc image export custom-image ./custom-image.ext4
+```
+
+Show image history metadata:
+
+```sh
+fvc image history custom-image
+```
+
+Remove an image:
+
+```sh
+fvc image rm custom-image
+```
+
+`fvc image rm` refuses to remove images referenced by existing microVMs unless `--force` is provided.
+
+Prune unused images:
+
+```sh
+fvc image prune --dry-run
+fvc image prune --force
+```
+
+Images keep sidecar metadata in the local cache. `inspect` computes a `sha256` digest from the ext4 file and shows metadata such as source and creation time.
+
+Clean unused local resources:
+
+```sh
+fvc prune --dry-run
+fvc prune --force
+```
+
+`fvc prune` keeps running VM runtime files and referenced VM drives. It removes legacy duplicate cache files, orphan active root filesystems, and stale runtime files from interrupted runs. Use `--dry-run` to preview every file, and `--force` to skip the confirmation prompt.
+
 ## Vmfile
 
 Example:
@@ -159,6 +233,48 @@ Run from a directory containing `Vmfile`:
 fvc run .
 ```
 
+## Fvcfile Build
+
+`Fvcfile` builds a reusable local image from an existing cached image. It uses TOML, like `Vmfile`.
+
+Example:
+
+```toml
+[image]
+from = "ubuntu"
+tag = "ubuntu-web"
+
+[[copy]]
+src = "index.html"
+dest = "/var/www/html/index.html"
+
+[[copy]]
+src = "app"
+dest = "/opt/app"
+```
+
+Build the image:
+
+```sh
+fvc build .
+```
+
+Override the tag from the CLI:
+
+```sh
+fvc build -t ubuntu-web .
+```
+
+Run the result:
+
+```sh
+fvc run --image ubuntu-web
+```
+
+The first build implementation supports `[image].from`, `[image].tag`, `-t`, and `[[copy]]`. It mounts a temporary clone of the base ext4 image, copies files from the build context, unmounts it, then publishes the final image into `FVC_HOME/cache`.
+
+Because the daemon mounts ext4 images, `fvcd` must run with mount privileges. `RUN` instructions are intentionally not supported yet; they need a proper chroot or guest-agent build environment.
+
 ## Lifecycle
 
 Stop a running microVM:
@@ -173,6 +289,19 @@ Restart a stopped microVM:
 fvc start <vm-id>
 ```
 
+Wait until a microVM stops:
+
+```sh
+fvc wait <vm-id>
+fvc wait --timeout 30 <vm-id>
+```
+
+Force a running microVM to stop:
+
+```sh
+fvc kill <vm-id>
+```
+
 Remove a stopped microVM and its local files:
 
 ```sh
@@ -180,6 +309,56 @@ fvc rm <vm-id>
 ```
 
 `fvc rm` refuses running microVMs. Stop the VM first, then remove it.
+
+## Snapshots
+
+Create a snapshot from a stopped microVM:
+
+```sh
+fvc snapshot create <vm-id> before-upgrade
+```
+
+List snapshots:
+
+```sh
+fvc snapshot ls <vm-id>
+```
+
+Restore a snapshot onto a stopped microVM:
+
+```sh
+fvc snapshot restore <vm-id> before-upgrade
+```
+
+Remove a snapshot:
+
+```sh
+fvc snapshot rm <vm-id> before-upgrade
+```
+
+Snapshots live under `FVC_HOME/snapshots/<vm-id>/`. Snapshot create and restore refuse running microVMs so the disk copy stays consistent.
+
+## Stats
+
+Show metrics for running microVMs:
+
+```sh
+fvc stats
+```
+
+Show one VM:
+
+```sh
+fvc stats <vm-id>
+```
+
+Refresh continuously:
+
+```sh
+fvc stats --watch
+```
+
+The daemon reads host process metrics from `/proc`, so CPU and memory usage describe the Firecracker process for each VM.
 
 ## Network
 
@@ -213,7 +392,7 @@ sudo modprobe tun
 
 ## Runtime Permissions
 
-If `fvcd` runs as root, console FIFOs and VM logs are created by root. To use `fvc console` without `sudo`, create a runtime group and run the daemon with `FVC_RUNTIME_GROUP`:
+If `fvcd` runs as root, runtime files and VM logs are created by root. To use `fvc console` without `sudo`, create a runtime group and run the daemon with `FVC_RUNTIME_GROUP`:
 
 ```sh
 sudo groupadd -f fvc
@@ -226,7 +405,7 @@ Restart your shell session so the new group is active, then start the daemon:
 sudo FVC_RUNTIME_GROUP=fvc FVC_HOME=/tmp/fvc-dev ./fvcd
 ```
 
-The daemon will set group ownership and `0660` permissions on VM logs and console FIFOs. Your user can then run:
+The daemon will set group ownership on `/run/fvc`, VM logs, and console FIFOs. Runtime directories use `0770`; VM logs and console FIFOs use `0660`. Your user can then run:
 
 ```sh
 ./fvc console <vm-id>
@@ -260,6 +439,12 @@ Get the guest IP with:
 
 ```sh
 fvc ps --all
+```
+
+Inspect all stored state for one VM:
+
+```sh
+fvc inspect <vm-id>
 ```
 
 For machine-to-machine control, the long-term professional path is a small guest agent over Firecracker vsock. That future agent should own features like `fvc exec`, guest health checks, file copy, clean shutdown, and richer stats.
@@ -327,3 +512,54 @@ fvc logs --tail 20 --follow <vm-id>
 - Guest IP, TAP name, and MAC are deterministic per VM.
 - `stop`, `start`, `rm`, and daemon reconciliation clean up network resources.
 - Network setup is covered by tests through a fake command runner.
+
+## Sprint 6 Done
+
+- `fvc ps` includes guest IP and TAP name.
+- `fvc inspect <id>` displays status, PID, image, resources, network identity, and runtime paths.
+- `Inspect` is exposed through the daemon API.
+
+## Sprint 7 Done
+
+- `fvc pull <image>` preloads an image and kernel through the daemon.
+- `fvc images` lists cached images with size and path.
+- Image cache listing decodes the safe on-disk filenames back to image references.
+
+## Sprint 8 Done
+
+- `fvc prune` cleans unused local files through the daemon.
+- Image listing deduplicates legacy cache files and prefers the safe encoded cache format.
+- Prune preserves running VM sockets, console FIFOs, and referenced active drives.
+
+## Sprint 9 Done
+
+- `fvc stats` reports CPU, memory usage/limit, PID, status, and uptime.
+- `fvc stats --watch` refreshes the metrics table.
+- `fvc wait <id>` blocks until a VM is no longer running.
+- `fvc kill <id>` force-stops a VM and cleans host-side runtime/network resources.
+- `fvc prune --dry-run` previews cleanup, and `fvc prune --force` skips confirmation.
+
+## Sprint 10 Done
+
+- `fvc snapshot create <id> <name>` copies a stopped VM drive into `FVC_HOME/snapshots`.
+- `fvc snapshot ls <id>` lists snapshots with size and path.
+- `fvc snapshot restore <id> <name>` restores a snapshot onto a stopped VM drive.
+- `fvc snapshot rm <id> <name>` removes a snapshot.
+- Snapshot names are validated and snapshot operations are covered by tests.
+
+## Sprint 11 Done
+
+- `fvc build [-t image] [path]` builds a local image from a TOML `Fvcfile`.
+- `Fvcfile` supports `[image].from`, `[image].tag`, and `[[copy]]`.
+- Build contexts reject path traversal and require absolute guest destinations.
+- Built images are published atomically into the local image cache.
+
+## Sprint 12 Done
+
+- `fvc image inspect <image>` reports size, path, digest, source, labels, and creation time.
+- `fvc image rm <image>` removes local images and protects images referenced by VMs.
+- `fvc image tag <source> <target>` creates a local image tag with history metadata.
+- `fvc image import <rootfs.ext4> <image>` imports a regular ext4 rootfs atomically.
+- `fvc image export <image> <rootfs.ext4>` exports a cached image atomically.
+- `fvc image history <image>` displays metadata history.
+- `fvc image prune` removes unused local images with `--dry-run` and `--force`.

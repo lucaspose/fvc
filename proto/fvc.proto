@@ -29,6 +29,63 @@ service FvcService {
     // Retourne les chemins locaux nécessaires à la console série
     rpc ConsoleInfo(ConsoleInfoRequest) returns (ConsoleInfoResponse);
 
+    // Retourne les détails complets d'une microVM
+    rpc Inspect(InspectRequest) returns (InspectResponse);
+
+    // Télécharge une image dans le cache local
+    rpc PullImage(PullImageRequest) returns (PullImageResponse);
+
+    // Liste les images présentes dans le cache local
+    rpc ListImages(ListImagesRequest) returns (ListImagesResponse);
+
+    // Nettoie les ressources locales inutilisées
+    rpc Prune(PruneRequest) returns (PruneResponse);
+
+    // Retourne les métriques host des microVMs
+    rpc Stats(StatsRequest) returns (StatsResponse);
+
+    // Attend qu'une microVM atteigne l'état stopped/down
+    rpc Wait(WaitRequest) returns (WaitResponse);
+
+    // Force l'arrêt d'une microVM
+    rpc Kill(KillRequest) returns (KillResponse);
+
+    // Crée un snapshot du disque d'une microVM stoppée
+    rpc SnapshotCreate(SnapshotCreateRequest) returns (SnapshotCreateResponse);
+
+    // Liste les snapshots d'une microVM
+    rpc SnapshotList(SnapshotListRequest) returns (SnapshotListResponse);
+
+    // Restaure un snapshot sur le disque d'une microVM stoppée
+    rpc SnapshotRestore(SnapshotRestoreRequest) returns (SnapshotRestoreResponse);
+
+    // Supprime un snapshot
+    rpc SnapshotRemove(SnapshotRemoveRequest) returns (SnapshotRemoveResponse);
+
+    // Construit une image locale depuis un Fvcfile TOML
+    rpc BuildImage(BuildImageRequest) returns (BuildImageResponse);
+
+    // Inspecte une image locale
+    rpc ImageInspect(ImageInspectRequest) returns (ImageInspectResponse);
+
+    // Supprime une image locale
+    rpc ImageRemove(ImageRemoveRequest) returns (ImageRemoveResponse);
+
+    // Ajoute un tag local à une image
+    rpc ImageTag(ImageTagRequest) returns (ImageTagResponse);
+
+    // Importe un rootfs ext4 comme image locale
+    rpc ImageImport(ImageImportRequest) returns (ImageImportResponse);
+
+    // Exporte une image locale vers un fichier ext4
+    rpc ImageExport(ImageExportRequest) returns (ImageExportResponse);
+
+    // Liste l'historique metadata d'une image
+    rpc ImageHistory(ImageHistoryRequest) returns (ImageHistoryResponse);
+
+    // Supprime les images locales inutilisées
+    rpc ImagePrune(ImagePruneRequest) returns (ImagePruneResponse);
+
     // Phase 1 & 5 : Liste toutes les microVMs
     rpc Ps(PsRequest) returns (PsResponse);
 
@@ -97,6 +154,242 @@ message ConsoleInfoResponse {
     string input_path = 5;
 }
 
+message InspectRequest {
+    string vm_id = 1;
+}
+
+message InspectResponse {
+    bool success = 1;
+    string message = 2;
+    VmDetails vm = 3;
+}
+
+message PullImageRequest {
+    string image = 1;
+}
+
+message PullImageResponse {
+    bool success = 1;
+    string message = 2;
+    string image = 3;
+    string path = 4;
+}
+
+message ListImagesRequest {}
+
+message ImageDetails {
+    string image = 1;
+    string path = 2;
+    int64 size_bytes = 3;
+    string digest = 4;
+    string source = 5;
+    google.protobuf.Timestamp created_at = 6;
+    map<string, string> labels = 7;
+}
+
+message ListImagesResponse {
+    repeated ImageDetails images = 1;
+}
+
+message PruneRequest {
+    bool dry_run = 1;
+}
+
+message PruneItem {
+    string kind = 1;
+    string path = 2;
+    int64 size_bytes = 3;
+}
+
+message PruneResponse {
+    bool success = 1;
+    string message = 2;
+    int32 removed_files = 3;
+    int64 freed_bytes = 4;
+    repeated PruneItem items = 5;
+    bool dry_run = 6;
+}
+
+message StatsRequest {
+    string vm_id = 1;
+}
+
+message VmStats {
+    string vm_id = 1;
+    int32 pid = 2;
+    string status = 3;
+    double cpu_percent = 4;
+    int64 rss_bytes = 5;
+    int32 memory_mb = 6;
+    int64 uptime_seconds = 7;
+}
+
+message StatsResponse {
+    repeated VmStats stats = 1;
+}
+
+message WaitRequest {
+    string vm_id = 1;
+    int32 timeout_seconds = 2;
+}
+
+message WaitResponse {
+    bool success = 1;
+    string message = 2;
+    string status = 3;
+}
+
+message KillRequest {
+    string vm_id = 1;
+}
+
+message KillResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message SnapshotCreateRequest {
+    string vm_id = 1;
+    string name = 2;
+}
+
+message SnapshotCreateResponse {
+    bool success = 1;
+    string message = 2;
+    SnapshotDetails snapshot = 3;
+}
+
+message SnapshotListRequest {
+    string vm_id = 1;
+}
+
+message SnapshotDetails {
+    string name = 1;
+    string path = 2;
+    int64 size_bytes = 3;
+}
+
+message SnapshotListResponse {
+    bool success = 1;
+    string message = 2;
+    repeated SnapshotDetails snapshots = 3;
+}
+
+message SnapshotRestoreRequest {
+    string vm_id = 1;
+    string name = 2;
+}
+
+message SnapshotRestoreResponse {
+    bool success = 1;
+    string message = 2;
+    SnapshotDetails snapshot = 3;
+}
+
+message SnapshotRemoveRequest {
+    string vm_id = 1;
+    string name = 2;
+}
+
+message SnapshotRemoveResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message BuildImageRequest {
+    string context_path = 1;
+    string tag = 2;
+}
+
+message BuildImageResponse {
+    bool success = 1;
+    string message = 2;
+    string image = 3;
+    string path = 4;
+}
+
+message ImageInspectRequest {
+    string image = 1;
+}
+
+message ImageInspectResponse {
+    bool success = 1;
+    string message = 2;
+    ImageDetails image = 3;
+}
+
+message ImageRemoveRequest {
+    string image = 1;
+    bool force = 2;
+}
+
+message ImageRemoveResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message ImageTagRequest {
+    string source = 1;
+    string target = 2;
+}
+
+message ImageTagResponse {
+    bool success = 1;
+    string message = 2;
+    ImageDetails image = 3;
+}
+
+message ImageImportRequest {
+    string source_path = 1;
+    string image = 2;
+}
+
+message ImageImportResponse {
+    bool success = 1;
+    string message = 2;
+    ImageDetails image = 3;
+}
+
+message ImageExportRequest {
+    string image = 1;
+    string dest_path = 2;
+}
+
+message ImageExportResponse {
+    bool success = 1;
+    string message = 2;
+    string path = 3;
+}
+
+message ImageHistoryRequest {
+    string image = 1;
+}
+
+message ImageHistoryEntry {
+    string action = 1;
+    string message = 2;
+    google.protobuf.Timestamp created_at = 3;
+}
+
+message ImageHistoryResponse {
+    bool success = 1;
+    string message = 2;
+    repeated ImageHistoryEntry entries = 3;
+}
+
+message ImagePruneRequest {
+    bool dry_run = 1;
+}
+
+message ImagePruneResponse {
+    bool success = 1;
+    string message = 2;
+    int32 removed_images = 3;
+    int64 freed_bytes = 4;
+    repeated ImageDetails images = 5;
+    bool dry_run = 6;
+}
+
 // --- Messages pour la commande PS ---
 message PsRequest {
     bool all = 1;
@@ -118,6 +411,9 @@ message VmDetails {
     string guest_ip = 7;
     string mac_address = 8;
     string tap_name = 9;
+    string log_path = 10;
+    string drive_path = 11;
+    string console_path = 12;
 }
 
 message PsResponse {

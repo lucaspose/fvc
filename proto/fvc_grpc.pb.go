@@ -21,14 +21,33 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FvcService_Run_FullMethodName         = "/fvc.FvcService/Run"
-	FvcService_RunStream_FullMethodName   = "/fvc.FvcService/RunStream"
-	FvcService_Stop_FullMethodName        = "/fvc.FvcService/Stop"
-	FvcService_Start_FullMethodName       = "/fvc.FvcService/Start"
-	FvcService_Rm_FullMethodName          = "/fvc.FvcService/Rm"
-	FvcService_ConsoleInfo_FullMethodName = "/fvc.FvcService/ConsoleInfo"
-	FvcService_Ps_FullMethodName          = "/fvc.FvcService/Ps"
-	FvcService_StreamLogs_FullMethodName  = "/fvc.FvcService/StreamLogs"
+	FvcService_Run_FullMethodName             = "/fvc.FvcService/Run"
+	FvcService_RunStream_FullMethodName       = "/fvc.FvcService/RunStream"
+	FvcService_Stop_FullMethodName            = "/fvc.FvcService/Stop"
+	FvcService_Start_FullMethodName           = "/fvc.FvcService/Start"
+	FvcService_Rm_FullMethodName              = "/fvc.FvcService/Rm"
+	FvcService_ConsoleInfo_FullMethodName     = "/fvc.FvcService/ConsoleInfo"
+	FvcService_Inspect_FullMethodName         = "/fvc.FvcService/Inspect"
+	FvcService_PullImage_FullMethodName       = "/fvc.FvcService/PullImage"
+	FvcService_ListImages_FullMethodName      = "/fvc.FvcService/ListImages"
+	FvcService_Prune_FullMethodName           = "/fvc.FvcService/Prune"
+	FvcService_Stats_FullMethodName           = "/fvc.FvcService/Stats"
+	FvcService_Wait_FullMethodName            = "/fvc.FvcService/Wait"
+	FvcService_Kill_FullMethodName            = "/fvc.FvcService/Kill"
+	FvcService_SnapshotCreate_FullMethodName  = "/fvc.FvcService/SnapshotCreate"
+	FvcService_SnapshotList_FullMethodName    = "/fvc.FvcService/SnapshotList"
+	FvcService_SnapshotRestore_FullMethodName = "/fvc.FvcService/SnapshotRestore"
+	FvcService_SnapshotRemove_FullMethodName  = "/fvc.FvcService/SnapshotRemove"
+	FvcService_BuildImage_FullMethodName      = "/fvc.FvcService/BuildImage"
+	FvcService_ImageInspect_FullMethodName    = "/fvc.FvcService/ImageInspect"
+	FvcService_ImageRemove_FullMethodName     = "/fvc.FvcService/ImageRemove"
+	FvcService_ImageTag_FullMethodName        = "/fvc.FvcService/ImageTag"
+	FvcService_ImageImport_FullMethodName     = "/fvc.FvcService/ImageImport"
+	FvcService_ImageExport_FullMethodName     = "/fvc.FvcService/ImageExport"
+	FvcService_ImageHistory_FullMethodName    = "/fvc.FvcService/ImageHistory"
+	FvcService_ImagePrune_FullMethodName      = "/fvc.FvcService/ImagePrune"
+	FvcService_Ps_FullMethodName              = "/fvc.FvcService/Ps"
+	FvcService_StreamLogs_FullMethodName      = "/fvc.FvcService/StreamLogs"
 )
 
 // FvcServiceClient is the client API for FvcService service.
@@ -49,6 +68,44 @@ type FvcServiceClient interface {
 	Rm(ctx context.Context, in *RmRequest, opts ...grpc.CallOption) (*RmResponse, error)
 	// Retourne les chemins locaux nécessaires à la console série
 	ConsoleInfo(ctx context.Context, in *ConsoleInfoRequest, opts ...grpc.CallOption) (*ConsoleInfoResponse, error)
+	// Retourne les détails complets d'une microVM
+	Inspect(ctx context.Context, in *InspectRequest, opts ...grpc.CallOption) (*InspectResponse, error)
+	// Télécharge une image dans le cache local
+	PullImage(ctx context.Context, in *PullImageRequest, opts ...grpc.CallOption) (*PullImageResponse, error)
+	// Liste les images présentes dans le cache local
+	ListImages(ctx context.Context, in *ListImagesRequest, opts ...grpc.CallOption) (*ListImagesResponse, error)
+	// Nettoie les ressources locales inutilisées
+	Prune(ctx context.Context, in *PruneRequest, opts ...grpc.CallOption) (*PruneResponse, error)
+	// Retourne les métriques host des microVMs
+	Stats(ctx context.Context, in *StatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)
+	// Attend qu'une microVM atteigne l'état stopped/down
+	Wait(ctx context.Context, in *WaitRequest, opts ...grpc.CallOption) (*WaitResponse, error)
+	// Force l'arrêt d'une microVM
+	Kill(ctx context.Context, in *KillRequest, opts ...grpc.CallOption) (*KillResponse, error)
+	// Crée un snapshot du disque d'une microVM stoppée
+	SnapshotCreate(ctx context.Context, in *SnapshotCreateRequest, opts ...grpc.CallOption) (*SnapshotCreateResponse, error)
+	// Liste les snapshots d'une microVM
+	SnapshotList(ctx context.Context, in *SnapshotListRequest, opts ...grpc.CallOption) (*SnapshotListResponse, error)
+	// Restaure un snapshot sur le disque d'une microVM stoppée
+	SnapshotRestore(ctx context.Context, in *SnapshotRestoreRequest, opts ...grpc.CallOption) (*SnapshotRestoreResponse, error)
+	// Supprime un snapshot
+	SnapshotRemove(ctx context.Context, in *SnapshotRemoveRequest, opts ...grpc.CallOption) (*SnapshotRemoveResponse, error)
+	// Construit une image locale depuis un Fvcfile TOML
+	BuildImage(ctx context.Context, in *BuildImageRequest, opts ...grpc.CallOption) (*BuildImageResponse, error)
+	// Inspecte une image locale
+	ImageInspect(ctx context.Context, in *ImageInspectRequest, opts ...grpc.CallOption) (*ImageInspectResponse, error)
+	// Supprime une image locale
+	ImageRemove(ctx context.Context, in *ImageRemoveRequest, opts ...grpc.CallOption) (*ImageRemoveResponse, error)
+	// Ajoute un tag local à une image
+	ImageTag(ctx context.Context, in *ImageTagRequest, opts ...grpc.CallOption) (*ImageTagResponse, error)
+	// Importe un rootfs ext4 comme image locale
+	ImageImport(ctx context.Context, in *ImageImportRequest, opts ...grpc.CallOption) (*ImageImportResponse, error)
+	// Exporte une image locale vers un fichier ext4
+	ImageExport(ctx context.Context, in *ImageExportRequest, opts ...grpc.CallOption) (*ImageExportResponse, error)
+	// Liste l'historique metadata d'une image
+	ImageHistory(ctx context.Context, in *ImageHistoryRequest, opts ...grpc.CallOption) (*ImageHistoryResponse, error)
+	// Supprime les images locales inutilisées
+	ImagePrune(ctx context.Context, in *ImagePruneRequest, opts ...grpc.CallOption) (*ImagePruneResponse, error)
 	// Phase 1 & 5 : Liste toutes les microVMs
 	Ps(ctx context.Context, in *PsRequest, opts ...grpc.CallOption) (*PsResponse, error)
 	// Phase 5 : Stream les logs textuels en temps réel
@@ -132,6 +189,196 @@ func (c *fvcServiceClient) ConsoleInfo(ctx context.Context, in *ConsoleInfoReque
 	return out, nil
 }
 
+func (c *fvcServiceClient) Inspect(ctx context.Context, in *InspectRequest, opts ...grpc.CallOption) (*InspectResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InspectResponse)
+	err := c.cc.Invoke(ctx, FvcService_Inspect_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) PullImage(ctx context.Context, in *PullImageRequest, opts ...grpc.CallOption) (*PullImageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PullImageResponse)
+	err := c.cc.Invoke(ctx, FvcService_PullImage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) ListImages(ctx context.Context, in *ListImagesRequest, opts ...grpc.CallOption) (*ListImagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListImagesResponse)
+	err := c.cc.Invoke(ctx, FvcService_ListImages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) Prune(ctx context.Context, in *PruneRequest, opts ...grpc.CallOption) (*PruneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PruneResponse)
+	err := c.cc.Invoke(ctx, FvcService_Prune_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) Stats(ctx context.Context, in *StatsRequest, opts ...grpc.CallOption) (*StatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StatsResponse)
+	err := c.cc.Invoke(ctx, FvcService_Stats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) Wait(ctx context.Context, in *WaitRequest, opts ...grpc.CallOption) (*WaitResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WaitResponse)
+	err := c.cc.Invoke(ctx, FvcService_Wait_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) Kill(ctx context.Context, in *KillRequest, opts ...grpc.CallOption) (*KillResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(KillResponse)
+	err := c.cc.Invoke(ctx, FvcService_Kill_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) SnapshotCreate(ctx context.Context, in *SnapshotCreateRequest, opts ...grpc.CallOption) (*SnapshotCreateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SnapshotCreateResponse)
+	err := c.cc.Invoke(ctx, FvcService_SnapshotCreate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) SnapshotList(ctx context.Context, in *SnapshotListRequest, opts ...grpc.CallOption) (*SnapshotListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SnapshotListResponse)
+	err := c.cc.Invoke(ctx, FvcService_SnapshotList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) SnapshotRestore(ctx context.Context, in *SnapshotRestoreRequest, opts ...grpc.CallOption) (*SnapshotRestoreResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SnapshotRestoreResponse)
+	err := c.cc.Invoke(ctx, FvcService_SnapshotRestore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) SnapshotRemove(ctx context.Context, in *SnapshotRemoveRequest, opts ...grpc.CallOption) (*SnapshotRemoveResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SnapshotRemoveResponse)
+	err := c.cc.Invoke(ctx, FvcService_SnapshotRemove_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) BuildImage(ctx context.Context, in *BuildImageRequest, opts ...grpc.CallOption) (*BuildImageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BuildImageResponse)
+	err := c.cc.Invoke(ctx, FvcService_BuildImage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) ImageInspect(ctx context.Context, in *ImageInspectRequest, opts ...grpc.CallOption) (*ImageInspectResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImageInspectResponse)
+	err := c.cc.Invoke(ctx, FvcService_ImageInspect_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) ImageRemove(ctx context.Context, in *ImageRemoveRequest, opts ...grpc.CallOption) (*ImageRemoveResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImageRemoveResponse)
+	err := c.cc.Invoke(ctx, FvcService_ImageRemove_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) ImageTag(ctx context.Context, in *ImageTagRequest, opts ...grpc.CallOption) (*ImageTagResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImageTagResponse)
+	err := c.cc.Invoke(ctx, FvcService_ImageTag_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) ImageImport(ctx context.Context, in *ImageImportRequest, opts ...grpc.CallOption) (*ImageImportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImageImportResponse)
+	err := c.cc.Invoke(ctx, FvcService_ImageImport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) ImageExport(ctx context.Context, in *ImageExportRequest, opts ...grpc.CallOption) (*ImageExportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImageExportResponse)
+	err := c.cc.Invoke(ctx, FvcService_ImageExport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) ImageHistory(ctx context.Context, in *ImageHistoryRequest, opts ...grpc.CallOption) (*ImageHistoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImageHistoryResponse)
+	err := c.cc.Invoke(ctx, FvcService_ImageHistory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) ImagePrune(ctx context.Context, in *ImagePruneRequest, opts ...grpc.CallOption) (*ImagePruneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImagePruneResponse)
+	err := c.cc.Invoke(ctx, FvcService_ImagePrune_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *fvcServiceClient) Ps(ctx context.Context, in *PsRequest, opts ...grpc.CallOption) (*PsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PsResponse)
@@ -179,6 +426,44 @@ type FvcServiceServer interface {
 	Rm(context.Context, *RmRequest) (*RmResponse, error)
 	// Retourne les chemins locaux nécessaires à la console série
 	ConsoleInfo(context.Context, *ConsoleInfoRequest) (*ConsoleInfoResponse, error)
+	// Retourne les détails complets d'une microVM
+	Inspect(context.Context, *InspectRequest) (*InspectResponse, error)
+	// Télécharge une image dans le cache local
+	PullImage(context.Context, *PullImageRequest) (*PullImageResponse, error)
+	// Liste les images présentes dans le cache local
+	ListImages(context.Context, *ListImagesRequest) (*ListImagesResponse, error)
+	// Nettoie les ressources locales inutilisées
+	Prune(context.Context, *PruneRequest) (*PruneResponse, error)
+	// Retourne les métriques host des microVMs
+	Stats(context.Context, *StatsRequest) (*StatsResponse, error)
+	// Attend qu'une microVM atteigne l'état stopped/down
+	Wait(context.Context, *WaitRequest) (*WaitResponse, error)
+	// Force l'arrêt d'une microVM
+	Kill(context.Context, *KillRequest) (*KillResponse, error)
+	// Crée un snapshot du disque d'une microVM stoppée
+	SnapshotCreate(context.Context, *SnapshotCreateRequest) (*SnapshotCreateResponse, error)
+	// Liste les snapshots d'une microVM
+	SnapshotList(context.Context, *SnapshotListRequest) (*SnapshotListResponse, error)
+	// Restaure un snapshot sur le disque d'une microVM stoppée
+	SnapshotRestore(context.Context, *SnapshotRestoreRequest) (*SnapshotRestoreResponse, error)
+	// Supprime un snapshot
+	SnapshotRemove(context.Context, *SnapshotRemoveRequest) (*SnapshotRemoveResponse, error)
+	// Construit une image locale depuis un Fvcfile TOML
+	BuildImage(context.Context, *BuildImageRequest) (*BuildImageResponse, error)
+	// Inspecte une image locale
+	ImageInspect(context.Context, *ImageInspectRequest) (*ImageInspectResponse, error)
+	// Supprime une image locale
+	ImageRemove(context.Context, *ImageRemoveRequest) (*ImageRemoveResponse, error)
+	// Ajoute un tag local à une image
+	ImageTag(context.Context, *ImageTagRequest) (*ImageTagResponse, error)
+	// Importe un rootfs ext4 comme image locale
+	ImageImport(context.Context, *ImageImportRequest) (*ImageImportResponse, error)
+	// Exporte une image locale vers un fichier ext4
+	ImageExport(context.Context, *ImageExportRequest) (*ImageExportResponse, error)
+	// Liste l'historique metadata d'une image
+	ImageHistory(context.Context, *ImageHistoryRequest) (*ImageHistoryResponse, error)
+	// Supprime les images locales inutilisées
+	ImagePrune(context.Context, *ImagePruneRequest) (*ImagePruneResponse, error)
 	// Phase 1 & 5 : Liste toutes les microVMs
 	Ps(context.Context, *PsRequest) (*PsResponse, error)
 	// Phase 5 : Stream les logs textuels en temps réel
@@ -210,6 +495,63 @@ func (UnimplementedFvcServiceServer) Rm(context.Context, *RmRequest) (*RmRespons
 }
 func (UnimplementedFvcServiceServer) ConsoleInfo(context.Context, *ConsoleInfoRequest) (*ConsoleInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ConsoleInfo not implemented")
+}
+func (UnimplementedFvcServiceServer) Inspect(context.Context, *InspectRequest) (*InspectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Inspect not implemented")
+}
+func (UnimplementedFvcServiceServer) PullImage(context.Context, *PullImageRequest) (*PullImageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PullImage not implemented")
+}
+func (UnimplementedFvcServiceServer) ListImages(context.Context, *ListImagesRequest) (*ListImagesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListImages not implemented")
+}
+func (UnimplementedFvcServiceServer) Prune(context.Context, *PruneRequest) (*PruneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Prune not implemented")
+}
+func (UnimplementedFvcServiceServer) Stats(context.Context, *StatsRequest) (*StatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Stats not implemented")
+}
+func (UnimplementedFvcServiceServer) Wait(context.Context, *WaitRequest) (*WaitResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Wait not implemented")
+}
+func (UnimplementedFvcServiceServer) Kill(context.Context, *KillRequest) (*KillResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Kill not implemented")
+}
+func (UnimplementedFvcServiceServer) SnapshotCreate(context.Context, *SnapshotCreateRequest) (*SnapshotCreateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SnapshotCreate not implemented")
+}
+func (UnimplementedFvcServiceServer) SnapshotList(context.Context, *SnapshotListRequest) (*SnapshotListResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SnapshotList not implemented")
+}
+func (UnimplementedFvcServiceServer) SnapshotRestore(context.Context, *SnapshotRestoreRequest) (*SnapshotRestoreResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SnapshotRestore not implemented")
+}
+func (UnimplementedFvcServiceServer) SnapshotRemove(context.Context, *SnapshotRemoveRequest) (*SnapshotRemoveResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SnapshotRemove not implemented")
+}
+func (UnimplementedFvcServiceServer) BuildImage(context.Context, *BuildImageRequest) (*BuildImageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BuildImage not implemented")
+}
+func (UnimplementedFvcServiceServer) ImageInspect(context.Context, *ImageInspectRequest) (*ImageInspectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImageInspect not implemented")
+}
+func (UnimplementedFvcServiceServer) ImageRemove(context.Context, *ImageRemoveRequest) (*ImageRemoveResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImageRemove not implemented")
+}
+func (UnimplementedFvcServiceServer) ImageTag(context.Context, *ImageTagRequest) (*ImageTagResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImageTag not implemented")
+}
+func (UnimplementedFvcServiceServer) ImageImport(context.Context, *ImageImportRequest) (*ImageImportResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImageImport not implemented")
+}
+func (UnimplementedFvcServiceServer) ImageExport(context.Context, *ImageExportRequest) (*ImageExportResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImageExport not implemented")
+}
+func (UnimplementedFvcServiceServer) ImageHistory(context.Context, *ImageHistoryRequest) (*ImageHistoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImageHistory not implemented")
+}
+func (UnimplementedFvcServiceServer) ImagePrune(context.Context, *ImagePruneRequest) (*ImagePruneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImagePrune not implemented")
 }
 func (UnimplementedFvcServiceServer) Ps(context.Context, *PsRequest) (*PsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Ps not implemented")
@@ -339,6 +681,348 @@ func _FvcService_ConsoleInfo_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FvcService_Inspect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InspectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).Inspect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_Inspect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).Inspect(ctx, req.(*InspectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_PullImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PullImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).PullImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_PullImage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).PullImage(ctx, req.(*PullImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_ListImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListImagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).ListImages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_ListImages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).ListImages(ctx, req.(*ListImagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_Prune_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PruneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).Prune(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_Prune_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).Prune(ctx, req.(*PruneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_Stats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).Stats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_Stats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).Stats(ctx, req.(*StatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_Wait_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WaitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).Wait(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_Wait_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).Wait(ctx, req.(*WaitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_Kill_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(KillRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).Kill(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_Kill_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).Kill(ctx, req.(*KillRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_SnapshotCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SnapshotCreateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).SnapshotCreate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_SnapshotCreate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).SnapshotCreate(ctx, req.(*SnapshotCreateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_SnapshotList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SnapshotListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).SnapshotList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_SnapshotList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).SnapshotList(ctx, req.(*SnapshotListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_SnapshotRestore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SnapshotRestoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).SnapshotRestore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_SnapshotRestore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).SnapshotRestore(ctx, req.(*SnapshotRestoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_SnapshotRemove_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SnapshotRemoveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).SnapshotRemove(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_SnapshotRemove_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).SnapshotRemove(ctx, req.(*SnapshotRemoveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_BuildImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BuildImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).BuildImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_BuildImage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).BuildImage(ctx, req.(*BuildImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_ImageInspect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImageInspectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).ImageInspect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_ImageInspect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).ImageInspect(ctx, req.(*ImageInspectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_ImageRemove_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImageRemoveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).ImageRemove(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_ImageRemove_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).ImageRemove(ctx, req.(*ImageRemoveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_ImageTag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImageTagRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).ImageTag(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_ImageTag_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).ImageTag(ctx, req.(*ImageTagRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_ImageImport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImageImportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).ImageImport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_ImageImport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).ImageImport(ctx, req.(*ImageImportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_ImageExport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImageExportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).ImageExport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_ImageExport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).ImageExport(ctx, req.(*ImageExportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_ImageHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImageHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).ImageHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_ImageHistory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).ImageHistory(ctx, req.(*ImageHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_ImagePrune_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImagePruneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).ImagePrune(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_ImagePrune_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).ImagePrune(ctx, req.(*ImagePruneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _FvcService_Ps_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PsRequest)
 	if err := dec(in); err != nil {
@@ -394,6 +1078,82 @@ var FvcService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConsoleInfo",
 			Handler:    _FvcService_ConsoleInfo_Handler,
+		},
+		{
+			MethodName: "Inspect",
+			Handler:    _FvcService_Inspect_Handler,
+		},
+		{
+			MethodName: "PullImage",
+			Handler:    _FvcService_PullImage_Handler,
+		},
+		{
+			MethodName: "ListImages",
+			Handler:    _FvcService_ListImages_Handler,
+		},
+		{
+			MethodName: "Prune",
+			Handler:    _FvcService_Prune_Handler,
+		},
+		{
+			MethodName: "Stats",
+			Handler:    _FvcService_Stats_Handler,
+		},
+		{
+			MethodName: "Wait",
+			Handler:    _FvcService_Wait_Handler,
+		},
+		{
+			MethodName: "Kill",
+			Handler:    _FvcService_Kill_Handler,
+		},
+		{
+			MethodName: "SnapshotCreate",
+			Handler:    _FvcService_SnapshotCreate_Handler,
+		},
+		{
+			MethodName: "SnapshotList",
+			Handler:    _FvcService_SnapshotList_Handler,
+		},
+		{
+			MethodName: "SnapshotRestore",
+			Handler:    _FvcService_SnapshotRestore_Handler,
+		},
+		{
+			MethodName: "SnapshotRemove",
+			Handler:    _FvcService_SnapshotRemove_Handler,
+		},
+		{
+			MethodName: "BuildImage",
+			Handler:    _FvcService_BuildImage_Handler,
+		},
+		{
+			MethodName: "ImageInspect",
+			Handler:    _FvcService_ImageInspect_Handler,
+		},
+		{
+			MethodName: "ImageRemove",
+			Handler:    _FvcService_ImageRemove_Handler,
+		},
+		{
+			MethodName: "ImageTag",
+			Handler:    _FvcService_ImageTag_Handler,
+		},
+		{
+			MethodName: "ImageImport",
+			Handler:    _FvcService_ImageImport_Handler,
+		},
+		{
+			MethodName: "ImageExport",
+			Handler:    _FvcService_ImageExport_Handler,
+		},
+		{
+			MethodName: "ImageHistory",
+			Handler:    _FvcService_ImageHistory_Handler,
+		},
+		{
+			MethodName: "ImagePrune",
+			Handler:    _FvcService_ImagePrune_Handler,
 		},
 		{
 			MethodName: "Ps",

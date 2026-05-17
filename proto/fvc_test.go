@@ -6,8 +6,8 @@ func TestFvcServiceDescriptor(t *testing.T) {
 	if FvcService_ServiceDesc.ServiceName != "fvc.FvcService" {
 		t.Fatalf("unexpected service name: %s", FvcService_ServiceDesc.ServiceName)
 	}
-	if len(FvcService_ServiceDesc.Methods) != 6 {
-		t.Fatalf("expected 6 unary methods, got %d", len(FvcService_ServiceDesc.Methods))
+	if len(FvcService_ServiceDesc.Methods) != 25 {
+		t.Fatalf("expected 25 unary methods, got %d", len(FvcService_ServiceDesc.Methods))
 	}
 	if len(FvcService_ServiceDesc.Streams) != 2 {
 		t.Fatalf("expected 2 stream methods, got %d", len(FvcService_ServiceDesc.Streams))
@@ -17,7 +17,7 @@ func TestFvcServiceDescriptor(t *testing.T) {
 	for _, method := range FvcService_ServiceDesc.Methods {
 		methods[method.MethodName] = true
 	}
-	for _, name := range []string{"Run", "Stop", "Start", "Rm", "ConsoleInfo", "Ps"} {
+	for _, name := range []string{"Run", "Stop", "Start", "Rm", "ConsoleInfo", "Inspect", "PullImage", "ListImages", "Prune", "Stats", "Wait", "Kill", "SnapshotCreate", "SnapshotList", "SnapshotRestore", "SnapshotRemove", "BuildImage", "ImageInspect", "ImageRemove", "ImageTag", "ImageImport", "ImageExport", "ImageHistory", "ImagePrune", "Ps"} {
 		if !methods[name] {
 			t.Fatalf("missing unary method %s", name)
 		}
@@ -57,10 +57,13 @@ func TestGeneratedMessageGetters(t *testing.T) {
 	}
 
 	details := &VmDetails{
-		VmId:       "vm-1",
-		GuestIp:    "172.16.0.2",
-		MacAddress: "02:FC:00:00:00:01",
-		TapName:    "fvc123",
+		VmId:        "vm-1",
+		GuestIp:     "172.16.0.2",
+		MacAddress:  "02:FC:00:00:00:01",
+		TapName:     "fvc123",
+		LogPath:     "/tmp/vm.log",
+		DrivePath:   "/tmp/vm.ext4",
+		ConsolePath: "/tmp/vm.in",
 	}
 	if details.GetGuestIp() != "172.16.0.2" {
 		t.Fatalf("unexpected guest ip: %s", details.GetGuestIp())
@@ -70,5 +73,13 @@ func TestGeneratedMessageGetters(t *testing.T) {
 	}
 	if details.GetTapName() != "fvc123" {
 		t.Fatalf("unexpected tap name: %s", details.GetTapName())
+	}
+	if details.GetLogPath() != "/tmp/vm.log" {
+		t.Fatalf("unexpected log path: %s", details.GetLogPath())
+	}
+
+	image := &ImageDetails{Image: "ubuntu", Path: "/cache/ubuntu.ext4", SizeBytes: 1024}
+	if image.GetImage() != "ubuntu" || image.GetSizeBytes() != 1024 {
+		t.Fatalf("unexpected image details: %#v", image)
 	}
 }

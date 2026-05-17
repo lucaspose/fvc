@@ -630,6 +630,2418 @@ func (x *ConsoleInfoResponse) GetInputPath() string {
 	return ""
 }
 
+type InspectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InspectRequest) Reset() {
+	*x = InspectRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InspectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InspectRequest) ProtoMessage() {}
+
+func (x *InspectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InspectRequest.ProtoReflect.Descriptor instead.
+func (*InspectRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *InspectRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+type InspectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Vm            *VmDetails             `protobuf:"bytes,3,opt,name=vm,proto3" json:"vm,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InspectResponse) Reset() {
+	*x = InspectResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InspectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InspectResponse) ProtoMessage() {}
+
+func (x *InspectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InspectResponse.ProtoReflect.Descriptor instead.
+func (*InspectResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *InspectResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *InspectResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *InspectResponse) GetVm() *VmDetails {
+	if x != nil {
+		return x.Vm
+	}
+	return nil
+}
+
+type PullImageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Image         string                 `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PullImageRequest) Reset() {
+	*x = PullImageRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PullImageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PullImageRequest) ProtoMessage() {}
+
+func (x *PullImageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PullImageRequest.ProtoReflect.Descriptor instead.
+func (*PullImageRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *PullImageRequest) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+type PullImageResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Image         string                 `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
+	Path          string                 `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PullImageResponse) Reset() {
+	*x = PullImageResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PullImageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PullImageResponse) ProtoMessage() {}
+
+func (x *PullImageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PullImageResponse.ProtoReflect.Descriptor instead.
+func (*PullImageResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *PullImageResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *PullImageResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *PullImageResponse) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+func (x *PullImageResponse) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type ListImagesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListImagesRequest) Reset() {
+	*x = ListImagesRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListImagesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListImagesRequest) ProtoMessage() {}
+
+func (x *ListImagesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListImagesRequest.ProtoReflect.Descriptor instead.
+func (*ListImagesRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{15}
+}
+
+type ImageDetails struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Image         string                 `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	SizeBytes     int64                  `protobuf:"varint,3,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	Digest        string                 `protobuf:"bytes,4,opt,name=digest,proto3" json:"digest,omitempty"`
+	Source        string                 `protobuf:"bytes,5,opt,name=source,proto3" json:"source,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Labels        map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageDetails) Reset() {
+	*x = ImageDetails{}
+	mi := &file_proto_fvc_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageDetails) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageDetails) ProtoMessage() {}
+
+func (x *ImageDetails) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageDetails.ProtoReflect.Descriptor instead.
+func (*ImageDetails) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ImageDetails) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+func (x *ImageDetails) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *ImageDetails) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+func (x *ImageDetails) GetDigest() string {
+	if x != nil {
+		return x.Digest
+	}
+	return ""
+}
+
+func (x *ImageDetails) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *ImageDetails) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *ImageDetails) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+type ListImagesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Images        []*ImageDetails        `protobuf:"bytes,1,rep,name=images,proto3" json:"images,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListImagesResponse) Reset() {
+	*x = ListImagesResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListImagesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListImagesResponse) ProtoMessage() {}
+
+func (x *ListImagesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListImagesResponse.ProtoReflect.Descriptor instead.
+func (*ListImagesResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ListImagesResponse) GetImages() []*ImageDetails {
+	if x != nil {
+		return x.Images
+	}
+	return nil
+}
+
+type PruneRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DryRun        bool                   `protobuf:"varint,1,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PruneRequest) Reset() {
+	*x = PruneRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PruneRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PruneRequest) ProtoMessage() {}
+
+func (x *PruneRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PruneRequest.ProtoReflect.Descriptor instead.
+func (*PruneRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *PruneRequest) GetDryRun() bool {
+	if x != nil {
+		return x.DryRun
+	}
+	return false
+}
+
+type PruneItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Kind          string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	SizeBytes     int64                  `protobuf:"varint,3,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PruneItem) Reset() {
+	*x = PruneItem{}
+	mi := &file_proto_fvc_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PruneItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PruneItem) ProtoMessage() {}
+
+func (x *PruneItem) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PruneItem.ProtoReflect.Descriptor instead.
+func (*PruneItem) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *PruneItem) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *PruneItem) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *PruneItem) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+type PruneResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	RemovedFiles  int32                  `protobuf:"varint,3,opt,name=removed_files,json=removedFiles,proto3" json:"removed_files,omitempty"`
+	FreedBytes    int64                  `protobuf:"varint,4,opt,name=freed_bytes,json=freedBytes,proto3" json:"freed_bytes,omitempty"`
+	Items         []*PruneItem           `protobuf:"bytes,5,rep,name=items,proto3" json:"items,omitempty"`
+	DryRun        bool                   `protobuf:"varint,6,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PruneResponse) Reset() {
+	*x = PruneResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PruneResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PruneResponse) ProtoMessage() {}
+
+func (x *PruneResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PruneResponse.ProtoReflect.Descriptor instead.
+func (*PruneResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *PruneResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *PruneResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *PruneResponse) GetRemovedFiles() int32 {
+	if x != nil {
+		return x.RemovedFiles
+	}
+	return 0
+}
+
+func (x *PruneResponse) GetFreedBytes() int64 {
+	if x != nil {
+		return x.FreedBytes
+	}
+	return 0
+}
+
+func (x *PruneResponse) GetItems() []*PruneItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *PruneResponse) GetDryRun() bool {
+	if x != nil {
+		return x.DryRun
+	}
+	return false
+}
+
+type StatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatsRequest) Reset() {
+	*x = StatsRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatsRequest) ProtoMessage() {}
+
+func (x *StatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatsRequest.ProtoReflect.Descriptor instead.
+func (*StatsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *StatsRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+type VmStats struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	Pid           int32                  `protobuf:"varint,2,opt,name=pid,proto3" json:"pid,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	CpuPercent    float64                `protobuf:"fixed64,4,opt,name=cpu_percent,json=cpuPercent,proto3" json:"cpu_percent,omitempty"`
+	RssBytes      int64                  `protobuf:"varint,5,opt,name=rss_bytes,json=rssBytes,proto3" json:"rss_bytes,omitempty"`
+	MemoryMb      int32                  `protobuf:"varint,6,opt,name=memory_mb,json=memoryMb,proto3" json:"memory_mb,omitempty"`
+	UptimeSeconds int64                  `protobuf:"varint,7,opt,name=uptime_seconds,json=uptimeSeconds,proto3" json:"uptime_seconds,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VmStats) Reset() {
+	*x = VmStats{}
+	mi := &file_proto_fvc_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VmStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VmStats) ProtoMessage() {}
+
+func (x *VmStats) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VmStats.ProtoReflect.Descriptor instead.
+func (*VmStats) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *VmStats) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+func (x *VmStats) GetPid() int32 {
+	if x != nil {
+		return x.Pid
+	}
+	return 0
+}
+
+func (x *VmStats) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *VmStats) GetCpuPercent() float64 {
+	if x != nil {
+		return x.CpuPercent
+	}
+	return 0
+}
+
+func (x *VmStats) GetRssBytes() int64 {
+	if x != nil {
+		return x.RssBytes
+	}
+	return 0
+}
+
+func (x *VmStats) GetMemoryMb() int32 {
+	if x != nil {
+		return x.MemoryMb
+	}
+	return 0
+}
+
+func (x *VmStats) GetUptimeSeconds() int64 {
+	if x != nil {
+		return x.UptimeSeconds
+	}
+	return 0
+}
+
+type StatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Stats         []*VmStats             `protobuf:"bytes,1,rep,name=stats,proto3" json:"stats,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatsResponse) Reset() {
+	*x = StatsResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatsResponse) ProtoMessage() {}
+
+func (x *StatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatsResponse.ProtoReflect.Descriptor instead.
+func (*StatsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *StatsResponse) GetStats() []*VmStats {
+	if x != nil {
+		return x.Stats
+	}
+	return nil
+}
+
+type WaitRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	VmId           string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	TimeoutSeconds int32                  `protobuf:"varint,2,opt,name=timeout_seconds,json=timeoutSeconds,proto3" json:"timeout_seconds,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *WaitRequest) Reset() {
+	*x = WaitRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WaitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WaitRequest) ProtoMessage() {}
+
+func (x *WaitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WaitRequest.ProtoReflect.Descriptor instead.
+func (*WaitRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *WaitRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+func (x *WaitRequest) GetTimeoutSeconds() int32 {
+	if x != nil {
+		return x.TimeoutSeconds
+	}
+	return 0
+}
+
+type WaitResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WaitResponse) Reset() {
+	*x = WaitResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WaitResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WaitResponse) ProtoMessage() {}
+
+func (x *WaitResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WaitResponse.ProtoReflect.Descriptor instead.
+func (*WaitResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *WaitResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *WaitResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *WaitResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type KillRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *KillRequest) Reset() {
+	*x = KillRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KillRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KillRequest) ProtoMessage() {}
+
+func (x *KillRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KillRequest.ProtoReflect.Descriptor instead.
+func (*KillRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *KillRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+type KillResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *KillResponse) Reset() {
+	*x = KillResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KillResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KillResponse) ProtoMessage() {}
+
+func (x *KillResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KillResponse.ProtoReflect.Descriptor instead.
+func (*KillResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *KillResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *KillResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type SnapshotCreateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotCreateRequest) Reset() {
+	*x = SnapshotCreateRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotCreateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotCreateRequest) ProtoMessage() {}
+
+func (x *SnapshotCreateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotCreateRequest.ProtoReflect.Descriptor instead.
+func (*SnapshotCreateRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *SnapshotCreateRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+func (x *SnapshotCreateRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type SnapshotCreateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Snapshot      *SnapshotDetails       `protobuf:"bytes,3,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotCreateResponse) Reset() {
+	*x = SnapshotCreateResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotCreateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotCreateResponse) ProtoMessage() {}
+
+func (x *SnapshotCreateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotCreateResponse.ProtoReflect.Descriptor instead.
+func (*SnapshotCreateResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *SnapshotCreateResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SnapshotCreateResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *SnapshotCreateResponse) GetSnapshot() *SnapshotDetails {
+	if x != nil {
+		return x.Snapshot
+	}
+	return nil
+}
+
+type SnapshotListRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotListRequest) Reset() {
+	*x = SnapshotListRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotListRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotListRequest) ProtoMessage() {}
+
+func (x *SnapshotListRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotListRequest.ProtoReflect.Descriptor instead.
+func (*SnapshotListRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *SnapshotListRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+type SnapshotDetails struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	SizeBytes     int64                  `protobuf:"varint,3,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotDetails) Reset() {
+	*x = SnapshotDetails{}
+	mi := &file_proto_fvc_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotDetails) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotDetails) ProtoMessage() {}
+
+func (x *SnapshotDetails) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotDetails.ProtoReflect.Descriptor instead.
+func (*SnapshotDetails) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *SnapshotDetails) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SnapshotDetails) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *SnapshotDetails) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+type SnapshotListResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Snapshots     []*SnapshotDetails     `protobuf:"bytes,3,rep,name=snapshots,proto3" json:"snapshots,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotListResponse) Reset() {
+	*x = SnapshotListResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotListResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotListResponse) ProtoMessage() {}
+
+func (x *SnapshotListResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotListResponse.ProtoReflect.Descriptor instead.
+func (*SnapshotListResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *SnapshotListResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SnapshotListResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *SnapshotListResponse) GetSnapshots() []*SnapshotDetails {
+	if x != nil {
+		return x.Snapshots
+	}
+	return nil
+}
+
+type SnapshotRestoreRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotRestoreRequest) Reset() {
+	*x = SnapshotRestoreRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotRestoreRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotRestoreRequest) ProtoMessage() {}
+
+func (x *SnapshotRestoreRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotRestoreRequest.ProtoReflect.Descriptor instead.
+func (*SnapshotRestoreRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *SnapshotRestoreRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+func (x *SnapshotRestoreRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type SnapshotRestoreResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Snapshot      *SnapshotDetails       `protobuf:"bytes,3,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotRestoreResponse) Reset() {
+	*x = SnapshotRestoreResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotRestoreResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotRestoreResponse) ProtoMessage() {}
+
+func (x *SnapshotRestoreResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotRestoreResponse.ProtoReflect.Descriptor instead.
+func (*SnapshotRestoreResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *SnapshotRestoreResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SnapshotRestoreResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *SnapshotRestoreResponse) GetSnapshot() *SnapshotDetails {
+	if x != nil {
+		return x.Snapshot
+	}
+	return nil
+}
+
+type SnapshotRemoveRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotRemoveRequest) Reset() {
+	*x = SnapshotRemoveRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotRemoveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotRemoveRequest) ProtoMessage() {}
+
+func (x *SnapshotRemoveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotRemoveRequest.ProtoReflect.Descriptor instead.
+func (*SnapshotRemoveRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *SnapshotRemoveRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+func (x *SnapshotRemoveRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type SnapshotRemoveResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotRemoveResponse) Reset() {
+	*x = SnapshotRemoveResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotRemoveResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotRemoveResponse) ProtoMessage() {}
+
+func (x *SnapshotRemoveResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotRemoveResponse.ProtoReflect.Descriptor instead.
+func (*SnapshotRemoveResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *SnapshotRemoveResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SnapshotRemoveResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type BuildImageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ContextPath   string                 `protobuf:"bytes,1,opt,name=context_path,json=contextPath,proto3" json:"context_path,omitempty"`
+	Tag           string                 `protobuf:"bytes,2,opt,name=tag,proto3" json:"tag,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BuildImageRequest) Reset() {
+	*x = BuildImageRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuildImageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildImageRequest) ProtoMessage() {}
+
+func (x *BuildImageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildImageRequest.ProtoReflect.Descriptor instead.
+func (*BuildImageRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *BuildImageRequest) GetContextPath() string {
+	if x != nil {
+		return x.ContextPath
+	}
+	return ""
+}
+
+func (x *BuildImageRequest) GetTag() string {
+	if x != nil {
+		return x.Tag
+	}
+	return ""
+}
+
+type BuildImageResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Image         string                 `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
+	Path          string                 `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BuildImageResponse) Reset() {
+	*x = BuildImageResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuildImageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildImageResponse) ProtoMessage() {}
+
+func (x *BuildImageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildImageResponse.ProtoReflect.Descriptor instead.
+func (*BuildImageResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *BuildImageResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *BuildImageResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *BuildImageResponse) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+func (x *BuildImageResponse) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type ImageInspectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Image         string                 `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageInspectRequest) Reset() {
+	*x = ImageInspectRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageInspectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageInspectRequest) ProtoMessage() {}
+
+func (x *ImageInspectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageInspectRequest.ProtoReflect.Descriptor instead.
+func (*ImageInspectRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *ImageInspectRequest) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+type ImageInspectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Image         *ImageDetails          `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageInspectResponse) Reset() {
+	*x = ImageInspectResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageInspectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageInspectResponse) ProtoMessage() {}
+
+func (x *ImageInspectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageInspectResponse.ProtoReflect.Descriptor instead.
+func (*ImageInspectResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *ImageInspectResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ImageInspectResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ImageInspectResponse) GetImage() *ImageDetails {
+	if x != nil {
+		return x.Image
+	}
+	return nil
+}
+
+type ImageRemoveRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Image         string                 `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	Force         bool                   `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageRemoveRequest) Reset() {
+	*x = ImageRemoveRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageRemoveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageRemoveRequest) ProtoMessage() {}
+
+func (x *ImageRemoveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageRemoveRequest.ProtoReflect.Descriptor instead.
+func (*ImageRemoveRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *ImageRemoveRequest) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+func (x *ImageRemoveRequest) GetForce() bool {
+	if x != nil {
+		return x.Force
+	}
+	return false
+}
+
+type ImageRemoveResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageRemoveResponse) Reset() {
+	*x = ImageRemoveResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageRemoveResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageRemoveResponse) ProtoMessage() {}
+
+func (x *ImageRemoveResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageRemoveResponse.ProtoReflect.Descriptor instead.
+func (*ImageRemoveResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *ImageRemoveResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ImageRemoveResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type ImageTagRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Source        string                 `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	Target        string                 `protobuf:"bytes,2,opt,name=target,proto3" json:"target,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageTagRequest) Reset() {
+	*x = ImageTagRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageTagRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageTagRequest) ProtoMessage() {}
+
+func (x *ImageTagRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageTagRequest.ProtoReflect.Descriptor instead.
+func (*ImageTagRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *ImageTagRequest) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *ImageTagRequest) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
+type ImageTagResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Image         *ImageDetails          `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageTagResponse) Reset() {
+	*x = ImageTagResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageTagResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageTagResponse) ProtoMessage() {}
+
+func (x *ImageTagResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageTagResponse.ProtoReflect.Descriptor instead.
+func (*ImageTagResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *ImageTagResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ImageTagResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ImageTagResponse) GetImage() *ImageDetails {
+	if x != nil {
+		return x.Image
+	}
+	return nil
+}
+
+type ImageImportRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SourcePath    string                 `protobuf:"bytes,1,opt,name=source_path,json=sourcePath,proto3" json:"source_path,omitempty"`
+	Image         string                 `protobuf:"bytes,2,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageImportRequest) Reset() {
+	*x = ImageImportRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageImportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageImportRequest) ProtoMessage() {}
+
+func (x *ImageImportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageImportRequest.ProtoReflect.Descriptor instead.
+func (*ImageImportRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *ImageImportRequest) GetSourcePath() string {
+	if x != nil {
+		return x.SourcePath
+	}
+	return ""
+}
+
+func (x *ImageImportRequest) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+type ImageImportResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Image         *ImageDetails          `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageImportResponse) Reset() {
+	*x = ImageImportResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageImportResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageImportResponse) ProtoMessage() {}
+
+func (x *ImageImportResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageImportResponse.ProtoReflect.Descriptor instead.
+func (*ImageImportResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *ImageImportResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ImageImportResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ImageImportResponse) GetImage() *ImageDetails {
+	if x != nil {
+		return x.Image
+	}
+	return nil
+}
+
+type ImageExportRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Image         string                 `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	DestPath      string                 `protobuf:"bytes,2,opt,name=dest_path,json=destPath,proto3" json:"dest_path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageExportRequest) Reset() {
+	*x = ImageExportRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageExportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageExportRequest) ProtoMessage() {}
+
+func (x *ImageExportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageExportRequest.ProtoReflect.Descriptor instead.
+func (*ImageExportRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *ImageExportRequest) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+func (x *ImageExportRequest) GetDestPath() string {
+	if x != nil {
+		return x.DestPath
+	}
+	return ""
+}
+
+type ImageExportResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Path          string                 `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageExportResponse) Reset() {
+	*x = ImageExportResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageExportResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageExportResponse) ProtoMessage() {}
+
+func (x *ImageExportResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageExportResponse.ProtoReflect.Descriptor instead.
+func (*ImageExportResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *ImageExportResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ImageExportResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ImageExportResponse) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type ImageHistoryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Image         string                 `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageHistoryRequest) Reset() {
+	*x = ImageHistoryRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageHistoryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageHistoryRequest) ProtoMessage() {}
+
+func (x *ImageHistoryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageHistoryRequest.ProtoReflect.Descriptor instead.
+func (*ImageHistoryRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *ImageHistoryRequest) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+type ImageHistoryEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Action        string                 `protobuf:"bytes,1,opt,name=action,proto3" json:"action,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageHistoryEntry) Reset() {
+	*x = ImageHistoryEntry{}
+	mi := &file_proto_fvc_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageHistoryEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageHistoryEntry) ProtoMessage() {}
+
+func (x *ImageHistoryEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageHistoryEntry.ProtoReflect.Descriptor instead.
+func (*ImageHistoryEntry) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *ImageHistoryEntry) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *ImageHistoryEntry) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ImageHistoryEntry) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+type ImageHistoryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Entries       []*ImageHistoryEntry   `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageHistoryResponse) Reset() {
+	*x = ImageHistoryResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageHistoryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageHistoryResponse) ProtoMessage() {}
+
+func (x *ImageHistoryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageHistoryResponse.ProtoReflect.Descriptor instead.
+func (*ImageHistoryResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *ImageHistoryResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ImageHistoryResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ImageHistoryResponse) GetEntries() []*ImageHistoryEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+type ImagePruneRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DryRun        bool                   `protobuf:"varint,1,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImagePruneRequest) Reset() {
+	*x = ImagePruneRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImagePruneRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImagePruneRequest) ProtoMessage() {}
+
+func (x *ImagePruneRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImagePruneRequest.ProtoReflect.Descriptor instead.
+func (*ImagePruneRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *ImagePruneRequest) GetDryRun() bool {
+	if x != nil {
+		return x.DryRun
+	}
+	return false
+}
+
+type ImagePruneResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	RemovedImages int32                  `protobuf:"varint,3,opt,name=removed_images,json=removedImages,proto3" json:"removed_images,omitempty"`
+	FreedBytes    int64                  `protobuf:"varint,4,opt,name=freed_bytes,json=freedBytes,proto3" json:"freed_bytes,omitempty"`
+	Images        []*ImageDetails        `protobuf:"bytes,5,rep,name=images,proto3" json:"images,omitempty"`
+	DryRun        bool                   `protobuf:"varint,6,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImagePruneResponse) Reset() {
+	*x = ImagePruneResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImagePruneResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImagePruneResponse) ProtoMessage() {}
+
+func (x *ImagePruneResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImagePruneResponse.ProtoReflect.Descriptor instead.
+func (*ImagePruneResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *ImagePruneResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ImagePruneResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ImagePruneResponse) GetRemovedImages() int32 {
+	if x != nil {
+		return x.RemovedImages
+	}
+	return 0
+}
+
+func (x *ImagePruneResponse) GetFreedBytes() int64 {
+	if x != nil {
+		return x.FreedBytes
+	}
+	return 0
+}
+
+func (x *ImagePruneResponse) GetImages() []*ImageDetails {
+	if x != nil {
+		return x.Images
+	}
+	return nil
+}
+
+func (x *ImagePruneResponse) GetDryRun() bool {
+	if x != nil {
+		return x.DryRun
+	}
+	return false
+}
+
 // --- Messages pour la commande PS ---
 type PsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -640,7 +3052,7 @@ type PsRequest struct {
 
 func (x *PsRequest) Reset() {
 	*x = PsRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[11]
+	mi := &file_proto_fvc_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -652,7 +3064,7 @@ func (x *PsRequest) String() string {
 func (*PsRequest) ProtoMessage() {}
 
 func (x *PsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[11]
+	mi := &file_proto_fvc_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -665,7 +3077,7 @@ func (x *PsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PsRequest.ProtoReflect.Descriptor instead.
 func (*PsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{11}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *PsRequest) GetAll() bool {
@@ -686,7 +3098,7 @@ type VmConfig struct {
 
 func (x *VmConfig) Reset() {
 	*x = VmConfig{}
-	mi := &file_proto_fvc_proto_msgTypes[12]
+	mi := &file_proto_fvc_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -698,7 +3110,7 @@ func (x *VmConfig) String() string {
 func (*VmConfig) ProtoMessage() {}
 
 func (x *VmConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[12]
+	mi := &file_proto_fvc_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -711,7 +3123,7 @@ func (x *VmConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VmConfig.ProtoReflect.Descriptor instead.
 func (*VmConfig) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{12}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *VmConfig) GetCpus() int32 {
@@ -746,13 +3158,16 @@ type VmDetails struct {
 	GuestIp       string                 `protobuf:"bytes,7,opt,name=guest_ip,json=guestIp,proto3" json:"guest_ip,omitempty"`
 	MacAddress    string                 `protobuf:"bytes,8,opt,name=mac_address,json=macAddress,proto3" json:"mac_address,omitempty"`
 	TapName       string                 `protobuf:"bytes,9,opt,name=tap_name,json=tapName,proto3" json:"tap_name,omitempty"`
+	LogPath       string                 `protobuf:"bytes,10,opt,name=log_path,json=logPath,proto3" json:"log_path,omitempty"`
+	DrivePath     string                 `protobuf:"bytes,11,opt,name=drive_path,json=drivePath,proto3" json:"drive_path,omitempty"`
+	ConsolePath   string                 `protobuf:"bytes,12,opt,name=console_path,json=consolePath,proto3" json:"console_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VmDetails) Reset() {
 	*x = VmDetails{}
-	mi := &file_proto_fvc_proto_msgTypes[13]
+	mi := &file_proto_fvc_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -764,7 +3179,7 @@ func (x *VmDetails) String() string {
 func (*VmDetails) ProtoMessage() {}
 
 func (x *VmDetails) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[13]
+	mi := &file_proto_fvc_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -777,7 +3192,7 @@ func (x *VmDetails) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VmDetails.ProtoReflect.Descriptor instead.
 func (*VmDetails) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{13}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *VmDetails) GetVmId() string {
@@ -843,6 +3258,27 @@ func (x *VmDetails) GetTapName() string {
 	return ""
 }
 
+func (x *VmDetails) GetLogPath() string {
+	if x != nil {
+		return x.LogPath
+	}
+	return ""
+}
+
+func (x *VmDetails) GetDrivePath() string {
+	if x != nil {
+		return x.DrivePath
+	}
+	return ""
+}
+
+func (x *VmDetails) GetConsolePath() string {
+	if x != nil {
+		return x.ConsolePath
+	}
+	return ""
+}
+
 type PsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Vms           []*VmDetails           `protobuf:"bytes,1,rep,name=vms,proto3" json:"vms,omitempty"` // La liste de toutes les microVMs
@@ -852,7 +3288,7 @@ type PsResponse struct {
 
 func (x *PsResponse) Reset() {
 	*x = PsResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[14]
+	mi := &file_proto_fvc_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -864,7 +3300,7 @@ func (x *PsResponse) String() string {
 func (*PsResponse) ProtoMessage() {}
 
 func (x *PsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[14]
+	mi := &file_proto_fvc_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -877,7 +3313,7 @@ func (x *PsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PsResponse.ProtoReflect.Descriptor instead.
 func (*PsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{14}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *PsResponse) GetVms() []*VmDetails {
@@ -899,7 +3335,7 @@ type LogsRequest struct {
 
 func (x *LogsRequest) Reset() {
 	*x = LogsRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[15]
+	mi := &file_proto_fvc_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -911,7 +3347,7 @@ func (x *LogsRequest) String() string {
 func (*LogsRequest) ProtoMessage() {}
 
 func (x *LogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[15]
+	mi := &file_proto_fvc_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -924,7 +3360,7 @@ func (x *LogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogsRequest.ProtoReflect.Descriptor instead.
 func (*LogsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{15}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *LogsRequest) GetVmId() string {
@@ -958,7 +3394,7 @@ type LogsResponse struct {
 
 func (x *LogsResponse) Reset() {
 	*x = LogsResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[16]
+	mi := &file_proto_fvc_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -970,7 +3406,7 @@ func (x *LogsResponse) String() string {
 func (*LogsResponse) ProtoMessage() {}
 
 func (x *LogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[16]
+	mi := &file_proto_fvc_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -983,7 +3419,7 @@ func (x *LogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogsResponse.ProtoReflect.Descriptor instead.
 func (*LogsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{16}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *LogsResponse) GetLine() string {
@@ -1044,13 +3480,176 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\x05vm_id\x18\x03 \x01(\tR\x04vmId\x12\x19\n" +
 	"\blog_path\x18\x04 \x01(\tR\alogPath\x12\x1d\n" +
 	"\n" +
-	"input_path\x18\x05 \x01(\tR\tinputPath\"\x1d\n" +
+	"input_path\x18\x05 \x01(\tR\tinputPath\"%\n" +
+	"\x0eInspectRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\"e\n" +
+	"\x0fInspectResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1e\n" +
+	"\x02vm\x18\x03 \x01(\v2\x0e.fvc.VmDetailsR\x02vm\"(\n" +
+	"\x10PullImageRequest\x12\x14\n" +
+	"\x05image\x18\x01 \x01(\tR\x05image\"q\n" +
+	"\x11PullImageResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x14\n" +
+	"\x05image\x18\x03 \x01(\tR\x05image\x12\x12\n" +
+	"\x04path\x18\x04 \x01(\tR\x04path\"\x13\n" +
+	"\x11ListImagesRequest\"\xb4\x02\n" +
+	"\fImageDetails\x12\x14\n" +
+	"\x05image\x18\x01 \x01(\tR\x05image\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x03 \x01(\x03R\tsizeBytes\x12\x16\n" +
+	"\x06digest\x18\x04 \x01(\tR\x06digest\x12\x16\n" +
+	"\x06source\x18\x05 \x01(\tR\x06source\x129\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x125\n" +
+	"\x06labels\x18\a \x03(\v2\x1d.fvc.ImageDetails.LabelsEntryR\x06labels\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"?\n" +
+	"\x12ListImagesResponse\x12)\n" +
+	"\x06images\x18\x01 \x03(\v2\x11.fvc.ImageDetailsR\x06images\"'\n" +
+	"\fPruneRequest\x12\x17\n" +
+	"\adry_run\x18\x01 \x01(\bR\x06dryRun\"R\n" +
+	"\tPruneItem\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x03 \x01(\x03R\tsizeBytes\"\xc8\x01\n" +
+	"\rPruneResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12#\n" +
+	"\rremoved_files\x18\x03 \x01(\x05R\fremovedFiles\x12\x1f\n" +
+	"\vfreed_bytes\x18\x04 \x01(\x03R\n" +
+	"freedBytes\x12$\n" +
+	"\x05items\x18\x05 \x03(\v2\x0e.fvc.PruneItemR\x05items\x12\x17\n" +
+	"\adry_run\x18\x06 \x01(\bR\x06dryRun\"#\n" +
+	"\fStatsRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\"\xca\x01\n" +
+	"\aVmStats\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x10\n" +
+	"\x03pid\x18\x02 \x01(\x05R\x03pid\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1f\n" +
+	"\vcpu_percent\x18\x04 \x01(\x01R\n" +
+	"cpuPercent\x12\x1b\n" +
+	"\trss_bytes\x18\x05 \x01(\x03R\brssBytes\x12\x1b\n" +
+	"\tmemory_mb\x18\x06 \x01(\x05R\bmemoryMb\x12%\n" +
+	"\x0euptime_seconds\x18\a \x01(\x03R\ruptimeSeconds\"3\n" +
+	"\rStatsResponse\x12\"\n" +
+	"\x05stats\x18\x01 \x03(\v2\f.fvc.VmStatsR\x05stats\"K\n" +
+	"\vWaitRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12'\n" +
+	"\x0ftimeout_seconds\x18\x02 \x01(\x05R\x0etimeoutSeconds\"Z\n" +
+	"\fWaitResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"\"\n" +
+	"\vKillRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\"B\n" +
+	"\fKillResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"@\n" +
+	"\x15SnapshotCreateRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"~\n" +
+	"\x16SnapshotCreateResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x120\n" +
+	"\bsnapshot\x18\x03 \x01(\v2\x14.fvc.SnapshotDetailsR\bsnapshot\"*\n" +
+	"\x13SnapshotListRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\"X\n" +
+	"\x0fSnapshotDetails\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x03 \x01(\x03R\tsizeBytes\"~\n" +
+	"\x14SnapshotListResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x122\n" +
+	"\tsnapshots\x18\x03 \x03(\v2\x14.fvc.SnapshotDetailsR\tsnapshots\"A\n" +
+	"\x16SnapshotRestoreRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x7f\n" +
+	"\x17SnapshotRestoreResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x120\n" +
+	"\bsnapshot\x18\x03 \x01(\v2\x14.fvc.SnapshotDetailsR\bsnapshot\"@\n" +
+	"\x15SnapshotRemoveRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"L\n" +
+	"\x16SnapshotRemoveResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"H\n" +
+	"\x11BuildImageRequest\x12!\n" +
+	"\fcontext_path\x18\x01 \x01(\tR\vcontextPath\x12\x10\n" +
+	"\x03tag\x18\x02 \x01(\tR\x03tag\"r\n" +
+	"\x12BuildImageResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x14\n" +
+	"\x05image\x18\x03 \x01(\tR\x05image\x12\x12\n" +
+	"\x04path\x18\x04 \x01(\tR\x04path\"+\n" +
+	"\x13ImageInspectRequest\x12\x14\n" +
+	"\x05image\x18\x01 \x01(\tR\x05image\"s\n" +
+	"\x14ImageInspectResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12'\n" +
+	"\x05image\x18\x03 \x01(\v2\x11.fvc.ImageDetailsR\x05image\"@\n" +
+	"\x12ImageRemoveRequest\x12\x14\n" +
+	"\x05image\x18\x01 \x01(\tR\x05image\x12\x14\n" +
+	"\x05force\x18\x02 \x01(\bR\x05force\"I\n" +
+	"\x13ImageRemoveResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"A\n" +
+	"\x0fImageTagRequest\x12\x16\n" +
+	"\x06source\x18\x01 \x01(\tR\x06source\x12\x16\n" +
+	"\x06target\x18\x02 \x01(\tR\x06target\"o\n" +
+	"\x10ImageTagResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12'\n" +
+	"\x05image\x18\x03 \x01(\v2\x11.fvc.ImageDetailsR\x05image\"K\n" +
+	"\x12ImageImportRequest\x12\x1f\n" +
+	"\vsource_path\x18\x01 \x01(\tR\n" +
+	"sourcePath\x12\x14\n" +
+	"\x05image\x18\x02 \x01(\tR\x05image\"r\n" +
+	"\x13ImageImportResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12'\n" +
+	"\x05image\x18\x03 \x01(\v2\x11.fvc.ImageDetailsR\x05image\"G\n" +
+	"\x12ImageExportRequest\x12\x14\n" +
+	"\x05image\x18\x01 \x01(\tR\x05image\x12\x1b\n" +
+	"\tdest_path\x18\x02 \x01(\tR\bdestPath\"]\n" +
+	"\x13ImageExportResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x12\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\"+\n" +
+	"\x13ImageHistoryRequest\x12\x14\n" +
+	"\x05image\x18\x01 \x01(\tR\x05image\"\x80\x01\n" +
+	"\x11ImageHistoryEntry\x12\x16\n" +
+	"\x06action\x18\x01 \x01(\tR\x06action\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x129\n" +
+	"\n" +
+	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"|\n" +
+	"\x14ImageHistoryResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x120\n" +
+	"\aentries\x18\x03 \x03(\v2\x16.fvc.ImageHistoryEntryR\aentries\",\n" +
+	"\x11ImagePruneRequest\x12\x17\n" +
+	"\adry_run\x18\x01 \x01(\bR\x06dryRun\"\xd4\x01\n" +
+	"\x12ImagePruneResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12%\n" +
+	"\x0eremoved_images\x18\x03 \x01(\x05R\rremovedImages\x12\x1f\n" +
+	"\vfreed_bytes\x18\x04 \x01(\x03R\n" +
+	"freedBytes\x12)\n" +
+	"\x06images\x18\x05 \x03(\v2\x11.fvc.ImageDetailsR\x06images\x12\x17\n" +
+	"\adry_run\x18\x06 \x01(\bR\x06dryRun\"\x1d\n" +
 	"\tPsRequest\x12\x10\n" +
 	"\x03all\x18\x01 \x01(\bR\x03all\"Q\n" +
 	"\bVmConfig\x12\x12\n" +
 	"\x04cpus\x18\x01 \x01(\x05R\x04cpus\x12\x1b\n" +
 	"\tmemory_mb\x18\x02 \x01(\x05R\bmemoryMb\x12\x14\n" +
-	"\x05ports\x18\x03 \x03(\tR\x05ports\"\x99\x02\n" +
+	"\x05ports\x18\x03 \x03(\tR\x05ports\"\xf6\x02\n" +
 	"\tVmDetails\x12\x13\n" +
 	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x10\n" +
 	"\x03pid\x18\x02 \x01(\x05R\x03pid\x12\x16\n" +
@@ -1062,7 +3661,12 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\bguest_ip\x18\a \x01(\tR\aguestIp\x12\x1f\n" +
 	"\vmac_address\x18\b \x01(\tR\n" +
 	"macAddress\x12\x19\n" +
-	"\btap_name\x18\t \x01(\tR\atapName\".\n" +
+	"\btap_name\x18\t \x01(\tR\atapName\x12\x19\n" +
+	"\blog_path\x18\n" +
+	" \x01(\tR\alogPath\x12\x1d\n" +
+	"\n" +
+	"drive_path\x18\v \x01(\tR\tdrivePath\x12!\n" +
+	"\fconsole_path\x18\f \x01(\tR\vconsolePath\".\n" +
 	"\n" +
 	"PsResponse\x12 \n" +
 	"\x03vms\x18\x01 \x03(\v2\x0e.fvc.VmDetailsR\x03vms\"N\n" +
@@ -1072,7 +3676,7 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\x04tail\x18\x03 \x01(\x05R\x04tail\"\\\n" +
 	"\fLogsResponse\x12\x12\n" +
 	"\x04line\x18\x01 \x01(\tR\x04line\x128\n" +
-	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp2\x87\x03\n" +
+	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp2\xa2\f\n" +
 	"\n" +
 	"FvcService\x12(\n" +
 	"\x03Run\x12\x0f.fvc.RunRequest\x1a\x10.fvc.RunResponse\x12-\n" +
@@ -1080,7 +3684,29 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\x04Stop\x12\x10.fvc.StopRequest\x1a\x11.fvc.StopResponse\x12.\n" +
 	"\x05Start\x12\x11.fvc.StartRequest\x1a\x12.fvc.StartResponse\x12%\n" +
 	"\x02Rm\x12\x0e.fvc.RmRequest\x1a\x0f.fvc.RmResponse\x12@\n" +
-	"\vConsoleInfo\x12\x17.fvc.ConsoleInfoRequest\x1a\x18.fvc.ConsoleInfoResponse\x12%\n" +
+	"\vConsoleInfo\x12\x17.fvc.ConsoleInfoRequest\x1a\x18.fvc.ConsoleInfoResponse\x124\n" +
+	"\aInspect\x12\x13.fvc.InspectRequest\x1a\x14.fvc.InspectResponse\x12:\n" +
+	"\tPullImage\x12\x15.fvc.PullImageRequest\x1a\x16.fvc.PullImageResponse\x12=\n" +
+	"\n" +
+	"ListImages\x12\x16.fvc.ListImagesRequest\x1a\x17.fvc.ListImagesResponse\x12.\n" +
+	"\x05Prune\x12\x11.fvc.PruneRequest\x1a\x12.fvc.PruneResponse\x12.\n" +
+	"\x05Stats\x12\x11.fvc.StatsRequest\x1a\x12.fvc.StatsResponse\x12+\n" +
+	"\x04Wait\x12\x10.fvc.WaitRequest\x1a\x11.fvc.WaitResponse\x12+\n" +
+	"\x04Kill\x12\x10.fvc.KillRequest\x1a\x11.fvc.KillResponse\x12I\n" +
+	"\x0eSnapshotCreate\x12\x1a.fvc.SnapshotCreateRequest\x1a\x1b.fvc.SnapshotCreateResponse\x12C\n" +
+	"\fSnapshotList\x12\x18.fvc.SnapshotListRequest\x1a\x19.fvc.SnapshotListResponse\x12L\n" +
+	"\x0fSnapshotRestore\x12\x1b.fvc.SnapshotRestoreRequest\x1a\x1c.fvc.SnapshotRestoreResponse\x12I\n" +
+	"\x0eSnapshotRemove\x12\x1a.fvc.SnapshotRemoveRequest\x1a\x1b.fvc.SnapshotRemoveResponse\x12=\n" +
+	"\n" +
+	"BuildImage\x12\x16.fvc.BuildImageRequest\x1a\x17.fvc.BuildImageResponse\x12C\n" +
+	"\fImageInspect\x12\x18.fvc.ImageInspectRequest\x1a\x19.fvc.ImageInspectResponse\x12@\n" +
+	"\vImageRemove\x12\x17.fvc.ImageRemoveRequest\x1a\x18.fvc.ImageRemoveResponse\x127\n" +
+	"\bImageTag\x12\x14.fvc.ImageTagRequest\x1a\x15.fvc.ImageTagResponse\x12@\n" +
+	"\vImageImport\x12\x17.fvc.ImageImportRequest\x1a\x18.fvc.ImageImportResponse\x12@\n" +
+	"\vImageExport\x12\x17.fvc.ImageExportRequest\x1a\x18.fvc.ImageExportResponse\x12C\n" +
+	"\fImageHistory\x12\x18.fvc.ImageHistoryRequest\x1a\x19.fvc.ImageHistoryResponse\x12=\n" +
+	"\n" +
+	"ImagePrune\x12\x16.fvc.ImagePruneRequest\x1a\x17.fvc.ImagePruneResponse\x12%\n" +
 	"\x02Ps\x12\x0e.fvc.PsRequest\x1a\x0f.fvc.PsResponse\x123\n" +
 	"\n" +
 	"StreamLogs\x12\x10.fvc.LogsRequest\x1a\x11.fvc.LogsResponse0\x01B\tZ\a./protob\x06proto3"
@@ -1097,54 +3723,151 @@ func file_proto_fvc_proto_rawDescGZIP() []byte {
 	return file_proto_fvc_proto_rawDescData
 }
 
-var file_proto_fvc_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_proto_fvc_proto_msgTypes = make([]protoimpl.MessageInfo, 61)
 var file_proto_fvc_proto_goTypes = []any{
-	(*RunRequest)(nil),            // 0: fvc.RunRequest
-	(*RunResponse)(nil),           // 1: fvc.RunResponse
-	(*RunEvent)(nil),              // 2: fvc.RunEvent
-	(*StopRequest)(nil),           // 3: fvc.StopRequest
-	(*StopResponse)(nil),          // 4: fvc.StopResponse
-	(*StartRequest)(nil),          // 5: fvc.StartRequest
-	(*StartResponse)(nil),         // 6: fvc.StartResponse
-	(*RmRequest)(nil),             // 7: fvc.RmRequest
-	(*RmResponse)(nil),            // 8: fvc.RmResponse
-	(*ConsoleInfoRequest)(nil),    // 9: fvc.ConsoleInfoRequest
-	(*ConsoleInfoResponse)(nil),   // 10: fvc.ConsoleInfoResponse
-	(*PsRequest)(nil),             // 11: fvc.PsRequest
-	(*VmConfig)(nil),              // 12: fvc.VmConfig
-	(*VmDetails)(nil),             // 13: fvc.VmDetails
-	(*PsResponse)(nil),            // 14: fvc.PsResponse
-	(*LogsRequest)(nil),           // 15: fvc.LogsRequest
-	(*LogsResponse)(nil),          // 16: fvc.LogsResponse
-	(*timestamppb.Timestamp)(nil), // 17: google.protobuf.Timestamp
+	(*RunRequest)(nil),              // 0: fvc.RunRequest
+	(*RunResponse)(nil),             // 1: fvc.RunResponse
+	(*RunEvent)(nil),                // 2: fvc.RunEvent
+	(*StopRequest)(nil),             // 3: fvc.StopRequest
+	(*StopResponse)(nil),            // 4: fvc.StopResponse
+	(*StartRequest)(nil),            // 5: fvc.StartRequest
+	(*StartResponse)(nil),           // 6: fvc.StartResponse
+	(*RmRequest)(nil),               // 7: fvc.RmRequest
+	(*RmResponse)(nil),              // 8: fvc.RmResponse
+	(*ConsoleInfoRequest)(nil),      // 9: fvc.ConsoleInfoRequest
+	(*ConsoleInfoResponse)(nil),     // 10: fvc.ConsoleInfoResponse
+	(*InspectRequest)(nil),          // 11: fvc.InspectRequest
+	(*InspectResponse)(nil),         // 12: fvc.InspectResponse
+	(*PullImageRequest)(nil),        // 13: fvc.PullImageRequest
+	(*PullImageResponse)(nil),       // 14: fvc.PullImageResponse
+	(*ListImagesRequest)(nil),       // 15: fvc.ListImagesRequest
+	(*ImageDetails)(nil),            // 16: fvc.ImageDetails
+	(*ListImagesResponse)(nil),      // 17: fvc.ListImagesResponse
+	(*PruneRequest)(nil),            // 18: fvc.PruneRequest
+	(*PruneItem)(nil),               // 19: fvc.PruneItem
+	(*PruneResponse)(nil),           // 20: fvc.PruneResponse
+	(*StatsRequest)(nil),            // 21: fvc.StatsRequest
+	(*VmStats)(nil),                 // 22: fvc.VmStats
+	(*StatsResponse)(nil),           // 23: fvc.StatsResponse
+	(*WaitRequest)(nil),             // 24: fvc.WaitRequest
+	(*WaitResponse)(nil),            // 25: fvc.WaitResponse
+	(*KillRequest)(nil),             // 26: fvc.KillRequest
+	(*KillResponse)(nil),            // 27: fvc.KillResponse
+	(*SnapshotCreateRequest)(nil),   // 28: fvc.SnapshotCreateRequest
+	(*SnapshotCreateResponse)(nil),  // 29: fvc.SnapshotCreateResponse
+	(*SnapshotListRequest)(nil),     // 30: fvc.SnapshotListRequest
+	(*SnapshotDetails)(nil),         // 31: fvc.SnapshotDetails
+	(*SnapshotListResponse)(nil),    // 32: fvc.SnapshotListResponse
+	(*SnapshotRestoreRequest)(nil),  // 33: fvc.SnapshotRestoreRequest
+	(*SnapshotRestoreResponse)(nil), // 34: fvc.SnapshotRestoreResponse
+	(*SnapshotRemoveRequest)(nil),   // 35: fvc.SnapshotRemoveRequest
+	(*SnapshotRemoveResponse)(nil),  // 36: fvc.SnapshotRemoveResponse
+	(*BuildImageRequest)(nil),       // 37: fvc.BuildImageRequest
+	(*BuildImageResponse)(nil),      // 38: fvc.BuildImageResponse
+	(*ImageInspectRequest)(nil),     // 39: fvc.ImageInspectRequest
+	(*ImageInspectResponse)(nil),    // 40: fvc.ImageInspectResponse
+	(*ImageRemoveRequest)(nil),      // 41: fvc.ImageRemoveRequest
+	(*ImageRemoveResponse)(nil),     // 42: fvc.ImageRemoveResponse
+	(*ImageTagRequest)(nil),         // 43: fvc.ImageTagRequest
+	(*ImageTagResponse)(nil),        // 44: fvc.ImageTagResponse
+	(*ImageImportRequest)(nil),      // 45: fvc.ImageImportRequest
+	(*ImageImportResponse)(nil),     // 46: fvc.ImageImportResponse
+	(*ImageExportRequest)(nil),      // 47: fvc.ImageExportRequest
+	(*ImageExportResponse)(nil),     // 48: fvc.ImageExportResponse
+	(*ImageHistoryRequest)(nil),     // 49: fvc.ImageHistoryRequest
+	(*ImageHistoryEntry)(nil),       // 50: fvc.ImageHistoryEntry
+	(*ImageHistoryResponse)(nil),    // 51: fvc.ImageHistoryResponse
+	(*ImagePruneRequest)(nil),       // 52: fvc.ImagePruneRequest
+	(*ImagePruneResponse)(nil),      // 53: fvc.ImagePruneResponse
+	(*PsRequest)(nil),               // 54: fvc.PsRequest
+	(*VmConfig)(nil),                // 55: fvc.VmConfig
+	(*VmDetails)(nil),               // 56: fvc.VmDetails
+	(*PsResponse)(nil),              // 57: fvc.PsResponse
+	(*LogsRequest)(nil),             // 58: fvc.LogsRequest
+	(*LogsResponse)(nil),            // 59: fvc.LogsResponse
+	nil,                             // 60: fvc.ImageDetails.LabelsEntry
+	(*timestamppb.Timestamp)(nil),   // 61: google.protobuf.Timestamp
 }
 var file_proto_fvc_proto_depIdxs = []int32{
-	12, // 0: fvc.RunRequest.config:type_name -> fvc.VmConfig
-	12, // 1: fvc.VmDetails.config:type_name -> fvc.VmConfig
-	17, // 2: fvc.VmDetails.created_at:type_name -> google.protobuf.Timestamp
-	13, // 3: fvc.PsResponse.vms:type_name -> fvc.VmDetails
-	17, // 4: fvc.LogsResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 5: fvc.FvcService.Run:input_type -> fvc.RunRequest
-	0,  // 6: fvc.FvcService.RunStream:input_type -> fvc.RunRequest
-	3,  // 7: fvc.FvcService.Stop:input_type -> fvc.StopRequest
-	5,  // 8: fvc.FvcService.Start:input_type -> fvc.StartRequest
-	7,  // 9: fvc.FvcService.Rm:input_type -> fvc.RmRequest
-	9,  // 10: fvc.FvcService.ConsoleInfo:input_type -> fvc.ConsoleInfoRequest
-	11, // 11: fvc.FvcService.Ps:input_type -> fvc.PsRequest
-	15, // 12: fvc.FvcService.StreamLogs:input_type -> fvc.LogsRequest
-	1,  // 13: fvc.FvcService.Run:output_type -> fvc.RunResponse
-	2,  // 14: fvc.FvcService.RunStream:output_type -> fvc.RunEvent
-	4,  // 15: fvc.FvcService.Stop:output_type -> fvc.StopResponse
-	6,  // 16: fvc.FvcService.Start:output_type -> fvc.StartResponse
-	8,  // 17: fvc.FvcService.Rm:output_type -> fvc.RmResponse
-	10, // 18: fvc.FvcService.ConsoleInfo:output_type -> fvc.ConsoleInfoResponse
-	14, // 19: fvc.FvcService.Ps:output_type -> fvc.PsResponse
-	16, // 20: fvc.FvcService.StreamLogs:output_type -> fvc.LogsResponse
-	13, // [13:21] is the sub-list for method output_type
-	5,  // [5:13] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	55, // 0: fvc.RunRequest.config:type_name -> fvc.VmConfig
+	56, // 1: fvc.InspectResponse.vm:type_name -> fvc.VmDetails
+	61, // 2: fvc.ImageDetails.created_at:type_name -> google.protobuf.Timestamp
+	60, // 3: fvc.ImageDetails.labels:type_name -> fvc.ImageDetails.LabelsEntry
+	16, // 4: fvc.ListImagesResponse.images:type_name -> fvc.ImageDetails
+	19, // 5: fvc.PruneResponse.items:type_name -> fvc.PruneItem
+	22, // 6: fvc.StatsResponse.stats:type_name -> fvc.VmStats
+	31, // 7: fvc.SnapshotCreateResponse.snapshot:type_name -> fvc.SnapshotDetails
+	31, // 8: fvc.SnapshotListResponse.snapshots:type_name -> fvc.SnapshotDetails
+	31, // 9: fvc.SnapshotRestoreResponse.snapshot:type_name -> fvc.SnapshotDetails
+	16, // 10: fvc.ImageInspectResponse.image:type_name -> fvc.ImageDetails
+	16, // 11: fvc.ImageTagResponse.image:type_name -> fvc.ImageDetails
+	16, // 12: fvc.ImageImportResponse.image:type_name -> fvc.ImageDetails
+	61, // 13: fvc.ImageHistoryEntry.created_at:type_name -> google.protobuf.Timestamp
+	50, // 14: fvc.ImageHistoryResponse.entries:type_name -> fvc.ImageHistoryEntry
+	16, // 15: fvc.ImagePruneResponse.images:type_name -> fvc.ImageDetails
+	55, // 16: fvc.VmDetails.config:type_name -> fvc.VmConfig
+	61, // 17: fvc.VmDetails.created_at:type_name -> google.protobuf.Timestamp
+	56, // 18: fvc.PsResponse.vms:type_name -> fvc.VmDetails
+	61, // 19: fvc.LogsResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 20: fvc.FvcService.Run:input_type -> fvc.RunRequest
+	0,  // 21: fvc.FvcService.RunStream:input_type -> fvc.RunRequest
+	3,  // 22: fvc.FvcService.Stop:input_type -> fvc.StopRequest
+	5,  // 23: fvc.FvcService.Start:input_type -> fvc.StartRequest
+	7,  // 24: fvc.FvcService.Rm:input_type -> fvc.RmRequest
+	9,  // 25: fvc.FvcService.ConsoleInfo:input_type -> fvc.ConsoleInfoRequest
+	11, // 26: fvc.FvcService.Inspect:input_type -> fvc.InspectRequest
+	13, // 27: fvc.FvcService.PullImage:input_type -> fvc.PullImageRequest
+	15, // 28: fvc.FvcService.ListImages:input_type -> fvc.ListImagesRequest
+	18, // 29: fvc.FvcService.Prune:input_type -> fvc.PruneRequest
+	21, // 30: fvc.FvcService.Stats:input_type -> fvc.StatsRequest
+	24, // 31: fvc.FvcService.Wait:input_type -> fvc.WaitRequest
+	26, // 32: fvc.FvcService.Kill:input_type -> fvc.KillRequest
+	28, // 33: fvc.FvcService.SnapshotCreate:input_type -> fvc.SnapshotCreateRequest
+	30, // 34: fvc.FvcService.SnapshotList:input_type -> fvc.SnapshotListRequest
+	33, // 35: fvc.FvcService.SnapshotRestore:input_type -> fvc.SnapshotRestoreRequest
+	35, // 36: fvc.FvcService.SnapshotRemove:input_type -> fvc.SnapshotRemoveRequest
+	37, // 37: fvc.FvcService.BuildImage:input_type -> fvc.BuildImageRequest
+	39, // 38: fvc.FvcService.ImageInspect:input_type -> fvc.ImageInspectRequest
+	41, // 39: fvc.FvcService.ImageRemove:input_type -> fvc.ImageRemoveRequest
+	43, // 40: fvc.FvcService.ImageTag:input_type -> fvc.ImageTagRequest
+	45, // 41: fvc.FvcService.ImageImport:input_type -> fvc.ImageImportRequest
+	47, // 42: fvc.FvcService.ImageExport:input_type -> fvc.ImageExportRequest
+	49, // 43: fvc.FvcService.ImageHistory:input_type -> fvc.ImageHistoryRequest
+	52, // 44: fvc.FvcService.ImagePrune:input_type -> fvc.ImagePruneRequest
+	54, // 45: fvc.FvcService.Ps:input_type -> fvc.PsRequest
+	58, // 46: fvc.FvcService.StreamLogs:input_type -> fvc.LogsRequest
+	1,  // 47: fvc.FvcService.Run:output_type -> fvc.RunResponse
+	2,  // 48: fvc.FvcService.RunStream:output_type -> fvc.RunEvent
+	4,  // 49: fvc.FvcService.Stop:output_type -> fvc.StopResponse
+	6,  // 50: fvc.FvcService.Start:output_type -> fvc.StartResponse
+	8,  // 51: fvc.FvcService.Rm:output_type -> fvc.RmResponse
+	10, // 52: fvc.FvcService.ConsoleInfo:output_type -> fvc.ConsoleInfoResponse
+	12, // 53: fvc.FvcService.Inspect:output_type -> fvc.InspectResponse
+	14, // 54: fvc.FvcService.PullImage:output_type -> fvc.PullImageResponse
+	17, // 55: fvc.FvcService.ListImages:output_type -> fvc.ListImagesResponse
+	20, // 56: fvc.FvcService.Prune:output_type -> fvc.PruneResponse
+	23, // 57: fvc.FvcService.Stats:output_type -> fvc.StatsResponse
+	25, // 58: fvc.FvcService.Wait:output_type -> fvc.WaitResponse
+	27, // 59: fvc.FvcService.Kill:output_type -> fvc.KillResponse
+	29, // 60: fvc.FvcService.SnapshotCreate:output_type -> fvc.SnapshotCreateResponse
+	32, // 61: fvc.FvcService.SnapshotList:output_type -> fvc.SnapshotListResponse
+	34, // 62: fvc.FvcService.SnapshotRestore:output_type -> fvc.SnapshotRestoreResponse
+	36, // 63: fvc.FvcService.SnapshotRemove:output_type -> fvc.SnapshotRemoveResponse
+	38, // 64: fvc.FvcService.BuildImage:output_type -> fvc.BuildImageResponse
+	40, // 65: fvc.FvcService.ImageInspect:output_type -> fvc.ImageInspectResponse
+	42, // 66: fvc.FvcService.ImageRemove:output_type -> fvc.ImageRemoveResponse
+	44, // 67: fvc.FvcService.ImageTag:output_type -> fvc.ImageTagResponse
+	46, // 68: fvc.FvcService.ImageImport:output_type -> fvc.ImageImportResponse
+	48, // 69: fvc.FvcService.ImageExport:output_type -> fvc.ImageExportResponse
+	51, // 70: fvc.FvcService.ImageHistory:output_type -> fvc.ImageHistoryResponse
+	53, // 71: fvc.FvcService.ImagePrune:output_type -> fvc.ImagePruneResponse
+	57, // 72: fvc.FvcService.Ps:output_type -> fvc.PsResponse
+	59, // 73: fvc.FvcService.StreamLogs:output_type -> fvc.LogsResponse
+	47, // [47:74] is the sub-list for method output_type
+	20, // [20:47] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_proto_fvc_proto_init() }
@@ -1158,7 +3881,7 @@ func file_proto_fvc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_fvc_proto_rawDesc), len(file_proto_fvc_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   61,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

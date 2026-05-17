@@ -87,3 +87,37 @@ func TestOpenConsoleWriterMissingReaderDoesNotBlock(t *testing.T) {
 		t.Fatal("expected openConsoleWriter to fail without a reader")
 	}
 }
+
+func TestFormatBytes(t *testing.T) {
+	cases := map[int64]string{
+		12:              "12B",
+		1024:            "1.0KB",
+		1024 * 1024:     "1.0MB",
+		5 * 1024 * 1024: "5.0MB",
+	}
+	for size, want := range cases {
+		if got := formatBytes(size); got != want {
+			t.Fatalf("formatBytes(%d) = %s, want %s", size, got, want)
+		}
+	}
+}
+
+func TestFormatDuration(t *testing.T) {
+	cases := map[int64]string{
+		12:   "12s",
+		65:   "1m05s",
+		3660: "1h01m",
+	}
+	for seconds, want := range cases {
+		if got := formatDuration(seconds); got != want {
+			t.Fatalf("formatDuration(%d) = %s, want %s", seconds, got, want)
+		}
+	}
+}
+
+func TestFormatMemoryUsage(t *testing.T) {
+	got := formatMemoryUsage(128*1024*1024, 1024)
+	if got != "128.0MB / 1024MB" {
+		t.Fatalf("unexpected memory usage: %s", got)
+	}
+}

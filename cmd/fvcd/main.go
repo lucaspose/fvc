@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -34,6 +35,7 @@ type Server struct {
 	Config DaemonConfig
 	Store  *ImageStore
 	Net    *NetworkManager
+	Runner CommandRunner
 }
 
 func sendFCConfig(socketPath, method, path, jsonBody string) error {
@@ -170,9 +172,9 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		}
 	}
 
-	socketPath := filepath.Join(os.TempDir(), fmt.Sprintf("fvc-%s.socket", vmID))
+	socketPath := s.runtimePath(fmt.Sprintf("fvc-%s.socket", vmID))
 	logPath := filepath.Join(s.Config.LogDir, vmID+".log")
-	consolePath := filepath.Join(os.TempDir(), fmt.Sprintf("fvc-%s.console.in", vmID))
+	consolePath := s.runtimePath(fmt.Sprintf("fvc-%s.console.in", vmID))
 	_ = os.Remove(socketPath)
 	_ = os.Remove(consolePath)
 
@@ -357,11 +359,14 @@ func (s *Server) watchVM(cmd *exec.Cmd, id string, sock string, drive string, co
 	_ = os.Remove(consolePath)
 	s.cleanupNetwork(netCfg)
 
-	query := `UPDATE vms SET status = ?, pid = 0 WHERE id = ? AND status = ?`
+	query := `UPDATE vms SET status = ?, pid = 0, tap_name = '', guest_ip = '', mac_address = '' WHERE id = ? AND status = ?`
 	_, _ = s.DB.Exec(query, internal.VmStopped, id, internal.VmRunning)
 }
 
 func (s *Server) Stop(ctx context.Context, req *proto.StopRequest) (*proto.StopResponse, error) {
+	if req == nil || req.VmId == "" {
+		return &proto.StopResponse{Success: false, Message: "vm id is required"}, nil
+	}
 	var pid int
 	var statusValue, tapName, guestIP, mac string
 	querySelect := `SELECT pid, status, COALESCE(tap_name, ''), COALESCE(guest_ip, ''), COALESCE(mac_address, '') FROM vms WHERE id = ?`
@@ -374,6 +379,7 @@ func (s *Server) Stop(ctx context.Context, req *proto.StopRequest) (*proto.StopR
 	}
 	if statusValue == internal.VmStopped || statusValue == internal.VmDown || pid == 0 {
 		s.cleanupNetwork(&NetworkConfig{TapName: tapName, GuestIP: guestIP, MAC: mac})
+		_, _ = s.DB.Exec(`UPDATE vms SET pid = 0, tap_name = '', guest_ip = '', mac_address = '' WHERE id = ?`, req.VmId)
 		return &proto.StopResponse{
 			Success: true,
 			Message: "microVM is already stopped",
@@ -408,7 +414,7 @@ func (s *Server) Stop(ctx context.Context, req *proto.StopRequest) (*proto.StopR
 	}
 	s.cleanupNetwork(&NetworkConfig{TapName: tapName, GuestIP: guestIP, MAC: mac})
 
-	queryUpdate := `UPDATE vms SET status = ?, pid = 0 WHERE id = ?`
+	queryUpdate := `UPDATE vms SET status = ?, pid = 0, tap_name = '', guest_ip = '', mac_address = '' WHERE id = ?`
 	_, err = s.DB.Exec(queryUpdate, internal.VmStopped, req.VmId)
 	if err != nil {
 		return &proto.StopResponse{
@@ -420,6 +426,48 @@ func (s *Server) Stop(ctx context.Context, req *proto.StopRequest) (*proto.StopR
 		Success: true,
 		Message: fmt.Sprintf("microVM stopped: %s", req.VmId),
 	}, nil
+}
+
+func (s *Server) Kill(ctx context.Context, req *proto.KillRequest) (*proto.KillResponse, error) {
+	if req == nil || req.VmId == "" {
+		return &proto.KillResponse{Success: false, Message: "vm id is required"}, nil
+	}
+
+	var pid int
+	var statusValue, tapName, guestIP, mac, consolePath string
+	err := s.DB.QueryRow(`SELECT pid, status, COALESCE(tap_name, ''), COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(console_path, '') FROM vms WHERE id = ?`, req.VmId).Scan(&pid, &statusValue, &tapName, &guestIP, &mac, &consolePath)
+	if err == sql.ErrNoRows {
+		return &proto.KillResponse{Success: false, Message: fmt.Sprintf("vm not found: %s", req.VmId)}, nil
+	}
+	if err != nil {
+		return &proto.KillResponse{Success: false, Message: fmt.Sprintf("state lookup failed: %v", err)}, nil
+	}
+	if statusValue != internal.VmRunning || pid == 0 {
+		s.cleanupNetwork(&NetworkConfig{TapName: tapName, GuestIP: guestIP, MAC: mac})
+		_, _ = s.DB.Exec(`UPDATE vms SET pid = 0, tap_name = '', guest_ip = '', mac_address = '' WHERE id = ?`, req.VmId)
+		return &proto.KillResponse{Success: true, Message: "microVM is already stopped"}, nil
+	}
+
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return &proto.KillResponse{Success: false, Message: fmt.Sprintf("process lookup failed for pid %d: %v", pid, err)}, nil
+	}
+	if err := process.Kill(); err != nil {
+		log.Printf("kill %s: SIGKILL failed for pid %d: %v", req.VmId, pid, err)
+	}
+	for i := 0; i < 20 && processExists(pid); i++ {
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	s.cleanupNetwork(&NetworkConfig{TapName: tapName, GuestIP: guestIP, MAC: mac})
+	_ = os.Remove(s.runtimePath(fmt.Sprintf("fvc-%s.socket", req.VmId)))
+	if consolePath != "" {
+		_ = os.Remove(consolePath)
+	}
+	if _, err := s.DB.Exec(`UPDATE vms SET status = ?, pid = 0, tap_name = '', guest_ip = '', mac_address = '' WHERE id = ?`, internal.VmStopped, req.VmId); err != nil {
+		return &proto.KillResponse{Success: false, Message: fmt.Sprintf("process killed but state update failed: %v", err)}, nil
+	}
+	return &proto.KillResponse{Success: true, Message: fmt.Sprintf("microVM killed: %s", req.VmId)}, nil
 }
 
 func (s *Server) Start(ctx context.Context, req *proto.StartRequest) (*proto.StartResponse, error) {
@@ -460,16 +508,16 @@ func (s *Server) Start(ctx context.Context, req *proto.StartRequest) (*proto.Sta
 			return &proto.StartResponse{Success: false, Message: fmt.Sprintf("network setup failed: %v", err)}, nil
 		}
 		netCfg = &cfg
-		_, _ = s.DB.Exec(`UPDATE vms SET tap_name = ?, guest_ip = ?, mac_address = ? WHERE id = ?`, cfg.TapName, cfg.GuestIP, cfg.MAC, req.VmId)
 	}
-	consolePath := filepath.Join(os.TempDir(), fmt.Sprintf("fvc-%s.console.in", req.VmId))
+	consolePath := s.runtimePath(fmt.Sprintf("fvc-%s.console.in", req.VmId))
 	pid, _, err := s.launchFirecracker(req.VmId, kernelPath, drivePath, logPath, consolePath, cpus, memoryMb, netCfg)
 	if err != nil {
 		s.cleanupNetwork(netCfg)
 		return &proto.StartResponse{Success: false, Message: err.Error()}, nil
 	}
 
-	_, err = s.DB.Exec(`UPDATE vms SET status = ?, pid = ?, console_path = ? WHERE id = ?`, internal.VmRunning, pid, consolePath, req.VmId)
+	tapName, guestIP, mac := networkFields(netCfg)
+	_, err = s.DB.Exec(`UPDATE vms SET status = ?, pid = ?, console_path = ?, tap_name = ?, guest_ip = ?, mac_address = ? WHERE id = ?`, internal.VmRunning, pid, consolePath, tapName, guestIP, mac, req.VmId)
 	if err != nil {
 		process, findErr := os.FindProcess(int(pid))
 		if findErr == nil {
@@ -551,7 +599,7 @@ func (s *Server) ConsoleInfo(ctx context.Context, req *proto.ConsoleInfoRequest)
 }
 
 func (s *Server) launchFirecracker(vmID, kernelPath, drivePath, logPath, consolePath string, cpus, memoryMb int32, netCfg *NetworkConfig) (int32, string, error) {
-	socketPath := filepath.Join(os.TempDir(), fmt.Sprintf("fvc-%s.socket", vmID))
+	socketPath := s.runtimePath(fmt.Sprintf("fvc-%s.socket", vmID))
 	_ = os.Remove(socketPath)
 	_ = os.Remove(consolePath)
 
@@ -648,6 +696,20 @@ func (s *Server) networkManager() *NetworkManager {
 	return NewNetworkManager(nil)
 }
 
+func (s *Server) commandRunner() CommandRunner {
+	if s.Runner != nil {
+		return s.Runner
+	}
+	return realCommandRunner{}
+}
+
+func (s *Server) runtimePath(name string) string {
+	if s.Config.RuntimeDir == "" {
+		return filepath.Join(os.TempDir(), name)
+	}
+	return filepath.Join(s.Config.RuntimeDir, name)
+}
+
 func (s *Server) cleanupNetwork(cfg *NetworkConfig) {
 	if cfg == nil {
 		return
@@ -687,7 +749,7 @@ func processExists(pid int) bool {
 }
 
 func (s *Server) Ps(ctx context.Context, req *proto.PsRequest) (*proto.PsResponse, error) {
-	query := "SELECT id, pid, status, image, cpus, memory_mb, COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(tap_name, '') FROM vms"
+	query := vmDetailsSelect()
 	if !req.All {
 		query += " WHERE status = 'running'"
 	}
@@ -699,31 +761,435 @@ func (s *Server) Ps(ctx context.Context, req *proto.PsRequest) (*proto.PsRespons
 	var vms []*proto.VmDetails
 
 	for rows.Next() {
-		var id, status, image string
-		var guestIP, macAddress, tapName string
-		var pid, cpus, memoryMb int32
-
-		if err := rows.Scan(&id, &pid, &status, &image, &cpus, &memoryMb, &guestIP, &macAddress, &tapName); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %v", err)
+		vm, err := scanVMDetails(rows)
+		if err != nil {
+			return nil, err
 		}
-		vms = append(vms, &proto.VmDetails{
-			VmId:       id,
-			Pid:        pid,
-			Status:     status,
-			Image:      image,
-			GuestIp:    guestIP,
-			MacAddress: macAddress,
-			TapName:    tapName,
-			Config: &proto.VmConfig{
-				Cpus:     cpus,
-				MemoryMb: memoryMb,
-			},
-		})
+		vms = append(vms, vm)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to read vm rows: %v", err)
 	}
 	return &proto.PsResponse{Vms: vms}, nil
+}
+
+func (s *Server) Inspect(ctx context.Context, req *proto.InspectRequest) (*proto.InspectResponse, error) {
+	if req == nil || req.VmId == "" {
+		return &proto.InspectResponse{Success: false, Message: "vm id is required"}, nil
+	}
+
+	row := s.DB.QueryRow(vmDetailsSelect()+" WHERE id = ?", req.VmId)
+	vm, err := scanVMDetails(row)
+	if err == sql.ErrNoRows {
+		return &proto.InspectResponse{Success: false, Message: fmt.Sprintf("vm not found: %s", req.VmId)}, nil
+	}
+	if err != nil {
+		return &proto.InspectResponse{Success: false, Message: fmt.Sprintf("state lookup failed: %v", err)}, nil
+	}
+	return &proto.InspectResponse{Success: true, Message: "vm found", Vm: vm}, nil
+}
+
+func (s *Server) PullImage(ctx context.Context, req *proto.PullImageRequest) (*proto.PullImageResponse, error) {
+	if req == nil || req.Image == "" {
+		return &proto.PullImageResponse{Success: false, Message: "image is required"}, nil
+	}
+	path, err := s.Store.PullImageIfNeeded(req.Image)
+	if err != nil {
+		return &proto.PullImageResponse{Success: false, Message: fmt.Sprintf("image pull failed: %v", err), Image: req.Image}, nil
+	}
+	if _, err := s.Store.PullKernelIfNeeded(); err != nil {
+		return &proto.PullImageResponse{Success: false, Message: fmt.Sprintf("kernel pull failed: %v", err), Image: req.Image, Path: path}, nil
+	}
+	return &proto.PullImageResponse{
+		Success: true,
+		Message: "image ready",
+		Image:   req.Image,
+		Path:    path,
+	}, nil
+}
+
+func (s *Server) ListImages(ctx context.Context, req *proto.ListImagesRequest) (*proto.ListImagesResponse, error) {
+	images, err := s.Store.ListImages()
+	if err != nil {
+		return nil, err
+	}
+	res := &proto.ListImagesResponse{Images: make([]*proto.ImageDetails, 0, len(images))}
+	for _, image := range images {
+		info, err := s.Store.inspectImageAt(image.Name, image.Path, false)
+		if err != nil {
+			return nil, err
+		}
+		res.Images = append(res.Images, imageDetails(info))
+	}
+	return res, nil
+}
+
+func (s *Server) Prune(ctx context.Context, req *proto.PruneRequest) (*proto.PruneResponse, error) {
+	dryRun := req != nil && req.DryRun
+	imageResult, err := s.Store.PruneImageCache(dryRun)
+	if err != nil {
+		return &proto.PruneResponse{Success: false, Message: err.Error()}, nil
+	}
+	activeResult, err := s.pruneOrphanActiveDrives(dryRun)
+	if err != nil {
+		return &proto.PruneResponse{Success: false, Message: err.Error(), RemovedFiles: imageResult.RemovedFiles, FreedBytes: imageResult.FreedBytes}, nil
+	}
+	runtimeResult, err := s.pruneRuntimeFiles(dryRun)
+	if err != nil {
+		return &proto.PruneResponse{
+			Success:      false,
+			Message:      err.Error(),
+			RemovedFiles: imageResult.RemovedFiles + activeResult.RemovedFiles,
+			FreedBytes:   imageResult.FreedBytes + activeResult.FreedBytes,
+		}, nil
+	}
+
+	removed := imageResult.RemovedFiles + activeResult.RemovedFiles + runtimeResult.RemovedFiles
+	freed := imageResult.FreedBytes + activeResult.FreedBytes + runtimeResult.FreedBytes
+	items := pruneProtoItems(imageResult, activeResult, runtimeResult)
+	message := "prune complete"
+	if dryRun {
+		message = "prune dry-run complete"
+	}
+	return &proto.PruneResponse{
+		Success:      true,
+		Message:      message,
+		RemovedFiles: removed,
+		FreedBytes:   freed,
+		Items:        items,
+		DryRun:       dryRun,
+	}, nil
+}
+
+func pruneProtoItems(results ...PruneResult) []*proto.PruneItem {
+	var items []*proto.PruneItem
+	for _, result := range results {
+		for _, item := range result.Items {
+			items = append(items, &proto.PruneItem{
+				Kind:      item.Kind,
+				Path:      item.Path,
+				SizeBytes: item.SizeBytes,
+			})
+		}
+	}
+	return items
+}
+
+func (s *Server) pruneOrphanActiveDrives(dryRun bool) (PruneResult, error) {
+	known := make(map[string]bool)
+	rows, err := s.DB.Query(`SELECT COALESCE(drive_path, '') FROM vms`)
+	if err != nil {
+		return PruneResult{}, fmt.Errorf("drive state query failed: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var path string
+		if err := rows.Scan(&path); err != nil {
+			return PruneResult{}, fmt.Errorf("drive state scan failed: %v", err)
+		}
+		if path != "" {
+			known[path] = true
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return PruneResult{}, fmt.Errorf("drive state rows failed: %v", err)
+	}
+
+	entries, err := os.ReadDir(s.Config.ActiveDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return PruneResult{}, nil
+		}
+		return PruneResult{}, fmt.Errorf("active directory read failed: %v", err)
+	}
+
+	var result PruneResult
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".ext4" {
+			continue
+		}
+		path := filepath.Join(s.Config.ActiveDir, entry.Name())
+		if known[path] {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return result, fmt.Errorf("active drive stat failed: %v", err)
+		}
+		if !dryRun {
+			if err := os.Remove(path); err != nil {
+				return result, fmt.Errorf("active drive remove failed: %v", err)
+			}
+		}
+		result.RemovedFiles++
+		result.FreedBytes += info.Size()
+		result.Items = append(result.Items, PruneItem{Kind: "active-drive", Path: path, SizeBytes: info.Size()})
+	}
+	return result, nil
+}
+
+func (s *Server) pruneRuntimeFiles(dryRun bool) (PruneResult, error) {
+	runtimeDir := s.Config.RuntimeDir
+	if runtimeDir == "" {
+		runtimeDir = os.TempDir()
+	}
+
+	keep := make(map[string]bool)
+	rows, err := s.DB.Query(`SELECT id, COALESCE(console_path, '') FROM vms WHERE status = ?`, internal.VmRunning)
+	if err != nil {
+		return PruneResult{}, fmt.Errorf("runtime state query failed: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var vmID, consolePath string
+		if err := rows.Scan(&vmID, &consolePath); err != nil {
+			return PruneResult{}, fmt.Errorf("runtime state scan failed: %v", err)
+		}
+		keep[s.runtimePath(fmt.Sprintf("fvc-%s.socket", vmID))] = true
+		if consolePath != "" {
+			keep[consolePath] = true
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return PruneResult{}, fmt.Errorf("runtime state rows failed: %v", err)
+	}
+
+	entries, err := os.ReadDir(runtimeDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return PruneResult{}, nil
+		}
+		return PruneResult{}, fmt.Errorf("runtime directory read failed: %v", err)
+	}
+
+	var result PruneResult
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasPrefix(entry.Name(), "fvc-") {
+			continue
+		}
+		path := filepath.Join(runtimeDir, entry.Name())
+		if keep[path] {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return result, fmt.Errorf("runtime file stat failed: %v", err)
+		}
+		if !dryRun {
+			if err := os.Remove(path); err != nil {
+				return result, fmt.Errorf("runtime file remove failed: %v", err)
+			}
+		}
+		result.RemovedFiles++
+		result.FreedBytes += info.Size()
+		result.Items = append(result.Items, PruneItem{Kind: "runtime", Path: path, SizeBytes: info.Size()})
+	}
+	return result, nil
+}
+
+func (s *Server) Stats(ctx context.Context, req *proto.StatsRequest) (*proto.StatsResponse, error) {
+	query := `SELECT id, pid, status, memory_mb, created_at FROM vms`
+	args := []any{}
+	if req != nil && req.VmId != "" {
+		query += ` WHERE id = ?`
+		args = append(args, req.VmId)
+	} else {
+		query += ` WHERE status = ?`
+		args = append(args, internal.VmRunning)
+	}
+
+	rows, err := s.DB.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("stats query failed: %v", err)
+	}
+	defer rows.Close()
+
+	var stats []*proto.VmStats
+	for rows.Next() {
+		var vmID, statusValue, createdAt string
+		var pid, memoryMb int32
+		if err := rows.Scan(&vmID, &pid, &statusValue, &memoryMb, &createdAt); err != nil {
+			return nil, fmt.Errorf("stats scan failed: %v", err)
+		}
+		stat := &proto.VmStats{
+			VmId:     vmID,
+			Pid:      pid,
+			Status:   statusValue,
+			MemoryMb: memoryMb,
+		}
+		if created, err := parseDBTime(createdAt); err == nil {
+			stat.UptimeSeconds = int64(time.Since(created).Seconds())
+		}
+		if statusValue == internal.VmRunning && pid > 0 && processExists(int(pid)) {
+			cpuPercent, rssBytes, err := sampleProcessStats(int(pid), 100*time.Millisecond)
+			if err == nil {
+				stat.CpuPercent = cpuPercent
+				stat.RssBytes = rssBytes
+			}
+		}
+		stats = append(stats, stat)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("stats rows failed: %v", err)
+	}
+	return &proto.StatsResponse{Stats: stats}, nil
+}
+
+func (s *Server) Wait(ctx context.Context, req *proto.WaitRequest) (*proto.WaitResponse, error) {
+	if req == nil || req.VmId == "" {
+		return &proto.WaitResponse{Success: false, Message: "vm id is required"}, nil
+	}
+	timeout := time.Duration(req.TimeoutSeconds) * time.Second
+	var deadline time.Time
+	if timeout > 0 {
+		deadline = time.Now().Add(timeout)
+	}
+
+	for {
+		var statusValue string
+		err := s.DB.QueryRow(`SELECT status FROM vms WHERE id = ?`, req.VmId).Scan(&statusValue)
+		if err == sql.ErrNoRows {
+			return &proto.WaitResponse{Success: false, Message: fmt.Sprintf("vm not found: %s", req.VmId)}, nil
+		}
+		if err != nil {
+			return &proto.WaitResponse{Success: false, Message: fmt.Sprintf("state lookup failed: %v", err)}, nil
+		}
+		if statusValue != internal.VmRunning {
+			return &proto.WaitResponse{Success: true, Message: fmt.Sprintf("microVM stopped: %s", req.VmId), Status: statusValue}, nil
+		}
+		if ctx != nil && ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		if !deadline.IsZero() && time.Now().After(deadline) {
+			return &proto.WaitResponse{Success: false, Message: fmt.Sprintf("wait timeout: %s is still running", req.VmId), Status: statusValue}, nil
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+}
+
+func parseDBTime(value string) (time.Time, error) {
+	for _, layout := range []string{
+		"2006-01-02 15:04:05",
+		time.RFC3339Nano,
+		time.RFC3339,
+	} {
+		parsed, err := time.ParseInLocation(layout, value, time.Local)
+		if err == nil {
+			return parsed, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unsupported time format: %s", value)
+}
+
+func sampleProcessStats(pid int, interval time.Duration) (float64, int64, error) {
+	first, err := readProcessCPUTicks(pid)
+	if err != nil {
+		return 0, 0, err
+	}
+	time.Sleep(interval)
+	second, err := readProcessCPUTicks(pid)
+	if err != nil {
+		return 0, 0, err
+	}
+	rssBytes, err := readProcessRSSBytes(pid)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	const clockTicksPerSecond = 100.0
+	deltaTicks := second - first
+	if deltaTicks < 0 {
+		deltaTicks = 0
+	}
+	cpuPercent := (float64(deltaTicks) / clockTicksPerSecond / interval.Seconds()) * 100
+	return cpuPercent, rssBytes, nil
+}
+
+func readProcessCPUTicks(pid int) (int64, error) {
+	data, err := os.ReadFile(filepath.Join("/proc", strconv.Itoa(pid), "stat"))
+	if err != nil {
+		return 0, err
+	}
+	line := string(data)
+	endComm := strings.LastIndex(line, ")")
+	if endComm == -1 || endComm+2 >= len(line) {
+		return 0, fmt.Errorf("unexpected proc stat format")
+	}
+	fields := strings.Fields(line[endComm+2:])
+	if len(fields) < 13 {
+		return 0, fmt.Errorf("unexpected proc stat field count")
+	}
+	utime, err := strconv.ParseInt(fields[11], 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	stime, err := strconv.ParseInt(fields[12], 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return utime + stime, nil
+}
+
+func readProcessRSSBytes(pid int) (int64, error) {
+	data, err := os.ReadFile(filepath.Join("/proc", strconv.Itoa(pid), "status"))
+	if err != nil {
+		return 0, err
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if !strings.HasPrefix(line, "VmRSS:") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			return 0, fmt.Errorf("unexpected VmRSS format")
+		}
+		kb, err := strconv.ParseInt(fields[1], 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return kb * 1024, nil
+	}
+	return 0, nil
+}
+
+type vmScanner interface {
+	Scan(dest ...any) error
+}
+
+func vmDetailsSelect() string {
+	return `SELECT id, pid, status, image, cpus, memory_mb, COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(tap_name, ''), COALESCE(log_path, ''), COALESCE(drive_path, ''), COALESCE(console_path, '') FROM vms`
+}
+
+func scanVMDetails(scanner vmScanner) (*proto.VmDetails, error) {
+	var id, statusValue, image string
+	var guestIP, macAddress, tapName string
+	var logPath, drivePath, consolePath string
+	var pid, cpus, memoryMb int32
+
+	if err := scanner.Scan(&id, &pid, &statusValue, &image, &cpus, &memoryMb, &guestIP, &macAddress, &tapName, &logPath, &drivePath, &consolePath); err != nil {
+		return nil, err
+	}
+	if statusValue != internal.VmRunning {
+		guestIP = ""
+		macAddress = ""
+		tapName = ""
+	}
+	return &proto.VmDetails{
+		VmId:        id,
+		Pid:         pid,
+		Status:      statusValue,
+		Image:       image,
+		GuestIp:     guestIP,
+		MacAddress:  macAddress,
+		TapName:     tapName,
+		LogPath:     logPath,
+		DrivePath:   drivePath,
+		ConsolePath: consolePath,
+		Config: &proto.VmConfig{
+			Cpus:     cpus,
+			MemoryMb: memoryMb,
+		},
+	}, nil
 }
 
 func (s *Server) StreamLogs(req *proto.LogsRequest, stream grpc.ServerStreamingServer[proto.LogsResponse]) error {
@@ -901,6 +1367,7 @@ func ensureSchema(db *sql.DB) error {
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN tap_name TEXT`)
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN guest_ip TEXT`)
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN mac_address TEXT`)
+	_, _ = db.Exec(`UPDATE vms SET tap_name = '', guest_ip = '', mac_address = '' WHERE status <> ?`, internal.VmRunning)
 	return nil
 }
 
@@ -922,7 +1389,7 @@ func reconcileState(db *sql.DB, network *NetworkManager) error {
 			if network != nil {
 				_ = network.Cleanup(NetworkConfig{TapName: tapName, GuestIP: guestIP, MAC: mac})
 			}
-			_, _ = db.Exec(`UPDATE vms SET status = ?, pid = 0 WHERE id = ?`, internal.VmStopped, id)
+			_, _ = db.Exec(`UPDATE vms SET status = ?, pid = 0, tap_name = '', guest_ip = '', mac_address = '' WHERE id = ?`, internal.VmStopped, id)
 		}
 	}
 	return rows.Err()
@@ -940,6 +1407,12 @@ func main() {
 	}
 	if err := applyRuntimePermissions(cfg.LogDir, cfg.RuntimeGroup, 0770); err != nil {
 		log.Fatalf("Log directory permission error: %v", err)
+	}
+	if err := os.MkdirAll(cfg.RuntimeDir, 0770); err != nil {
+		log.Fatalf("Runtime directory error: %v", err)
+	}
+	if err := applyRuntimePermissions(cfg.RuntimeDir, cfg.RuntimeGroup, 0770); err != nil {
+		log.Fatalf("Runtime directory permission error: %v", err)
 	}
 
 	db, err := sql.Open("sqlite", cfg.DBPath)
