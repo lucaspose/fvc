@@ -15,14 +15,9 @@ const (
 )
 
 func configureConsoleTerminal(file *os.File) (func(), error) {
-	info, err := file.Stat()
-	if err != nil {
-		return func() {}, fmt.Errorf("terminal stat failed: %w", err)
+	if err := requireInteractiveTerminal(file); err != nil {
+		return func() {}, err
 	}
-	if info.Mode()&os.ModeCharDevice == 0 {
-		return func() {}, nil
-	}
-
 	fd := file.Fd()
 	var original syscall.Termios
 	if err := ioctlTermios(fd, ioctlTCGETS, &original); err != nil {
@@ -42,6 +37,22 @@ func configureConsoleTerminal(file *os.File) (func(), error) {
 	return func() {
 		_ = ioctlTermios(fd, ioctlTCSETS, &original)
 	}, nil
+}
+
+func requireInteractiveTerminal(file *os.File) error {
+	info, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("terminal stat failed: %w", err)
+	}
+	if info.Mode()&os.ModeCharDevice == 0 {
+		return fmt.Errorf("console requires an interactive TTY; when using Docker, run: docker exec -it fvcd /usr/bin/fvc console <vm>")
+	}
+	fd := file.Fd()
+	var termios syscall.Termios
+	if err := ioctlTermios(fd, ioctlTCGETS, &termios); err != nil {
+		return fmt.Errorf("console requires an interactive TTY; when using Docker, run: docker exec -it fvcd /usr/bin/fvc console <vm>: %w", err)
+	}
+	return nil
 }
 
 func ioctlTermios(fd uintptr, request uintptr, termios *syscall.Termios) error {

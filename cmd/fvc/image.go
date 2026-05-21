@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/lucaspose/fvc/internal/cliui"
 	"github.com/lucaspose/fvc/proto"
 )
 
@@ -74,7 +76,7 @@ func executeImageRemove(client proto.FvcServiceClient, args []string) error {
 	if !res.Success {
 		return fmt.Errorf("image remove failed: %s", res.Message)
 	}
-	printSuccess(res.Message)
+	cliui.PrintSuccess(res.Message)
 	return nil
 }
 
@@ -94,7 +96,7 @@ func executeImageTag(client proto.FvcServiceClient, args []string) error {
 	if !res.Success {
 		return fmt.Errorf("image tag failed: %s", res.Message)
 	}
-	printSuccess(res.Message)
+	cliui.PrintSuccess(res.Message)
 	printImageDetails(res.Image)
 	return nil
 }
@@ -119,7 +121,7 @@ func executeImageImport(client proto.FvcServiceClient, args []string) error {
 	if !res.Success {
 		return fmt.Errorf("image import failed: %s", res.Message)
 	}
-	printSuccess(res.Message)
+	cliui.PrintSuccess(res.Message)
 	printImageDetails(res.Image)
 	return nil
 }
@@ -144,8 +146,8 @@ func executeImageExport(client proto.FvcServiceClient, args []string) error {
 	if !res.Success {
 		return fmt.Errorf("image export failed: %s", res.Message)
 	}
-	printSuccess(res.Message)
-	printKV("path", res.Path)
+	cliui.PrintSuccess(res.Message)
+	cliui.PrintKV("path", res.Path)
 	return nil
 }
 
@@ -165,8 +167,8 @@ func executeImageHistory(client proto.FvcServiceClient, args []string) error {
 	if !res.Success {
 		return fmt.Errorf("image history failed: %s", res.Message)
 	}
-	fmt.Printf("%s%-22s %-14s %s%s\n", color(colorBold+colorCyan), "CREATED", "ACTION", "MESSAGE", color(colorReset))
-	fmt.Println(color(colorGray) + "--------------------------------------------------------------------------------" + color(colorReset))
+	fmt.Printf("%s%-22s %-14s %s%s\n", cliui.Color(cliui.ColorBold+cliui.ColorCyan), "CREATED", "ACTION", "MESSAGE", cliui.Color(cliui.ColorReset))
+	fmt.Println(cliui.Color(cliui.ColorGray) + "--------------------------------------------------------------------------------" + cliui.Color(cliui.ColorReset))
 	for _, entry := range res.Entries {
 		fmt.Printf("%-22s %-14s %s\n", formatTimestamp(entry.CreatedAt.AsTime()), entry.Action, entry.Message)
 	}
@@ -187,7 +189,7 @@ func executeImagePrune(client proto.FvcServiceClient, args []string) error {
 			return err
 		}
 		if !ok {
-			printStep("IMAGE", "Prune cancelled")
+			cliui.PrintStep("IMAGE", "Prune cancelled")
 			return nil
 		}
 	}
@@ -198,11 +200,11 @@ func executeImagePrune(client proto.FvcServiceClient, args []string) error {
 	if !res.Success {
 		return fmt.Errorf("image prune failed: %s", res.Message)
 	}
-	printSuccess(res.Message)
-	printKV("removed", fmt.Sprintf("%d images", res.RemovedImages))
-	printKV("freed", formatBytes(res.FreedBytes))
+	cliui.PrintSuccess(res.Message)
+	cliui.PrintKV("removed", fmt.Sprintf("%d images", res.RemovedImages))
+	cliui.PrintKV("freed", cliui.FormatBytes(res.FreedBytes))
 	for _, image := range res.Images {
-		fmt.Printf("  %s%-8s%s %-10s %s\n", color(colorDim), image.Image+":", color(colorReset), formatBytes(image.SizeBytes), image.Path)
+		fmt.Printf("  %s%-8s%s %-10s %s\n", cliui.Color(cliui.ColorDim), image.Image+":", cliui.Color(cliui.ColorReset), cliui.FormatBytes(image.SizeBytes), image.Path)
 	}
 	return nil
 }
@@ -211,17 +213,37 @@ func printImageDetails(image *proto.ImageDetails) {
 	if image == nil {
 		return
 	}
-	printStep("IMAGE", image.Image)
-	printKV("path", image.Path)
-	printKV("size", formatBytes(image.SizeBytes))
-	printKV("digest", image.Digest)
-	printKV("source", image.Source)
+	cliui.PrintStep("IMAGE", image.Image)
+	cliui.PrintKV("path", image.Path)
+	cliui.PrintKV("size", cliui.FormatBytes(image.SizeBytes))
+	cliui.PrintKV("digest", image.Digest)
+	cliui.PrintKV("source", image.Source)
+	if image.Workdir != "" {
+		cliui.PrintKV("workdir", image.Workdir)
+	}
+	if len(image.Cmd) > 0 {
+		cliui.PrintKV("cmd", fmt.Sprintf("%q", image.Cmd))
+	}
+	for _, env := range image.Env {
+		cliui.PrintKV("env", env)
+	}
+	if len(image.ExposedPorts) > 0 {
+		cliui.PrintKV("expose", formatExposedPorts(image.ExposedPorts))
+	}
 	if image.CreatedAt != nil {
-		printKV("created", formatTimestamp(image.CreatedAt.AsTime()))
+		cliui.PrintKV("created", formatTimestamp(image.CreatedAt.AsTime()))
 	}
 	for key, value := range image.Labels {
-		printKV("label", fmt.Sprintf("%s=%s", key, value))
+		cliui.PrintKV("label", fmt.Sprintf("%s=%s", key, value))
 	}
+}
+
+func formatExposedPorts(ports []int32) string {
+	values := make([]string, 0, len(ports))
+	for _, port := range ports {
+		values = append(values, fmt.Sprintf("%d", port))
+	}
+	return strings.Join(values, ", ")
 }
 
 func formatTimestamp(value time.Time) string {

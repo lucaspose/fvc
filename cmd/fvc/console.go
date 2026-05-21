@@ -3,20 +3,55 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
 	"syscall"
 	"time"
+
+	"github.com/lucaspose/fvc/internal/cliui"
+	"github.com/lucaspose/fvc/proto"
 )
 
+func executeConsole(client proto.FvcServiceClient, args []string) error {
+	fs := flag.NewFlagSet("console", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if len(fs.Args()) < 1 {
+		return errors.New("console requires a microVM ID. Example: fvc console <id>")
+	}
+
+	vmID := fs.Args()[0]
+	info, err := client.ConsoleInfo(context.Background(), &proto.ConsoleInfoRequest{VmId: vmID})
+	if err != nil {
+		return fmt.Errorf("daemon request failed: %w", err)
+	}
+	if !info.Success {
+		return fmt.Errorf("console unavailable: %s", info.Message)
+	}
+	if err := requireInteractiveTerminal(os.Stdin); err != nil {
+		return err
+	}
+
+	cliui.PrintStep("CONSOLE", fmt.Sprintf("Attaching to %s", vmID))
+	cliui.PrintKV("exit", "Ctrl-C")
+	return attachConsole(info.LogPath, info.InputPath)
+}
+
 func attachConsole(logPath, inputPath string) error {
+	if err := requireInteractiveTerminal(os.Stdin); err != nil {
+		return err
+	}
 	if err := printConsoleTail(logPath, os.Stdout, 200); err != nil {
 		return err
 	}
 	fmt.Fprintln(os.Stdout)
-	printStep("CONSOLE", "Press Enter if the login prompt is not visible")
+	cliui.PrintStep("CONSOLE", "Press Enter if the login prompt is not visible")
 
 	input, err := openConsoleWriter(inputPath)
 	if err != nil {
