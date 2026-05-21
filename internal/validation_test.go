@@ -43,3 +43,28 @@ func TestValidateResources(t *testing.T) {
 		t.Fatal("expected invalid resources to be rejected")
 	}
 }
+
+func TestNormalizePortSpec(t *testing.T) {
+	cases := map[string]string{
+		"80":       "80:80",
+		"8080:80":  "8080:80",
+		" 443:443": "443:443",
+	}
+	for input, want := range cases {
+		got, err := NormalizePortSpec(input)
+		if err != nil {
+			t.Fatalf("NormalizePortSpec(%q) failed: %v", input, err)
+		}
+		if got != want {
+			t.Fatalf("NormalizePortSpec(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestValidatePortSpecRejectsInvalid(t *testing.T) {
+	for _, input := range []string{"", "0:80", "80:70000", "1:2:3", "abc"} {
+		if err := ValidatePortSpec(input); err == nil {
+			t.Fatalf("expected %q to be rejected", input)
+		}
+	}
+}

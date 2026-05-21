@@ -21,33 +21,37 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FvcService_Run_FullMethodName             = "/fvc.FvcService/Run"
-	FvcService_RunStream_FullMethodName       = "/fvc.FvcService/RunStream"
-	FvcService_Stop_FullMethodName            = "/fvc.FvcService/Stop"
-	FvcService_Start_FullMethodName           = "/fvc.FvcService/Start"
-	FvcService_Rm_FullMethodName              = "/fvc.FvcService/Rm"
-	FvcService_ConsoleInfo_FullMethodName     = "/fvc.FvcService/ConsoleInfo"
-	FvcService_Inspect_FullMethodName         = "/fvc.FvcService/Inspect"
-	FvcService_PullImage_FullMethodName       = "/fvc.FvcService/PullImage"
-	FvcService_ListImages_FullMethodName      = "/fvc.FvcService/ListImages"
-	FvcService_Prune_FullMethodName           = "/fvc.FvcService/Prune"
-	FvcService_Stats_FullMethodName           = "/fvc.FvcService/Stats"
-	FvcService_Wait_FullMethodName            = "/fvc.FvcService/Wait"
-	FvcService_Kill_FullMethodName            = "/fvc.FvcService/Kill"
-	FvcService_SnapshotCreate_FullMethodName  = "/fvc.FvcService/SnapshotCreate"
-	FvcService_SnapshotList_FullMethodName    = "/fvc.FvcService/SnapshotList"
-	FvcService_SnapshotRestore_FullMethodName = "/fvc.FvcService/SnapshotRestore"
-	FvcService_SnapshotRemove_FullMethodName  = "/fvc.FvcService/SnapshotRemove"
-	FvcService_BuildImage_FullMethodName      = "/fvc.FvcService/BuildImage"
-	FvcService_ImageInspect_FullMethodName    = "/fvc.FvcService/ImageInspect"
-	FvcService_ImageRemove_FullMethodName     = "/fvc.FvcService/ImageRemove"
-	FvcService_ImageTag_FullMethodName        = "/fvc.FvcService/ImageTag"
-	FvcService_ImageImport_FullMethodName     = "/fvc.FvcService/ImageImport"
-	FvcService_ImageExport_FullMethodName     = "/fvc.FvcService/ImageExport"
-	FvcService_ImageHistory_FullMethodName    = "/fvc.FvcService/ImageHistory"
-	FvcService_ImagePrune_FullMethodName      = "/fvc.FvcService/ImagePrune"
-	FvcService_Ps_FullMethodName              = "/fvc.FvcService/Ps"
-	FvcService_StreamLogs_FullMethodName      = "/fvc.FvcService/StreamLogs"
+	FvcService_Run_FullMethodName              = "/fvc.FvcService/Run"
+	FvcService_RunStream_FullMethodName        = "/fvc.FvcService/RunStream"
+	FvcService_Stop_FullMethodName             = "/fvc.FvcService/Stop"
+	FvcService_Start_FullMethodName            = "/fvc.FvcService/Start"
+	FvcService_Rm_FullMethodName               = "/fvc.FvcService/Rm"
+	FvcService_ConsoleInfo_FullMethodName      = "/fvc.FvcService/ConsoleInfo"
+	FvcService_Exec_FullMethodName             = "/fvc.FvcService/Exec"
+	FvcService_Inspect_FullMethodName          = "/fvc.FvcService/Inspect"
+	FvcService_PullImage_FullMethodName        = "/fvc.FvcService/PullImage"
+	FvcService_PullImageStream_FullMethodName  = "/fvc.FvcService/PullImageStream"
+	FvcService_ListImages_FullMethodName       = "/fvc.FvcService/ListImages"
+	FvcService_Prune_FullMethodName            = "/fvc.FvcService/Prune"
+	FvcService_Stats_FullMethodName            = "/fvc.FvcService/Stats"
+	FvcService_Wait_FullMethodName             = "/fvc.FvcService/Wait"
+	FvcService_Kill_FullMethodName             = "/fvc.FvcService/Kill"
+	FvcService_SnapshotCreate_FullMethodName   = "/fvc.FvcService/SnapshotCreate"
+	FvcService_SnapshotList_FullMethodName     = "/fvc.FvcService/SnapshotList"
+	FvcService_SnapshotRestore_FullMethodName  = "/fvc.FvcService/SnapshotRestore"
+	FvcService_SnapshotRemove_FullMethodName   = "/fvc.FvcService/SnapshotRemove"
+	FvcService_BuildImage_FullMethodName       = "/fvc.FvcService/BuildImage"
+	FvcService_BuildImageStream_FullMethodName = "/fvc.FvcService/BuildImageStream"
+	FvcService_ImageInspect_FullMethodName     = "/fvc.FvcService/ImageInspect"
+	FvcService_ImageRemove_FullMethodName      = "/fvc.FvcService/ImageRemove"
+	FvcService_ImageTag_FullMethodName         = "/fvc.FvcService/ImageTag"
+	FvcService_ImageImport_FullMethodName      = "/fvc.FvcService/ImageImport"
+	FvcService_ImageExport_FullMethodName      = "/fvc.FvcService/ImageExport"
+	FvcService_ImageHistory_FullMethodName     = "/fvc.FvcService/ImageHistory"
+	FvcService_ImagePrune_FullMethodName       = "/fvc.FvcService/ImagePrune"
+	FvcService_Ps_FullMethodName               = "/fvc.FvcService/Ps"
+	FvcService_StreamLogs_FullMethodName       = "/fvc.FvcService/StreamLogs"
+	FvcService_Diagnostics_FullMethodName      = "/fvc.FvcService/Diagnostics"
 )
 
 // FvcServiceClient is the client API for FvcService service.
@@ -68,10 +72,14 @@ type FvcServiceClient interface {
 	Rm(ctx context.Context, in *RmRequest, opts ...grpc.CallOption) (*RmResponse, error)
 	// Retourne les chemins locaux nécessaires à la console série
 	ConsoleInfo(ctx context.Context, in *ConsoleInfoRequest, opts ...grpc.CallOption) (*ConsoleInfoResponse, error)
+	// Exécute une commande dans une microVM via l'agent invité
+	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecEvent], error)
 	// Retourne les détails complets d'une microVM
 	Inspect(ctx context.Context, in *InspectRequest, opts ...grpc.CallOption) (*InspectResponse, error)
 	// Télécharge une image dans le cache local
 	PullImage(ctx context.Context, in *PullImageRequest, opts ...grpc.CallOption) (*PullImageResponse, error)
+	// Télécharge une image en streamant la progression
+	PullImageStream(ctx context.Context, in *PullImageRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[OperationEvent], error)
 	// Liste les images présentes dans le cache local
 	ListImages(ctx context.Context, in *ListImagesRequest, opts ...grpc.CallOption) (*ListImagesResponse, error)
 	// Nettoie les ressources locales inutilisées
@@ -92,6 +100,8 @@ type FvcServiceClient interface {
 	SnapshotRemove(ctx context.Context, in *SnapshotRemoveRequest, opts ...grpc.CallOption) (*SnapshotRemoveResponse, error)
 	// Construit une image locale depuis un Fvcfile TOML
 	BuildImage(ctx context.Context, in *BuildImageRequest, opts ...grpc.CallOption) (*BuildImageResponse, error)
+	// Construit une image locale en streamant les étapes
+	BuildImageStream(ctx context.Context, in *BuildImageRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[OperationEvent], error)
 	// Inspecte une image locale
 	ImageInspect(ctx context.Context, in *ImageInspectRequest, opts ...grpc.CallOption) (*ImageInspectResponse, error)
 	// Supprime une image locale
@@ -110,6 +120,8 @@ type FvcServiceClient interface {
 	Ps(ctx context.Context, in *PsRequest, opts ...grpc.CallOption) (*PsResponse, error)
 	// Phase 5 : Stream les logs textuels en temps réel
 	StreamLogs(ctx context.Context, in *LogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogsResponse], error)
+	// Retourne les diagnostics runtime du daemon
+	Diagnostics(ctx context.Context, in *DiagnosticsRequest, opts ...grpc.CallOption) (*DiagnosticsResponse, error)
 }
 
 type fvcServiceClient struct {
@@ -189,6 +201,25 @@ func (c *fvcServiceClient) ConsoleInfo(ctx context.Context, in *ConsoleInfoReque
 	return out, nil
 }
 
+func (c *fvcServiceClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &FvcService_ServiceDesc.Streams[1], FvcService_Exec_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[ExecRequest, ExecEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FvcService_ExecClient = grpc.ServerStreamingClient[ExecEvent]
+
 func (c *fvcServiceClient) Inspect(ctx context.Context, in *InspectRequest, opts ...grpc.CallOption) (*InspectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InspectResponse)
@@ -208,6 +239,25 @@ func (c *fvcServiceClient) PullImage(ctx context.Context, in *PullImageRequest, 
 	}
 	return out, nil
 }
+
+func (c *fvcServiceClient) PullImageStream(ctx context.Context, in *PullImageRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[OperationEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &FvcService_ServiceDesc.Streams[2], FvcService_PullImageStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[PullImageRequest, OperationEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FvcService_PullImageStreamClient = grpc.ServerStreamingClient[OperationEvent]
 
 func (c *fvcServiceClient) ListImages(ctx context.Context, in *ListImagesRequest, opts ...grpc.CallOption) (*ListImagesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -309,6 +359,25 @@ func (c *fvcServiceClient) BuildImage(ctx context.Context, in *BuildImageRequest
 	return out, nil
 }
 
+func (c *fvcServiceClient) BuildImageStream(ctx context.Context, in *BuildImageRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[OperationEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &FvcService_ServiceDesc.Streams[3], FvcService_BuildImageStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[BuildImageRequest, OperationEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FvcService_BuildImageStreamClient = grpc.ServerStreamingClient[OperationEvent]
+
 func (c *fvcServiceClient) ImageInspect(ctx context.Context, in *ImageInspectRequest, opts ...grpc.CallOption) (*ImageInspectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ImageInspectResponse)
@@ -391,7 +460,7 @@ func (c *fvcServiceClient) Ps(ctx context.Context, in *PsRequest, opts ...grpc.C
 
 func (c *fvcServiceClient) StreamLogs(ctx context.Context, in *LogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogsResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &FvcService_ServiceDesc.Streams[1], FvcService_StreamLogs_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &FvcService_ServiceDesc.Streams[4], FvcService_StreamLogs_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -407,6 +476,16 @@ func (c *fvcServiceClient) StreamLogs(ctx context.Context, in *LogsRequest, opts
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type FvcService_StreamLogsClient = grpc.ServerStreamingClient[LogsResponse]
+
+func (c *fvcServiceClient) Diagnostics(ctx context.Context, in *DiagnosticsRequest, opts ...grpc.CallOption) (*DiagnosticsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DiagnosticsResponse)
+	err := c.cc.Invoke(ctx, FvcService_Diagnostics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
 
 // FvcServiceServer is the server API for FvcService service.
 // All implementations must embed UnimplementedFvcServiceServer
@@ -426,10 +505,14 @@ type FvcServiceServer interface {
 	Rm(context.Context, *RmRequest) (*RmResponse, error)
 	// Retourne les chemins locaux nécessaires à la console série
 	ConsoleInfo(context.Context, *ConsoleInfoRequest) (*ConsoleInfoResponse, error)
+	// Exécute une commande dans une microVM via l'agent invité
+	Exec(*ExecRequest, grpc.ServerStreamingServer[ExecEvent]) error
 	// Retourne les détails complets d'une microVM
 	Inspect(context.Context, *InspectRequest) (*InspectResponse, error)
 	// Télécharge une image dans le cache local
 	PullImage(context.Context, *PullImageRequest) (*PullImageResponse, error)
+	// Télécharge une image en streamant la progression
+	PullImageStream(*PullImageRequest, grpc.ServerStreamingServer[OperationEvent]) error
 	// Liste les images présentes dans le cache local
 	ListImages(context.Context, *ListImagesRequest) (*ListImagesResponse, error)
 	// Nettoie les ressources locales inutilisées
@@ -450,6 +533,8 @@ type FvcServiceServer interface {
 	SnapshotRemove(context.Context, *SnapshotRemoveRequest) (*SnapshotRemoveResponse, error)
 	// Construit une image locale depuis un Fvcfile TOML
 	BuildImage(context.Context, *BuildImageRequest) (*BuildImageResponse, error)
+	// Construit une image locale en streamant les étapes
+	BuildImageStream(*BuildImageRequest, grpc.ServerStreamingServer[OperationEvent]) error
 	// Inspecte une image locale
 	ImageInspect(context.Context, *ImageInspectRequest) (*ImageInspectResponse, error)
 	// Supprime une image locale
@@ -468,6 +553,8 @@ type FvcServiceServer interface {
 	Ps(context.Context, *PsRequest) (*PsResponse, error)
 	// Phase 5 : Stream les logs textuels en temps réel
 	StreamLogs(*LogsRequest, grpc.ServerStreamingServer[LogsResponse]) error
+	// Retourne les diagnostics runtime du daemon
+	Diagnostics(context.Context, *DiagnosticsRequest) (*DiagnosticsResponse, error)
 	mustEmbedUnimplementedFvcServiceServer()
 }
 
@@ -496,11 +583,17 @@ func (UnimplementedFvcServiceServer) Rm(context.Context, *RmRequest) (*RmRespons
 func (UnimplementedFvcServiceServer) ConsoleInfo(context.Context, *ConsoleInfoRequest) (*ConsoleInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ConsoleInfo not implemented")
 }
+func (UnimplementedFvcServiceServer) Exec(*ExecRequest, grpc.ServerStreamingServer[ExecEvent]) error {
+	return status.Error(codes.Unimplemented, "method Exec not implemented")
+}
 func (UnimplementedFvcServiceServer) Inspect(context.Context, *InspectRequest) (*InspectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Inspect not implemented")
 }
 func (UnimplementedFvcServiceServer) PullImage(context.Context, *PullImageRequest) (*PullImageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PullImage not implemented")
+}
+func (UnimplementedFvcServiceServer) PullImageStream(*PullImageRequest, grpc.ServerStreamingServer[OperationEvent]) error {
+	return status.Error(codes.Unimplemented, "method PullImageStream not implemented")
 }
 func (UnimplementedFvcServiceServer) ListImages(context.Context, *ListImagesRequest) (*ListImagesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListImages not implemented")
@@ -532,6 +625,9 @@ func (UnimplementedFvcServiceServer) SnapshotRemove(context.Context, *SnapshotRe
 func (UnimplementedFvcServiceServer) BuildImage(context.Context, *BuildImageRequest) (*BuildImageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method BuildImage not implemented")
 }
+func (UnimplementedFvcServiceServer) BuildImageStream(*BuildImageRequest, grpc.ServerStreamingServer[OperationEvent]) error {
+	return status.Error(codes.Unimplemented, "method BuildImageStream not implemented")
+}
 func (UnimplementedFvcServiceServer) ImageInspect(context.Context, *ImageInspectRequest) (*ImageInspectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ImageInspect not implemented")
 }
@@ -558,6 +654,9 @@ func (UnimplementedFvcServiceServer) Ps(context.Context, *PsRequest) (*PsRespons
 }
 func (UnimplementedFvcServiceServer) StreamLogs(*LogsRequest, grpc.ServerStreamingServer[LogsResponse]) error {
 	return status.Error(codes.Unimplemented, "method StreamLogs not implemented")
+}
+func (UnimplementedFvcServiceServer) Diagnostics(context.Context, *DiagnosticsRequest) (*DiagnosticsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Diagnostics not implemented")
 }
 func (UnimplementedFvcServiceServer) mustEmbedUnimplementedFvcServiceServer() {}
 func (UnimplementedFvcServiceServer) testEmbeddedByValue()                    {}
@@ -681,6 +780,17 @@ func _FvcService_ConsoleInfo_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FvcService_Exec_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ExecRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FvcServiceServer).Exec(m, &grpc.GenericServerStream[ExecRequest, ExecEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FvcService_ExecServer = grpc.ServerStreamingServer[ExecEvent]
+
 func _FvcService_Inspect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InspectRequest)
 	if err := dec(in); err != nil {
@@ -716,6 +826,17 @@ func _FvcService_PullImage_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	return interceptor(ctx, in, info, handler)
 }
+
+func _FvcService_PullImageStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(PullImageRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FvcServiceServer).PullImageStream(m, &grpc.GenericServerStream[PullImageRequest, OperationEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FvcService_PullImageStreamServer = grpc.ServerStreamingServer[OperationEvent]
 
 func _FvcService_ListImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListImagesRequest)
@@ -897,6 +1018,17 @@ func _FvcService_BuildImage_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FvcService_BuildImageStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(BuildImageRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FvcServiceServer).BuildImageStream(m, &grpc.GenericServerStream[BuildImageRequest, OperationEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FvcService_BuildImageStreamServer = grpc.ServerStreamingServer[OperationEvent]
+
 func _FvcService_ImageInspect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ImageInspectRequest)
 	if err := dec(in); err != nil {
@@ -1052,6 +1184,24 @@ func _FvcService_StreamLogs_Handler(srv interface{}, stream grpc.ServerStream) e
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type FvcService_StreamLogsServer = grpc.ServerStreamingServer[LogsResponse]
 
+func _FvcService_Diagnostics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DiagnosticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).Diagnostics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_Diagnostics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).Diagnostics(ctx, req.(*DiagnosticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FvcService_ServiceDesc is the grpc.ServiceDesc for FvcService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1159,11 +1309,30 @@ var FvcService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Ps",
 			Handler:    _FvcService_Ps_Handler,
 		},
+		{
+			MethodName: "Diagnostics",
+			Handler:    _FvcService_Diagnostics_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "RunStream",
 			Handler:       _FvcService_RunStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Exec",
+			Handler:       _FvcService_Exec_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "PullImageStream",
+			Handler:       _FvcService_PullImageStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "BuildImageStream",
+			Handler:       _FvcService_BuildImageStream_Handler,
 			ServerStreams: true,
 		},
 		{

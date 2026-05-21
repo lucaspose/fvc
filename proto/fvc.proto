@@ -29,11 +29,17 @@ service FvcService {
     // Retourne les chemins locaux nécessaires à la console série
     rpc ConsoleInfo(ConsoleInfoRequest) returns (ConsoleInfoResponse);
 
+    // Exécute une commande dans une microVM via l'agent invité
+    rpc Exec(ExecRequest) returns (stream ExecEvent);
+
     // Retourne les détails complets d'une microVM
     rpc Inspect(InspectRequest) returns (InspectResponse);
 
     // Télécharge une image dans le cache local
     rpc PullImage(PullImageRequest) returns (PullImageResponse);
+
+    // Télécharge une image en streamant la progression
+    rpc PullImageStream(PullImageRequest) returns (stream OperationEvent);
 
     // Liste les images présentes dans le cache local
     rpc ListImages(ListImagesRequest) returns (ListImagesResponse);
@@ -65,6 +71,9 @@ service FvcService {
     // Construit une image locale depuis un Fvcfile TOML
     rpc BuildImage(BuildImageRequest) returns (BuildImageResponse);
 
+    // Construit une image locale en streamant les étapes
+    rpc BuildImageStream(BuildImageRequest) returns (stream OperationEvent);
+
     // Inspecte une image locale
     rpc ImageInspect(ImageInspectRequest) returns (ImageInspectResponse);
 
@@ -91,12 +100,16 @@ service FvcService {
 
     // Phase 5 : Stream les logs textuels en temps réel
     rpc StreamLogs(LogsRequest) returns (stream LogsResponse);
+
+    // Retourne les diagnostics runtime du daemon
+    rpc Diagnostics(DiagnosticsRequest) returns (DiagnosticsResponse);
 }
 
 // --- Messages pour la commande RUN ---
 message RunRequest {
     string source = 1; // Le chemin du Vmfile ou le nom de l'image
     VmConfig config = 2;
+    string name = 3;
 }
 
 message RunResponse {
@@ -111,6 +124,21 @@ message RunEvent {
     string message = 3;
     string vm_id = 4;
     string error_message = 5;
+    int64 current = 6;
+    int64 total = 7;
+    string detail = 8;
+}
+
+message OperationEvent {
+    string stage = 1;
+    string status = 2;
+    string message = 3;
+    string error_message = 4;
+    int64 current = 5;
+    int64 total = 6;
+    string detail = 7;
+    string image = 8;
+    string path = 9;
 }
 
 // --- Messages pour la commande STOP ---
@@ -154,6 +182,20 @@ message ConsoleInfoResponse {
     string input_path = 5;
 }
 
+message ExecRequest {
+    string vm_id = 1;
+    repeated string command = 2;
+    repeated string env = 3;
+    string workdir = 4;
+}
+
+message ExecEvent {
+    string stream = 1;
+    bytes data = 2;
+    int32 exit_code = 3;
+    string error_message = 4;
+}
+
 message InspectRequest {
     string vm_id = 1;
 }
@@ -166,6 +208,8 @@ message InspectResponse {
 
 message PullImageRequest {
     string image = 1;
+    string source = 2;
+    string target = 3;
 }
 
 message PullImageResponse {
@@ -185,6 +229,10 @@ message ImageDetails {
     string source = 5;
     google.protobuf.Timestamp created_at = 6;
     map<string, string> labels = 7;
+    repeated string env = 8;
+    repeated string cmd = 9;
+    string workdir = 10;
+    repeated int32 exposed_ports = 11;
 }
 
 message ListImagesResponse {
@@ -237,6 +285,7 @@ message WaitResponse {
     bool success = 1;
     string message = 2;
     string status = 3;
+    int32 exit_code = 4;
 }
 
 message KillRequest {
@@ -399,6 +448,7 @@ message VmConfig {
     int32 cpus = 1;
     int32 memory_mb = 2;
     repeated string ports = 3;
+    bool publish_all = 4;
 }
 
 message VmDetails {
@@ -414,6 +464,8 @@ message VmDetails {
     string log_path = 10;
     string drive_path = 11;
     string console_path = 12;
+    string name = 13;
+    int32 exit_code = 14;
 }
 
 message PsResponse {
@@ -430,4 +482,21 @@ message LogsRequest {
 message LogsResponse {
     string line = 1;
     google.protobuf.Timestamp timestamp = 2;
+}
+
+message DiagnosticsRequest {}
+
+message DiagnosticCheck {
+    string name = 1;
+    bool ok = 2;
+    string message = 3;
+}
+
+message DiagnosticsResponse {
+    repeated DiagnosticCheck checks = 1;
+    string grpc_network = 2;
+    string grpc_address = 3;
+    string data_dir = 4;
+    string runtime_dir = 5;
+    bool network_enabled = 6;
 }

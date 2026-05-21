@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -65,4 +66,56 @@ func ValidateResources(cpus, memoryMB int32) error {
 		return errors.New(strings.Join(problems, "; "))
 	}
 	return nil
+}
+
+func ValidatePortSpec(spec string) error {
+	_, _, err := ParsePortSpec(spec)
+	return err
+}
+
+func ParsePortSpec(spec string) (int, int, error) {
+	spec = strings.TrimSpace(spec)
+	if spec == "" {
+		return 0, 0, errors.New("port mapping is required")
+	}
+	parts := strings.Split(spec, ":")
+	if len(parts) == 1 {
+		port, err := parsePort(parts[0])
+		if err != nil {
+			return 0, 0, err
+		}
+		return port, port, nil
+	}
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("port mapping %q must be HOST:GUEST or PORT", spec)
+	}
+	host, err := parsePort(parts[0])
+	if err != nil {
+		return 0, 0, fmt.Errorf("host port: %w", err)
+	}
+	guest, err := parsePort(parts[1])
+	if err != nil {
+		return 0, 0, fmt.Errorf("guest port: %w", err)
+	}
+	return host, guest, nil
+}
+
+func NormalizePortSpec(spec string) (string, error) {
+	host, guest, err := ParsePortSpec(spec)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%d:%d", host, guest), nil
+}
+
+func parsePort(value string) (int, error) {
+	value = strings.TrimSpace(value)
+	port, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, fmt.Errorf("invalid port %q", value)
+	}
+	if port < 1 || port > 65535 {
+		return 0, fmt.Errorf("port %d must be between 1 and 65535", port)
+	}
+	return port, nil
 }

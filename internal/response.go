@@ -6,4 +6,5 @@ const (
 	VmFailed  = "failed"
 	VmDown    = "down"
 	VmStopped = "stopped"
+	VmExited  = "exited"
 )
