@@ -3,7 +3,7 @@ VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
 GOCACHE ?= /tmp/fvc-go-build
 
-.PHONY: build docker-build proto test clean
+.PHONY: build docker-build proto test test-e2e test-docker-import test-functional-docker builder-rootfs install-systemd clean
 
 build:
 	@docker build \
@@ -26,5 +26,20 @@ proto:
 test:
 	@GOCACHE=$(GOCACHE) go test ./...
 
+test-e2e:
+	@FVC_E2E=1 GOCACHE=$(GOCACHE) go test ./test/e2e -v -timeout 15m
+
+test-docker-import:
+	@FVC_DOCKER_IMPORT_E2E=1 GOCACHE=$(GOCACHE) go test ./cmd/fvcd -run TestDockerImportFromDockerHubE2E -v -timeout 10m
+
+test-functional-docker:
+	@./test/functional/docker-functional.sh
+
+builder-rootfs:
+	@./packaging/builder/build-builder-rootfs.sh
+
+install-systemd:
+	@./packaging/install-systemd.sh
+
 clean:
-	@rm -f fvc fvcd
+	@rm -f fvc fvcd fvc-build-agent fvc-init

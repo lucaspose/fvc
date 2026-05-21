@@ -1,0 +1,30 @@
+[Unit]
+Description=FVC Firecracker microVM daemon
+Documentation=https://github.com/lucaspose/fvc
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/fvcd
+Restart=on-failure
+RestartSec=2s
+Environment=FVC_HOME=/var/lib/fvc
+Environment=FVC_RUNTIME_DIR=/run/fvc
+Environment=FVC_GRPC_NETWORK=unix
+Environment=FVC_GRPC_ADDR=/run/fvc/fvcd.sock
+Environment=FVC_RUNTIME_GROUP=fvc
+EnvironmentFile=-/etc/fvc/fvcd.env
+StateDirectory=fvc
+RuntimeDirectory=fvc
+RuntimeDirectoryMode=0770
+UMask=0007
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_SYS_ADMIN CAP_SYS_RESOURCE CAP_DAC_OVERRIDE
+AmbientCapabilities=CAP_NET_ADMIN CAP_SYS_ADMIN CAP_SYS_RESOURCE CAP_DAC_OVERRIDE
+NoNewPrivileges=false
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/fvc /run/fvc
+
+[Install]
+WantedBy=multi-user.target

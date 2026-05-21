@@ -1,0 +1,37 @@
+#!/bin/sh
+set -eu
+
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+mountpoint -q /proc || mount -t proc proc /proc
+mountpoint -q /sys || mount -t sysfs sysfs /sys
+mountpoint -q /dev || mount -t devtmpfs devtmpfs /dev
+
+ip link set lo up || true
+
+cmdline="$(cat /proc/cmdline 2>/dev/null || true)"
+iparg=""
+for arg in $cmdline; do
+  case "$arg" in
+    ip=*) iparg="${arg#ip=}" ;;
+  esac
+done
+
+if [ -n "$iparg" ]; then
+  guest_ip="$(printf '%s' "$iparg" | cut -d: -f1)"
+  host_ip="$(printf '%s' "$iparg" | cut -d: -f3)"
+  netmask="$(printf '%s' "$iparg" | cut -d: -f4)"
+  iface="$(printf '%s' "$iparg" | cut -d: -f6)"
+  [ -n "$iface" ] || iface="eth0"
+  ip link set "$iface" up || true
+  if [ -n "$guest_ip" ] && [ -n "$netmask" ]; then
+    ip addr add "$guest_ip/$netmask" dev "$iface" 2>/dev/null || true
+  fi
+  if [ -n "$host_ip" ]; then
+    ip route add default via "$host_ip" dev "$iface" 2>/dev/null || true
+  fi
+fi
+
+mkdir -p /mnt/fvc-target
+
+exec /usr/local/bin/fvc-build-agent serve --addr :9090

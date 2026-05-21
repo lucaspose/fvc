@@ -4,6 +4,11 @@
 # Binaries for programs and plugins
 /fvc
 /fvcd
+/fvc-build-agent
+/fvc-init
+/dist/
+/fvm_roadmap.docx
+/index.html
 *.exe
 *.exe~
 *.dll

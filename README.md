@@ -9,6 +9,8 @@ The current milestone is focused on making the foundation reliable before adding
 - `fvc run`: starts a Firecracker microVM from an image reference or a `Vmfile`.
 - `fvc build`: builds a local image from a TOML `Fvcfile`.
 - `fvc pull`: downloads an image into the local cache.
+- `fvc pull --from docker`: pulls a Docker Hub image, converts its layers into
+  a Firecracker-ready ext4 rootfs, and imports it as a local FVC image.
 - `fvc images`: lists locally cached images.
 - `fvc image`: inspects, tags, imports, exports, removes, and prunes local images.
 - `fvc prune`: removes unused local resources left behind by older cache formats or interrupted runs.
@@ -22,12 +24,14 @@ The current milestone is focused on making the foundation reliable before adding
 - `fvc snapshot`: creates, lists, restores, and removes stopped microVM disk snapshots.
 - `fvc rm`: removes a stopped microVM and its local files.
 - `fvc console`: opens an interactive serial console to a running microVM.
+- `fvc exec`: runs a command in a running runtime-managed microVM through the guest agent.
 - `fvc logs`: prints VM logs, with `--tail` and `--follow`.
+- `fvc doctor`: checks daemon connectivity and Firecracker host requirements.
 - `fvcd`: persistent gRPC daemon with SQLite state.
 - Image cache with validated image references and atomic downloads.
 - Server-side validation for run requests.
 
-Not implemented yet: port publishing, exec, `RUN` during image build, and a real registry protocol.
+Not implemented yet: a real registry protocol.
 
 ## Development
 
@@ -36,6 +40,68 @@ Run the test suite:
 ```sh
 make test
 ```
+
+Run the Firecracker end-to-end suite on a Linux host with KVM:
+
+```sh
+make build
+make builder-rootfs
+sudo FVC_E2E=1 \
+  FVC_E2E_BASE_IMAGE=/path/to/base.ext4 \
+  FVC_E2E_KERNEL=/path/to/vmlinux.bin \
+  make test-e2e
+```
+
+The e2e suite starts a temporary `fvcd`, imports the base image, builds an image
+with `COPY` and `[[run]]`, boots it with Firecracker, waits for the guest agent,
+runs `fvc exec`, checks logs, then stops and removes the VM. It skips by default
+unless `FVC_E2E=1` is set, and it requires `/dev/kvm`, `/dev/net/tun`,
+Firecracker, a compatible kernel, a compatible base ext4 image, and the builder
+rootfs. Override binary and asset paths with `FVC_E2E_FVC`, `FVC_E2E_FVCD`,
+`FVC_E2E_FIRECRACKER`, `FVC_E2E_BUILDER_ROOTFS`, and
+`FVC_E2E_RUNTIME_INIT`.
+
+Run the functional Docker smoke test against the `fvcd` compose container:
+
+```sh
+docker compose -f compose.firecracker.yml up -d --build
+make test-functional-docker
+```
+
+The script rebuilds local binaries and the builder rootfs by default, copies
+rootfs images into the container, configures the builder VM, creates a minimal
+`Fvcfile`, imports a base image, builds with `COPY` and `[[run]]`, boots the VM,
+runs `fvc exec`, verifies the published HTTP port, checks logs, prints a
+`PASS`/`FAIL`/`SKIP` summary, and cleans up. By default it uses
+`dist/builder.ext4` both as the builder rootfs and as a minimal test base image.
+Use a real runtime rootfs with:
+
+```sh
+FVC_TEST_BASE_IMAGE=/path/to/base.ext4 make test-functional-docker
+```
+
+Use `FVC_TEST_GUEST_AGENT_MODE=vsock` to force the secure guest-agent path, or
+`FVC_TEST_REBUILD_ARTIFACTS=0` to skip the rebuild when iterating on an existing
+rootfs.
+
+Run the optional Docker Hub import test:
+
+```sh
+make test-docker-import
+```
+
+Pull and convert a Docker Hub image into a local Firecracker rootfs:
+
+```sh
+fvc pull --from docker ubuntu:24.04 -t ubuntu-fvc:24.04
+fvc run --image ubuntu-fvc:24.04
+```
+
+When `--from docker` is used, FVC treats the source as a normal Docker image,
+downloads its OCI/Docker manifest and gzip layers from Docker Hub, applies
+Docker whiteouts, creates an ext4 filesystem, imports it into the local image
+cache, and stores Docker config metadata such as `Cmd`, `Env`, `WorkingDir`,
+labels, and exposed TCP ports.
 
 Build the local binaries through Docker:
 
@@ -48,6 +114,63 @@ Build a runnable container image:
 ```sh
 make docker-build
 ```
+
+Run `fvcd` in Docker for local Firecracker testing:
+
+```sh
+docker compose -f compose.firecracker.yml up --build
+```
+
+The compose file builds the `systemd-test` image target, boots systemd inside
+the container, enables `fvcd.service`, installs `fvc` and `fvcd` in `/usr/bin`,
+persists daemon state in the `fvc-data` volume, mounts `/dev/kvm` and
+`/dev/net/tun`, and grants the network and mount capabilities required by the
+current runtime.
+
+Run CLI checks inside that container:
+
+```sh
+docker exec -it fvcd /usr/bin/systemctl status fvcd --no-pager
+docker exec -it fvcd /usr/bin/fvc doctor
+docker exec -it fvcd /usr/bin/fvc run --image ubuntu --name test-vm --cpu 1 --ram 512
+```
+
+Manual Docker run equivalent:
+
+```sh
+docker run --rm -it \
+  --name fvcd \
+  --privileged \
+  --cgroupns=host \
+  --device /dev/kvm \
+  --device /dev/net/tun \
+  --sysctl net.ipv4.ip_forward=1 \
+  -v fvc-data:/var/lib/fvc \
+  -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
+  --tmpfs /run \
+  --tmpfs /run/lock \
+  fvc:dev
+```
+
+Docker is useful for development and release testing. For a long-running host
+install, `fvcd` is expected to run as a Linux daemon under systemd so it can
+manage KVM, TAP devices, NAT rules, loop mounts, and persistent state directly
+on the host.
+
+Install the host daemon under systemd after building local binaries:
+
+```sh
+make build
+sudo make install-systemd
+sudo systemctl start fvcd
+fvc doctor
+```
+
+The systemd unit listens on the Unix socket `/run/fvc/fvcd.sock` by default.
+The CLI uses that socket automatically when it exists, and falls back to
+`127.0.0.1:50051` for Docker/dev setups. Override the transport with
+`FVC_GRPC_NETWORK=tcp FVC_GRPC_ADDR=127.0.0.1:50051` or
+`FVC_GRPC_TARGET=unix:///run/fvc/fvcd.sock`.
 
 Clean generated local binaries:
 
@@ -108,18 +231,29 @@ While a step is running, the spinner stays on that same line. When the daemon re
 `fvcd` reads configuration from environment variables:
 
 - `FVC_HOME`: daemon data directory, defaults to `/var/lib/fvc`.
-- `FVC_GRPC_ADDR`: gRPC bind address, defaults to `127.0.0.1:50051`.
+- `FVC_GRPC_NETWORK`: gRPC listen network, defaults to `unix`.
+- `FVC_GRPC_ADDR`: gRPC bind address, defaults to `/run/fvc/fvcd.sock`.
+- `FVC_ALLOW_REMOTE_TCP`: allow `fvcd` to bind TCP on all interfaces, defaults to `false`.
 - `FVC_FIRECRACKER_PATH`: Firecracker binary path, defaults to `/usr/local/bin/firecracker`.
 - `FVC_KERNEL_PATH`: kernel path, defaults to `$FVC_HOME/vmlinux.bin`.
 - `FVC_IMAGE_BASE_URL`: base URL for images and kernel downloads.
 - `FVC_NETWORK_ENABLED`: automatic TAP/NAT networking, defaults to `true`.
 - `FVC_RUNTIME_DIR`: runtime socket and console FIFO directory, defaults to `/run/fvc`.
 - `FVC_RUNTIME_GROUP`: optional group that can access runtime logs and console FIFOs.
+- `FVC_RUNTIME_INIT_PATH`: host path to the static guest init injected into
+  images with runtime metadata, defaults to `/usr/local/bin/fvc-init`.
+- `FVC_RUNTIME_ROOT_DEVICE`: root block device passed to guest kernels,
+  defaults to `/dev/vda`.
+- `FVC_GUEST_AGENT_MODE`: guest agent transport, `vsock` by default. Use `auto`
+  to fall back to TCP when no vsock path is present, or `tcp` for legacy
+  network-only debugging.
+- `FVC_STRICT_RUNTIME_CHECKS`: fail daemon startup if Firecracker host
+  requirements are missing, defaults to `false`.
 
 For local development, use a writable data directory:
 
 ```sh
-FVC_HOME=/tmp/fvc-dev fvcd
+FVC_HOME=/tmp/fvc-dev FVC_RUNTIME_DIR=/tmp/fvc-run FVC_GRPC_ADDR=/tmp/fvc-run/fvcd.sock fvcd
 ```
 
 ## Images
@@ -222,6 +356,7 @@ Example:
 name = "api"
 cpu = 2
 ram = 1024
+ports = ["8080:80"]
 
 [image]
 source = "ubuntu"
@@ -231,6 +366,20 @@ Run from a directory containing `Vmfile`:
 
 ```sh
 fvc run .
+```
+
+Override fields from the command line:
+
+```sh
+fvc run --image ubuntu --name api -p 8080:80 --cpu 2 --ram 1024
+```
+
+Commands that accept a VM identifier also accept the VM name or an unambiguous
+ID prefix:
+
+```sh
+fvc logs api
+fvc stop api
 ```
 
 ## Fvcfile Build
@@ -243,6 +392,15 @@ Example:
 [image]
 from = "ubuntu"
 tag = "ubuntu-web"
+
+[config]
+workdir = "/var/www/html"
+cmd = ["/usr/bin/python3", "-m", "http.server", "80"]
+env = ["PORT=80"]
+expose = [80]
+
+[labels]
+app = "ubuntu-web"
 
 [[copy]]
 src = "index.html"
@@ -271,9 +429,103 @@ Run the result:
 fvc run --image ubuntu-web
 ```
 
-The first build implementation supports `[image].from`, `[image].tag`, `-t`, and `[[copy]]`. It mounts a temporary clone of the base ext4 image, copies files from the build context, unmounts it, then publishes the final image into `FVC_HOME/cache`.
+Build contexts can include a `.fvcignore` file. It uses simple path/glob
+patterns to skip files during `COPY`, for example `.git`, `*.db`, or `fvc`.
 
-Because the daemon mounts ext4 images, `fvcd` must run with mount privileges. `RUN` instructions are intentionally not supported yet; they need a proper chroot or guest-agent build environment.
+Image metadata from `[config]` and `[labels]` is stored with the image and shown
+by:
+
+```sh
+fvc image inspect ubuntu-web
+fvc image history ubuntu-web
+```
+
+Expose metadata does not publish host ports by itself. Publish ports explicitly
+with `-p`, or publish every exposed port as `PORT:PORT`:
+
+```sh
+fvc run --image ubuntu-web --publish-all
+```
+
+The current build implementation supports `[image].from`, `[image].tag`, `-t`,
+`[config]`, `[labels]`, `.fvcignore`, `[[copy]]`, and `[[run]]`. It mounts a
+temporary clone of the base ext4 image, copies files from the build context,
+unmounts it, optionally executes build commands through the isolated builder,
+then publishes the final image into `FVC_HOME/cache`.
+
+When an image has runtime metadata from `[config]`, `fvc run` injects the static
+`fvc-init` binary and `/etc/fvc/runtime.json` into the cloned root filesystem
+before Firecracker starts. The kernel receives `root=/dev/vda rw` and, for those
+images, `init=/usr/local/bin/fvc-init`. Inside the guest, `fvc-init` mounts basic virtual
+filesystems, applies the static IP from the kernel `ip=` argument, sets
+environment variables and workdir, then starts and supervises the configured
+command. When that command exits, `fvc-init` prints `FVC_EXIT_CODE=<code>` to
+the serial log and powers off the guest cleanly.
+It also starts a small authenticated guest agent used by `fvc exec`; the daemon
+generates a per-VM token, stores it in SQLite, and passes it to the guest kernel
+command line for that boot. By default, the daemon attaches a Firecracker vsock
+device and the guest agent listens on AF_VSOCK port `9100`; TCP can still be
+selected for legacy debugging with `FVC_GUEST_AGENT_MODE=tcp`.
+
+Because the daemon mounts ext4 images, `fvcd` must run with mount privileges.
+`[[run]]` build steps are delegated to `fvc-build-agent`. The default backend is
+`microvm`: `fvcd` launches a temporary Firecracker builder VM, attaches the
+image being built as a secondary drive, waits for `fvc-build-agent serve` inside
+the guest, sends the build plan to `POST /build`, then shuts the builder down.
+
+The builder VM must be provided by the operator for now:
+
+```sh
+make builder-rootfs
+sudo install -m 0644 dist/builder.ext4 /var/lib/fvc/builder.ext4
+
+FVC_BUILD_BACKEND=microvm \
+FVC_BUILDER_ROOTFS_PATH=/var/lib/fvc/builder.ext4 \
+FVC_BUILDER_KERNEL_PATH=/var/lib/fvc/vmlinux.bin \
+fvc build .
+```
+
+The builder rootfs is expected to boot, configure the static IP provided in the
+kernel args, and start:
+
+```sh
+fvc-build-agent serve --addr :9090
+```
+
+Optional builder settings:
+
+- `FVC_BUILDER_AGENT_PORT`: defaults to `9090`.
+- `FVC_BUILDER_CPUS`: defaults to `1`.
+- `FVC_BUILDER_MEMORY_MB`: defaults to `512`.
+- `FVC_BUILDER_TARGET_DEVICE`: defaults to `/dev/vdb`.
+- `FVC_BUILDER_TARGET_ROOT`: defaults to `/mnt/fvc-target`.
+- `FVC_BUILD_AGENT_REQUEST_TIMEOUT_SECONDS`: daemon timeout for the builder
+  `/build` request, defaults to `3600`.
+- `FVC_BUILDER_ROOTFS_SIZE_MB`: rootfs generator size, defaults to `512`.
+- `FVC_BUILDER_BASE_IMAGE`: rootfs generator base image, defaults to
+  `debian:bookworm-slim`.
+- `FVC_BUILDER_BOOT_ARGS_EXTRA`: appended to the builder kernel boot args.
+
+`make builder-rootfs` creates a Debian-based Firecracker builder image with
+`/init`, `busybox`, `iproute2`, mount tools, and `fvc-build-agent`. The init
+script mounts `/proc`, `/sys`, `/dev`, configures the interface from the `ip=`
+kernel arg, creates `/mnt/fvc-target`, and starts the agent on port `9090`.
+
+For local development experiments without Firecracker, an explicit host agent
+backend can be selected:
+
+```sh
+FVC_BUILD_BACKEND=agent \
+FVC_ALLOW_INSECURE_HOST_AGENT=true \
+FVC_BUILD_AGENT_PATH=/usr/local/bin/fvc-build-agent \
+fvc build .
+```
+
+The host agent backend reads the same JSON build plan from stdin, runs commands
+from the host with the mounted root path as its working tree, and streams
+command output. It is intentionally guarded by
+`FVC_ALLOW_INSECURE_HOST_AGENT=true` because it is useful for debugging the
+agent protocol, not as the production isolation boundary.
 
 ## Lifecycle
 
@@ -447,7 +699,31 @@ Inspect all stored state for one VM:
 fvc inspect <vm-id>
 ```
 
-For machine-to-machine control, the long-term professional path is a small guest agent over Firecracker vsock. That future agent should own features like `fvc exec`, guest health checks, file copy, clean shutdown, and richer stats.
+For machine-to-machine control, runtime-managed images include a small guest
+agent. The current agent owns `fvc exec` over Firecracker vsock; future versions
+should expand the same protocol to guest health checks, file copy, clean
+shutdown, and richer stats.
+Run a non-interactive command in a running runtime-managed microVM:
+
+```sh
+fvc exec <vm-id-or-name> -- uname -a
+fvc exec -w /tmp -e HELLO=world <vm-id-or-name> -- sh -lc 'echo "$HELLO"'
+```
+
+`fvc exec` streams guest stdout to local stdout and guest stderr to local
+stderr. The CLI exits with the same code as the guest command, so it can be used
+from scripts and CI jobs.
+
+Current `exec` requirements:
+
+- the VM must be running;
+- the image must use `[config]` runtime metadata so `fvc-init` is injected;
+- the guest kernel must support virtio-vsock for the default transport;
+- requests require the per-VM bearer token generated by `fvcd`.
+
+The default transport is authenticated HTTP over Firecracker vsock. For older
+test images that do not expose `/dev/vsock`, use `FVC_GUEST_AGENT_MODE=auto` or
+`FVC_GUEST_AGENT_MODE=tcp`; TCP mode requires VM networking.
 
 ## Logs
 
