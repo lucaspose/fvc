@@ -4,11 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 
-	"github.com/lucaspose/fvc/internal"
+	"github.com/lucaspose/fvc/internal/vmstore"
 	"github.com/lucaspose/fvc/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/grpc"
 )
 
 func (s *Server) BuildImage(ctx context.Context, req *proto.BuildImageRequest) (*proto.BuildImageResponse, error) {
@@ -29,6 +28,41 @@ func (s *Server) BuildImage(ctx context.Context, req *proto.BuildImageRequest) (
 		Image:   plan.Tag,
 		Path:    path,
 	}, nil
+}
+
+func (s *Server) BuildImageStream(req *proto.BuildImageRequest, stream grpc.ServerStreamingServer[proto.OperationEvent]) error {
+	if req == nil {
+		return stream.Send(&proto.OperationEvent{Stage: "validate", Status: "error", Message: "build request is required", ErrorMessage: "build request is required"})
+	}
+	send := func(stage, eventStatus, message string, current, total int64) error {
+		if stream.Context().Err() != nil {
+			return stream.Context().Err()
+		}
+		return stream.Send(&proto.OperationEvent{Stage: stage, Status: eventStatus, Message: message, Current: current, Total: total})
+	}
+	if err := send("plan", "running", "Loading Fvcfile", 0, 0); err != nil {
+		return err
+	}
+	plan, err := LoadBuildPlan(req.ContextPath, req.Tag)
+	if err != nil {
+		_ = send("plan", "error", err.Error(), 0, 0)
+		return nil
+	}
+	if err := send("plan", "complete", fmt.Sprintf("Build plan ready: %s", plan.Tag), 0, 0); err != nil {
+		return err
+	}
+	path, err := s.Store.BuildImageProgress(plan, s.commandRunner(), send)
+	if err != nil {
+		_ = stream.Send(&proto.OperationEvent{Stage: "build", Status: "error", Message: err.Error(), ErrorMessage: err.Error(), Image: plan.Tag})
+		return nil
+	}
+	return stream.Send(&proto.OperationEvent{
+		Stage:   "done",
+		Status:  "complete",
+		Message: fmt.Sprintf("image built: %s", plan.Tag),
+		Image:   plan.Tag,
+		Path:    path,
+	})
 }
 
 func (s *Server) ImageInspect(ctx context.Context, req *proto.ImageInspectRequest) (*proto.ImageInspectResponse, error) {
@@ -115,14 +149,7 @@ func (s *Server) ImageHistory(ctx context.Context, req *proto.ImageHistoryReques
 	res := &proto.ImageHistoryResponse{
 		Success: true,
 		Message: "image history found",
-		Entries: make([]*proto.ImageHistoryEntry, 0, len(history)),
-	}
-	for _, entry := range history {
-		res.Entries = append(res.Entries, &proto.ImageHistoryEntry{
-			Action:    entry.Action,
-			Message:   entry.Message,
-			CreatedAt: timestamppb.New(entry.CreatedAt),
-		})
+		Entries: imageHistoryEntries(history),
 	}
 	return res, nil
 }
@@ -155,103 +182,8 @@ func (s *Server) ImagePrune(ctx context.Context, req *proto.ImagePruneRequest) (
 	return res, nil
 }
 
-func (s *Server) SnapshotCreate(ctx context.Context, req *proto.SnapshotCreateRequest) (*proto.SnapshotCreateResponse, error) {
-	if req == nil || req.VmId == "" || req.Name == "" {
-		return &proto.SnapshotCreateResponse{Success: false, Message: "vm id and snapshot name are required"}, nil
-	}
-	drivePath, err := s.snapshotDrivePath(req.VmId)
-	if err != nil {
-		return &proto.SnapshotCreateResponse{Success: false, Message: err.Error()}, nil
-	}
-	path, size, err := s.Store.CreateSnapshot(req.VmId, drivePath, req.Name)
-	if err != nil {
-		return &proto.SnapshotCreateResponse{Success: false, Message: err.Error()}, nil
-	}
-	return &proto.SnapshotCreateResponse{
-		Success:  true,
-		Message:  fmt.Sprintf("snapshot created: %s", req.Name),
-		Snapshot: snapshotDetails(req.Name, path, size),
-	}, nil
-}
-
-func (s *Server) SnapshotList(ctx context.Context, req *proto.SnapshotListRequest) (*proto.SnapshotListResponse, error) {
-	if req == nil || req.VmId == "" {
-		return &proto.SnapshotListResponse{Success: false, Message: "vm id is required"}, nil
-	}
-	if err := s.vmExists(req.VmId); err != nil {
-		return &proto.SnapshotListResponse{Success: false, Message: err.Error()}, nil
-	}
-	snapshots, err := s.Store.ListSnapshots(req.VmId)
-	if err != nil {
-		return &proto.SnapshotListResponse{Success: false, Message: err.Error()}, nil
-	}
-	res := &proto.SnapshotListResponse{
-		Success:   true,
-		Message:   "snapshots listed",
-		Snapshots: make([]*proto.SnapshotDetails, 0, len(snapshots)),
-	}
-	for _, snapshot := range snapshots {
-		res.Snapshots = append(res.Snapshots, snapshotDetails(snapshot.Name, snapshot.Path, snapshot.SizeBytes))
-	}
-	return res, nil
-}
-
-func (s *Server) SnapshotRestore(ctx context.Context, req *proto.SnapshotRestoreRequest) (*proto.SnapshotRestoreResponse, error) {
-	if req == nil || req.VmId == "" || req.Name == "" {
-		return &proto.SnapshotRestoreResponse{Success: false, Message: "vm id and snapshot name are required"}, nil
-	}
-	drivePath, err := s.snapshotDrivePath(req.VmId)
-	if err != nil {
-		return &proto.SnapshotRestoreResponse{Success: false, Message: err.Error()}, nil
-	}
-	path, size, err := s.Store.RestoreSnapshot(req.VmId, drivePath, req.Name)
-	if err != nil {
-		return &proto.SnapshotRestoreResponse{Success: false, Message: err.Error()}, nil
-	}
-	return &proto.SnapshotRestoreResponse{
-		Success:  true,
-		Message:  fmt.Sprintf("snapshot restored: %s", req.Name),
-		Snapshot: snapshotDetails(req.Name, path, size),
-	}, nil
-}
-
-func (s *Server) SnapshotRemove(ctx context.Context, req *proto.SnapshotRemoveRequest) (*proto.SnapshotRemoveResponse, error) {
-	if req == nil || req.VmId == "" || req.Name == "" {
-		return &proto.SnapshotRemoveResponse{Success: false, Message: "vm id and snapshot name are required"}, nil
-	}
-	if err := s.vmExists(req.VmId); err != nil {
-		return &proto.SnapshotRemoveResponse{Success: false, Message: err.Error()}, nil
-	}
-	if _, err := s.Store.RemoveSnapshot(req.VmId, req.Name); err != nil {
-		return &proto.SnapshotRemoveResponse{Success: false, Message: err.Error()}, nil
-	}
-	return &proto.SnapshotRemoveResponse{Success: true, Message: fmt.Sprintf("snapshot removed: %s", req.Name)}, nil
-}
-
-func (s *Server) snapshotDrivePath(vmID string) (string, error) {
-	var statusValue, drivePath string
-	err := s.DB.QueryRow(`SELECT status, COALESCE(drive_path, '') FROM vms WHERE id = ?`, vmID).Scan(&statusValue, &drivePath)
-	if err == sql.ErrNoRows {
-		return "", fmt.Errorf("vm not found: %s", vmID)
-	}
-	if err != nil {
-		return "", fmt.Errorf("state lookup failed: %w", err)
-	}
-	if statusValue == internal.VmRunning {
-		return "", fmt.Errorf("snapshot requires a stopped microVM")
-	}
-	if drivePath == "" {
-		return "", fmt.Errorf("snapshot unavailable: missing drive path")
-	}
-	if _, err := os.Stat(drivePath); err != nil {
-		return "", fmt.Errorf("snapshot unavailable: drive not found: %w", err)
-	}
-	return drivePath, nil
-}
-
 func (s *Server) vmExists(vmID string) error {
-	var id string
-	err := s.DB.QueryRow(`SELECT id FROM vms WHERE id = ?`, vmID).Scan(&id)
+	err := vmstore.Exists(s.DB, vmID)
 	if err == sql.ErrNoRows {
 		return fmt.Errorf("vm not found: %s", vmID)
 	}
@@ -259,29 +191,6 @@ func (s *Server) vmExists(vmID string) error {
 		return fmt.Errorf("state lookup failed: %w", err)
 	}
 	return nil
-}
-
-func snapshotDetails(name, path string, size int64) *proto.SnapshotDetails {
-	return &proto.SnapshotDetails{
-		Name:      name,
-		Path:      path,
-		SizeBytes: size,
-	}
-}
-
-func imageDetails(info ImageInfo) *proto.ImageDetails {
-	details := &proto.ImageDetails{
-		Image:     info.Name,
-		Path:      info.Path,
-		SizeBytes: info.SizeBytes,
-		Digest:    info.Digest,
-		Source:    info.Metadata.Source,
-		Labels:    info.Metadata.Labels,
-	}
-	if !info.Metadata.CreatedAt.IsZero() {
-		details.CreatedAt = timestamppb.New(info.Metadata.CreatedAt)
-	}
-	return details
 }
 
 func (s *Server) imageInUse(image string) (bool, error) {

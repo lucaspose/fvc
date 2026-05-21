@@ -14,6 +14,9 @@ func TestLoadConfigUsesFVCHome(t *testing.T) {
 	t.Setenv("FVC_NETWORK_ENABLED", "")
 	t.Setenv("FVC_RUNTIME_GROUP", "")
 	t.Setenv("FVC_RUNTIME_DIR", "")
+	t.Setenv("FVC_GUEST_AGENT_MODE", "")
+	t.Setenv("FVC_STRICT_RUNTIME_CHECKS", "")
+	t.Setenv("FVC_ALLOW_REMOTE_TCP", "")
 
 	cfg := LoadConfig()
 
@@ -32,10 +35,39 @@ func TestLoadConfigUsesFVCHome(t *testing.T) {
 	if cfg.RuntimeDir != "/run/fvc" {
 		t.Fatalf("expected runtime dir default, got %q", cfg.RuntimeDir)
 	}
+	if cfg.GRPCNetwork != "unix" {
+		t.Fatalf("expected unix grpc network default, got %q", cfg.GRPCNetwork)
+	}
+	if cfg.GRPCAddr != filepath.Join("/run/fvc", "fvcd.sock") {
+		t.Fatalf("expected unix grpc addr default, got %q", cfg.GRPCAddr)
+	}
 	if !cfg.NetworkEnabled {
 		t.Fatal("expected network to be enabled by default")
 	}
 	if cfg.RuntimeGroup != "" {
 		t.Fatalf("expected empty runtime group by default, got %q", cfg.RuntimeGroup)
+	}
+	if cfg.GuestAgentMode != "vsock" {
+		t.Fatalf("expected vsock guest agent mode by default, got %q", cfg.GuestAgentMode)
+	}
+	if cfg.StrictChecks {
+		t.Fatal("expected strict runtime checks to be disabled by default")
+	}
+	if cfg.AllowRemoteTCP {
+		t.Fatal("expected remote tcp to be disabled by default")
+	}
+}
+
+func TestValidateListenConfigRejectsWildcardTCPByDefault(t *testing.T) {
+	cfg := DaemonConfig{GRPCNetwork: "tcp", GRPCAddr: "0.0.0.0:50051"}
+	if err := validateListenConfig(cfg); err == nil {
+		t.Fatal("expected wildcard tcp bind to require explicit opt-in")
+	}
+}
+
+func TestValidateListenConfigAllowsLoopbackTCP(t *testing.T) {
+	cfg := DaemonConfig{GRPCNetwork: "tcp", GRPCAddr: "127.0.0.1:50051"}
+	if err := validateListenConfig(cfg); err != nil {
+		t.Fatalf("expected loopback tcp bind to be allowed: %v", err)
 	}
 }

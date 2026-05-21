@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/lucaspose/fvc/internal/storeio"
 )
 
 func newTestStore(t *testing.T, baseURL string) *ImageStore {
@@ -181,7 +183,7 @@ func TestListImagesSkipsInvalidDecodedNames(t *testing.T) {
 
 func TestDownloadAtomicDoesNotLeavePartialDestination(t *testing.T) {
 	dest := filepath.Join(t.TempDir(), "cache", "image.ext4")
-	if err := downloadAtomic("://bad-url", dest); err == nil {
+	if err := storeio.DownloadAtomic("://bad-url", dest); err == nil {
 		t.Fatal("expected download to fail")
 	}
 	if _, err := os.Stat(dest); !os.IsNotExist(err) {
