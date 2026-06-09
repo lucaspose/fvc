@@ -23,24 +23,52 @@ func executeRun(client proto.FvcServiceClient, args []string) error {
 	flagCPU := fs.Int("cpu", 0, "Number of CPU cores")
 	flagRAM := fs.Int("ram", 0, "Amount of RAM in MB")
 	flagName := fs.String("name", "", "Stable microVM name")
+	autoRemove := fs.Bool("rm", false, "Automatically remove the microVM after it exits")
+	imageSource := fs.String("from", "", "Image source: local or docker")
+	pullPolicy := fs.String("pull", "missing", "Pull policy: missing, always, or never")
+	networkMode := fs.String("network", "", "Network mode: nat or none")
 	publishAll := fs.Bool("publish-all", false, "Publish all ports exposed by image metadata")
 	var flagPorts stringListFlag
+	var flagVolumes stringListFlag
 	fs.Var(&flagPorts, "p", "Publish a TCP port as HOST:GUEST or PORT")
 	fs.Var(&flagPorts, "publish", "Publish a TCP port as HOST:GUEST or PORT")
+	fs.Var(&flagVolumes, "v", "Attach a named volume as NAME:GUEST_PATH[:ro]")
+	fs.Var(&flagVolumes, "volume", "Attach a named volume as NAME:GUEST_PATH[:ro]")
 
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 
 	finalImage := strings.TrimSpace(*flagImage)
+	finalImageSource := strings.TrimSpace(*imageSource)
+	finalDockerSource := ""
 	finalCPU := *flagCPU
 	finalRAM := *flagRAM
 	finalName := strings.TrimSpace(*flagName)
 	finalPorts := []string(flagPorts)
+	finalVolumes := []string(flagVolumes)
+	finalNetworkMode := strings.TrimSpace(*networkMode)
 
 	sourcePath := "."
 	if len(fs.Args()) > 0 {
 		sourcePath = fs.Args()[0]
+	}
+	if positionalImage, fromDocker := parseDockerImageArg(sourcePath); fromDocker {
+		finalImageSource = "docker"
+		finalDockerSource = positionalImage
+		if finalImage == "" {
+			target, err := dockerLocalTarget(positionalImage, "")
+			if err != nil {
+				return err
+			}
+			finalImage = target
+		}
+		sourcePath = "."
+	} else if finalImage == "" && len(fs.Args()) > 0 {
+		if _, err := os.Stat(sourcePath); err != nil && errors.Is(err, os.ErrNotExist) {
+			finalImage = sourcePath
+			sourcePath = "."
+		}
 	}
 
 	if path, ok, err := findVmfile(sourcePath); err != nil {
@@ -62,8 +90,14 @@ func executeRun(client proto.FvcServiceClient, args []string) error {
 		if finalName == "" {
 			finalName = config.VM.Name
 		}
+		if finalNetworkMode == "" {
+			finalNetworkMode = strings.TrimSpace(config.VM.Network)
+		}
 		if len(finalPorts) == 0 {
 			finalPorts = append(finalPorts, config.VM.Ports...)
+		}
+		if len(finalVolumes) == 0 {
+			finalVolumes = append(finalVolumes, config.VM.Volumes...)
 		}
 	}
 
@@ -76,6 +110,29 @@ func executeRun(client proto.FvcServiceClient, args []string) error {
 
 	if finalImage == "" {
 		return errors.New("missing image. Specify --image <name> or set [image].source in a Vmfile")
+	}
+	if finalImageSource != "" && finalImageSource != "local" && finalImageSource != "docker" {
+		return fmt.Errorf("unsupported image source %q", finalImageSource)
+	}
+	if *pullPolicy != "missing" && *pullPolicy != "always" && *pullPolicy != "never" {
+		return fmt.Errorf("unsupported pull policy %q", *pullPolicy)
+	}
+	if err := internal.ValidateNetworkMode(finalNetworkMode); err != nil {
+		return err
+	}
+	if finalNetworkMode == "none" && (len(finalPorts) > 0 || *publishAll) {
+		return errors.New("port publishing requires --network nat")
+	}
+	if finalImageSource == "docker" {
+		if finalDockerSource == "" {
+			finalDockerSource = finalImage
+			finalImage = ""
+		}
+		target, err := dockerLocalTarget(finalDockerSource, finalImage)
+		if err != nil {
+			return err
+		}
+		finalImage = target
 	}
 	if err := internal.ValidateImageRef(finalImage); err != nil {
 		return fmt.Errorf("invalid image name %q: %w", finalImage, err)
@@ -94,12 +151,30 @@ func executeRun(client proto.FvcServiceClient, args []string) error {
 		}
 		normalizedPorts = append(normalizedPorts, normalized)
 	}
+	normalizedVolumes := make([]string, 0, len(finalVolumes))
+	for _, volume := range finalVolumes {
+		normalized, err := internal.NormalizeVolumeSpec(volume)
+		if err != nil {
+			return fmt.Errorf("invalid volume %q: %w", volume, err)
+		}
+		normalizedVolumes = append(normalizedVolumes, normalized)
+	}
 
 	cliui.PrintStep("CONFIG", "Resolving configuration")
 	if finalName != "" {
 		cliui.PrintKV("name", finalName)
 	}
 	cliui.PrintKV("image", finalImage)
+	if finalImageSource == "docker" {
+		cliui.PrintKV("source", "docker")
+		cliui.PrintKV("docker", finalDockerSource)
+	}
+	if *pullPolicy != "missing" {
+		cliui.PrintKV("pull", *pullPolicy)
+	}
+	if finalNetworkMode != "" {
+		cliui.PrintKV("network", finalNetworkMode)
+	}
 	cliui.PrintKV("cpu", fmt.Sprintf("%d", finalCPU))
 	cliui.PrintKV("ram", fmt.Sprintf("%d MB", finalRAM))
 	if len(normalizedPorts) > 0 {
@@ -107,15 +182,27 @@ func executeRun(client proto.FvcServiceClient, args []string) error {
 	} else if *publishAll {
 		cliui.PrintKV("ports", "publish all exposed ports")
 	}
+	if *autoRemove {
+		cliui.PrintKV("rm", "true")
+	}
+	if len(normalizedVolumes) > 0 {
+		cliui.PrintKV("volumes", strings.Join(normalizedVolumes, ", "))
+	}
 
 	stream, err := client.RunStream(context.Background(), &proto.RunRequest{
-		Source: finalImage,
-		Name:   finalName,
+		Source:       finalImage,
+		Name:         finalName,
+		AutoRemove:   *autoRemove,
+		ImageSource:  finalImageSource,
+		DockerSource: finalDockerSource,
+		PullPolicy:   *pullPolicy,
 		Config: &proto.VmConfig{
-			Cpus:       int32(finalCPU),
-			MemoryMb:   int32(finalRAM),
-			Ports:      normalizedPorts,
-			PublishAll: *publishAll,
+			Cpus:        int32(finalCPU),
+			MemoryMb:    int32(finalRAM),
+			Ports:       normalizedPorts,
+			PublishAll:  *publishAll,
+			NetworkMode: finalNetworkMode,
+			Volumes:     normalizedVolumes,
 		},
 	})
 	if err != nil {
@@ -284,7 +371,11 @@ func parsePullOptions(args []string) (pullOptions, error) {
 			if options.image != "" {
 				return pullOptions{}, fmt.Errorf("pull accepts one image, got %q and %q", options.image, arg)
 			}
-			options.image = strings.TrimSpace(arg)
+			image, fromDocker := parseDockerImageArg(arg)
+			options.image = image
+			if fromDocker {
+				options.source = "docker"
+			}
 		}
 	}
 	if options.image == "" {
@@ -294,12 +385,11 @@ func parsePullOptions(args []string) (pullOptions, error) {
 		return pullOptions{}, fmt.Errorf("unsupported pull source %q", options.source)
 	}
 	if options.source == "docker" {
-		if options.target == "" {
-			options.target = options.image
+		target, err := dockerLocalTarget(options.image, options.target)
+		if err != nil {
+			return pullOptions{}, err
 		}
-		if err := internal.ValidateImageRef(options.target); err != nil {
-			return pullOptions{}, fmt.Errorf("invalid local image tag %q: %w", options.target, err)
-		}
+		options.target = target
 	}
 	return options, nil
 }

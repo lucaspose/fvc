@@ -26,17 +26,23 @@ func usage(out io.Writer) {
 	fmt.Fprintln(out, "Usage: fvc <command> [arguments]")
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, "Commands:")
-	fmt.Fprintln(out, "  run [path] [--image name] [--name name] [--cpu n] [--ram mb] [-p host:guest] [--publish-all]")
+	fmt.Fprintln(out, "  run [image|path] [--from docker] [--pull missing|always|never] [--network nat|none] [--name name] [--cpu n] [--ram mb] [-p host:guest] [-v name:/path[:ro]] [--publish-all] [--rm]")
 	fmt.Fprintln(out, "  build [-t image] [path]")
 	fmt.Fprintln(out, "  doctor")
-	fmt.Fprintln(out, "  pull [--from docker] [-t local-tag] <image>")
+	fmt.Fprintln(out, "  pull [--from docker|docker://] [-t local-tag] <image>")
 	fmt.Fprintln(out, "  images")
 	fmt.Fprintln(out, "  image inspect|rm|tag|import|export|history|prune")
+	fmt.Fprintln(out, "  volume create|ls|inspect|rm|prune")
 	fmt.Fprintln(out, "  prune [--dry-run] [--force]")
 	fmt.Fprintln(out, "  stats [--watch] [--interval duration] [id]")
 	fmt.Fprintln(out, "  ps [--all]")
 	fmt.Fprintln(out, "  stop [--timeout seconds] <id>")
 	fmt.Fprintln(out, "  start <id>")
+	fmt.Fprintln(out, "  restart [--timeout seconds] <id>")
+	fmt.Fprintln(out, "  rename <id> <name>")
+	fmt.Fprintln(out, "  update [--cpu n] [--ram mb] <id>")
+	fmt.Fprintln(out, "  top <id>")
+	fmt.Fprintln(out, "  cp <src> <dest>")
 	fmt.Fprintln(out, "  wait [--timeout seconds] <id>")
 	fmt.Fprintln(out, "  kill <id>")
 	fmt.Fprintln(out, "  snapshot create <id> <name>")
@@ -58,11 +64,17 @@ func defaultCommands() map[string]commandFunc {
 		"pull":     executePull,
 		"images":   executeImages,
 		"image":    executeImage,
+		"volume":   executeVolume,
 		"prune":    executePrune,
 		"stats":    executeStats,
 		"ps":       executePs,
 		"stop":     executeStop,
 		"start":    executeStart,
+		"restart":  executeRestart,
+		"rename":   executeRename,
+		"update":   executeUpdate,
+		"top":      executeTop,
+		"cp":       executeCp,
 		"wait":     executeWait,
 		"kill":     executeKill,
 		"snapshot": executeSnapshot,

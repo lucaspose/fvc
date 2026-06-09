@@ -16,9 +16,10 @@ import (
 func TestValidateVmfileAcceptsMinimalConfig(t *testing.T) {
 	config := VmfileConfig{
 		VM: VMSection{
-			Name: "api",
-			CPU:  2,
-			RAM:  512,
+			Name:    "api",
+			CPU:     2,
+			RAM:     512,
+			Network: "none",
 		},
 		Image: ImageSection{
 			Source: "debian:bookworm",
@@ -27,6 +28,25 @@ func TestValidateVmfileAcceptsMinimalConfig(t *testing.T) {
 
 	if err := validateVmfile(config); err != nil {
 		t.Fatalf("expected config to be valid, got %v", err)
+	}
+}
+
+func TestValidateVmfileRejectsPortsWithNetworkNone(t *testing.T) {
+	config := VmfileConfig{
+		VM: VMSection{
+			CPU:     1,
+			RAM:     512,
+			Network: "none",
+			Ports:   []string{"8080:80"},
+		},
+		Image: ImageSection{
+			Source: "debian",
+		},
+	}
+
+	err := validateVmfile(config)
+	if err == nil || !strings.Contains(err.Error(), "port publishing") {
+		t.Fatalf("expected network none port error, got %v", err)
 	}
 }
 
@@ -132,12 +152,22 @@ func TestParsePullOptionsAcceptsTargetBeforeImage(t *testing.T) {
 }
 
 func TestParsePullOptionsDefaultsDockerTargetToSource(t *testing.T) {
-	options, err := parsePullOptions([]string{"--from", "docker", "hello-world:latest"})
+	options, err := parsePullOptions([]string{"--from", "docker", "hello-world"})
 	if err != nil {
 		t.Fatalf("parsePullOptions failed: %v", err)
 	}
 	if options.target != "hello-world:latest" {
 		t.Fatalf("unexpected target %q", options.target)
+	}
+}
+
+func TestParsePullOptionsAcceptsDockerScheme(t *testing.T) {
+	options, err := parsePullOptions([]string{"docker://nginx"})
+	if err != nil {
+		t.Fatalf("parsePullOptions failed: %v", err)
+	}
+	if options.image != "nginx" || options.source != "docker" || options.target != "nginx:latest" {
+		t.Fatalf("unexpected options: %#v", options)
 	}
 }
 

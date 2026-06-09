@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -17,7 +18,7 @@ func TestExecuteRunSendsConfigAndPorts(t *testing.T) {
 	contextDir := t.TempDir()
 
 	_ = captureStdout(t, func() {
-		err := executeRun(client, []string{"--image", "nginx-fvc:latest", "--name", "web", "--cpu", "2", "--ram", "1024", "-p", "8080:80", "--publish-all", contextDir})
+		err := executeRun(client, []string{"--image", "nginx-fvc:latest", "--name", "web", "--cpu", "2", "--ram", "1024", "-p", "8080:80", "-v", "data:/var/lib/app", "--publish-all", "--network", "nat", "--rm", contextDir})
 		if err != nil {
 			t.Fatalf("executeRun failed: %v", err)
 		}
@@ -29,12 +30,143 @@ func TestExecuteRunSendsConfigAndPorts(t *testing.T) {
 	if client.runReq.GetSource() != "nginx-fvc:latest" || client.runReq.GetName() != "web" {
 		t.Fatalf("unexpected run request identity: %#v", client.runReq)
 	}
+	if !client.runReq.GetAutoRemove() {
+		t.Fatalf("expected run request to enable auto-remove")
+	}
 	config := client.runReq.GetConfig()
-	if config.GetCpus() != 2 || config.GetMemoryMb() != 1024 || !config.GetPublishAll() {
+	if config.GetCpus() != 2 || config.GetMemoryMb() != 1024 || !config.GetPublishAll() || config.GetNetworkMode() != "nat" {
 		t.Fatalf("unexpected run config: %#v", config)
 	}
 	if want := []string{"8080:80"}; !reflect.DeepEqual(config.GetPorts(), want) {
 		t.Fatalf("unexpected ports: %#v", config.GetPorts())
+	}
+	if want := []string{"data:/var/lib/app"}; !reflect.DeepEqual(config.GetVolumes(), want) {
+		t.Fatalf("unexpected volumes: %#v", config.GetVolumes())
+	}
+}
+
+func TestExecuteRunRejectsPortsWithNetworkNone(t *testing.T) {
+	client := &fakeFvcClient{}
+	err := executeRun(client, []string{"--image", "nginx", "--network", "none", "-p", "8080:80"})
+	if err == nil || !strings.Contains(err.Error(), "port publishing requires --network nat") {
+		t.Fatalf("expected network none port error, got %v", err)
+	}
+	if client.runReq != nil {
+		t.Fatalf("did not expect daemon request: %#v", client.runReq)
+	}
+}
+
+func TestExecuteRunReadsNetworkFromVmfile(t *testing.T) {
+	client := &fakeFvcClient{
+		runEvents: []*proto.RunEvent{{Status: "complete", VmId: "vm-1"}},
+	}
+	contextDir := t.TempDir()
+	vmfile := "[vm]\nname = \"job\"\ncpu = 1\nram = 512\nnetwork = \"none\"\n\n[image]\nsource = \"hello-fvc:latest\"\n"
+	if err := os.WriteFile(filepath.Join(contextDir, "Vmfile"), []byte(vmfile), 0600); err != nil {
+		t.Fatalf("write Vmfile failed: %v", err)
+	}
+
+	_ = captureStdout(t, func() {
+		if err := executeRun(client, []string{contextDir}); err != nil {
+			t.Fatalf("executeRun failed: %v", err)
+		}
+	})
+
+	if got := client.runReq.GetConfig().GetNetworkMode(); got != "none" {
+		t.Fatalf("expected Vmfile network mode none, got %q", got)
+	}
+}
+
+func TestExecuteRestartStopsThenStarts(t *testing.T) {
+	client := &fakeFvcClient{}
+	if err := executeRestart(client, []string{"--timeout", "3", "vm-1"}); err != nil {
+		t.Fatalf("executeRestart failed: %v", err)
+	}
+	if client.stopReq.GetVmId() != "vm-1" || client.stopReq.GetTimeoutSeconds() != 3 {
+		t.Fatalf("unexpected stop request: %#v", client.stopReq)
+	}
+	if client.startReq.GetVmId() != "vm-1" {
+		t.Fatalf("unexpected start request: %#v", client.startReq)
+	}
+}
+
+func TestExecuteRenameSendsRequest(t *testing.T) {
+	client := &fakeFvcClient{}
+	if err := executeRename(client, []string{"vm-1", "api"}); err != nil {
+		t.Fatalf("executeRename failed: %v", err)
+	}
+	if client.renameReq.GetVmId() != "vm-1" || client.renameReq.GetName() != "api" {
+		t.Fatalf("unexpected rename request: %#v", client.renameReq)
+	}
+}
+
+func TestExecuteUpdateSendsResources(t *testing.T) {
+	client := &fakeFvcClient{}
+	if err := executeUpdate(client, []string{"--cpu", "2", "--ram", "1024", "vm-1"}); err != nil {
+		t.Fatalf("executeUpdate failed: %v", err)
+	}
+	if client.updateReq.GetVmId() != "vm-1" || client.updateReq.GetCpus() != 2 || client.updateReq.GetMemoryMb() != 1024 {
+		t.Fatalf("unexpected update request: %#v", client.updateReq)
+	}
+}
+
+func TestExecuteTopUsesGuestPs(t *testing.T) {
+	client := &fakeFvcClient{execEvents: []*proto.ExecEvent{{Stream: "stdout", Data: []byte("PID CMD\n")}, {Stream: "exit", ExitCode: 0}}}
+	if err := executeTop(client, []string{"vm-1"}); err != nil {
+		t.Fatalf("executeTop failed: %v", err)
+	}
+	if client.execReq.GetVmId() != "vm-1" || !strings.Contains(strings.Join(client.execReq.GetCommand(), " "), "ps") {
+		t.Fatalf("unexpected exec request: %#v", client.execReq)
+	}
+}
+
+func TestExecuteCpToGuestUsesBase64(t *testing.T) {
+	client := &fakeFvcClient{execEvents: []*proto.ExecEvent{{Stream: "exit", ExitCode: 0}}}
+	dir := t.TempDir()
+	source := filepath.Join(dir, "hello.txt")
+	if err := os.WriteFile(source, []byte("hello"), 0600); err != nil {
+		t.Fatalf("write source failed: %v", err)
+	}
+	if err := executeCp(client, []string{source, "vm-1:/tmp/hello.txt"}); err != nil {
+		t.Fatalf("executeCp failed: %v", err)
+	}
+	if client.execReq.GetVmId() != "vm-1" || !strings.Contains(strings.Join(client.execReq.GetCommand(), " "), "base64 -d") {
+		t.Fatalf("unexpected exec request: %#v", client.execReq)
+	}
+}
+
+func TestExecuteCpFromGuestWritesLocalFile(t *testing.T) {
+	client := &fakeFvcClient{execEvents: []*proto.ExecEvent{{Stream: "stdout", Data: []byte("hello")}, {Stream: "exit", ExitCode: 0}}}
+	dest := filepath.Join(t.TempDir(), "hello.txt")
+	if err := executeCp(client, []string{"vm-1:/tmp/hello.txt", dest}); err != nil {
+		t.Fatalf("executeCp failed: %v", err)
+	}
+	data, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatalf("read dest failed: %v", err)
+	}
+	if string(data) != "hello" {
+		t.Fatalf("unexpected copied data %q", data)
+	}
+}
+
+func TestExecuteRunCanPullDockerImage(t *testing.T) {
+	client := &fakeFvcClient{
+		runEvents: []*proto.RunEvent{{Status: "complete", VmId: "vm-1"}},
+	}
+
+	_ = captureStdout(t, func() {
+		err := executeRun(client, []string{"--from", "docker", "--pull", "always", "--name", "web", "nginx"})
+		if err != nil {
+			t.Fatalf("executeRun failed: %v", err)
+		}
+	})
+
+	if client.runReq == nil {
+		t.Fatal("expected RunStream to be called")
+	}
+	if client.runReq.GetSource() != "nginx:latest" || client.runReq.GetDockerSource() != "nginx" || client.runReq.GetImageSource() != "docker" || client.runReq.GetPullPolicy() != "always" {
+		t.Fatalf("unexpected run request: %#v", client.runReq)
 	}
 }
 
@@ -322,5 +454,34 @@ func TestExecuteImageImportAndExportUseAbsolutePaths(t *testing.T) {
 	}
 	if client.imageExport.GetDestPath() != dest || client.imageExport.GetImage() != "custom" {
 		t.Fatalf("unexpected image export request: %#v", client.imageExport)
+	}
+}
+
+func TestExecuteVolumeCommandsSendRequests(t *testing.T) {
+	client := &fakeFvcClient{}
+
+	_ = captureStdout(t, func() {
+		if err := executeVolumeCreate(client, []string{"--size", "256", "data"}); err != nil {
+			t.Fatalf("executeVolumeCreate failed: %v", err)
+		}
+		if err := executeVolumeList(client, nil); err != nil {
+			t.Fatalf("executeVolumeList failed: %v", err)
+		}
+		if err := executeVolumeRemove(client, []string{"--force", "data"}); err != nil {
+			t.Fatalf("executeVolumeRemove failed: %v", err)
+		}
+		if err := executeVolumePrune(client, []string{"--dry-run"}); err != nil {
+			t.Fatalf("executeVolumePrune failed: %v", err)
+		}
+	})
+
+	if client.volumeCreate == nil || client.volumeCreate.GetName() != "data" || client.volumeCreate.GetSizeMb() != 256 {
+		t.Fatalf("unexpected volume create request: %#v", client.volumeCreate)
+	}
+	if client.volumeRemove == nil || client.volumeRemove.GetName() != "data" || !client.volumeRemove.GetForce() {
+		t.Fatalf("unexpected volume remove request: %#v", client.volumeRemove)
+	}
+	if client.volumePrune == nil || !client.volumePrune.GetDryRun() {
+		t.Fatalf("unexpected volume prune request: %#v", client.volumePrune)
 	}
 }

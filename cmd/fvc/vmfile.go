@@ -12,11 +12,13 @@ import (
 )
 
 type VMSection struct {
-	Name  string   `toml:"name"`
-	CPU   int      `toml:"cpu"`
-	RAM   int      `toml:"ram"`
-	Disk  int      `toml:"disk"`
-	Ports []string `toml:"ports"`
+	Name    string   `toml:"name"`
+	CPU     int      `toml:"cpu"`
+	RAM     int      `toml:"ram"`
+	Disk    int      `toml:"disk"`
+	Network string   `toml:"network"`
+	Ports   []string `toml:"ports"`
+	Volumes []string `toml:"volumes"`
 }
 
 type ImageSection struct {
@@ -50,9 +52,20 @@ func validateVmfile(config VmfileConfig) error {
 	if err := internal.ValidateVMName(config.VM.Name); err != nil {
 		problems = append(problems, "vm.name: "+err.Error())
 	}
+	if err := internal.ValidateNetworkMode(config.VM.Network); err != nil {
+		problems = append(problems, "vm.network: "+err.Error())
+	}
+	if strings.TrimSpace(config.VM.Network) == internal.NetworkModeNone && len(config.VM.Ports) > 0 {
+		problems = append(problems, "vm.ports: port publishing requires vm.network = \"nat\"")
+	}
 	for _, port := range config.VM.Ports {
 		if err := internal.ValidatePortSpec(port); err != nil {
 			problems = append(problems, "vm.ports: "+err.Error())
+		}
+	}
+	for _, volume := range config.VM.Volumes {
+		if _, err := internal.NormalizeVolumeSpec(volume); err != nil {
+			problems = append(problems, "vm.volumes: "+err.Error())
 		}
 	}
 	if config.VM.CPU < 1 || config.VM.CPU > internal.MaxCPUs {

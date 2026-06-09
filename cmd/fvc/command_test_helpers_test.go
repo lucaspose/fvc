@@ -20,6 +20,8 @@ type fakeFvcClient struct {
 	stopReq        *proto.StopRequest
 	startReq       *proto.StartRequest
 	rmReq          *proto.RmRequest
+	renameReq      *proto.RenameRequest
+	updateReq      *proto.UpdateRequest
 	psReq          *proto.PsRequest
 	inspectReq     *proto.InspectRequest
 	statsReq       *proto.StatsRequest
@@ -35,6 +37,9 @@ type fakeFvcClient struct {
 	imageRemove    *proto.ImageRemoveRequest
 	imageImport    *proto.ImageImportRequest
 	imageExport    *proto.ImageExportRequest
+	volumeCreate   *proto.VolumeCreateRequest
+	volumeRemove   *proto.VolumeRemoveRequest
+	volumePrune    *proto.VolumePruneRequest
 }
 
 func (f *fakeFvcClient) Run(context.Context, *proto.RunRequest, ...grpc.CallOption) (*proto.RunResponse, error) {
@@ -59,6 +64,16 @@ func (f *fakeFvcClient) Start(_ context.Context, req *proto.StartRequest, _ ...g
 func (f *fakeFvcClient) Rm(_ context.Context, req *proto.RmRequest, _ ...grpc.CallOption) (*proto.RmResponse, error) {
 	f.rmReq = req
 	return &proto.RmResponse{Success: true, Message: "microVM removed"}, nil
+}
+
+func (f *fakeFvcClient) Rename(_ context.Context, req *proto.RenameRequest, _ ...grpc.CallOption) (*proto.RenameResponse, error) {
+	f.renameReq = req
+	return &proto.RenameResponse{Success: true, Message: "microVM renamed"}, nil
+}
+
+func (f *fakeFvcClient) Update(_ context.Context, req *proto.UpdateRequest, _ ...grpc.CallOption) (*proto.UpdateResponse, error) {
+	f.updateReq = req
+	return &proto.UpdateResponse{Success: true, Message: "microVM updated"}, nil
 }
 
 func (f *fakeFvcClient) ConsoleInfo(context.Context, *proto.ConsoleInfoRequest, ...grpc.CallOption) (*proto.ConsoleInfoResponse, error) {
@@ -164,6 +179,29 @@ func (f *fakeFvcClient) ImageHistory(context.Context, *proto.ImageHistoryRequest
 
 func (f *fakeFvcClient) ImagePrune(context.Context, *proto.ImagePruneRequest, ...grpc.CallOption) (*proto.ImagePruneResponse, error) {
 	return nil, errors.New("unexpected ImagePrune call")
+}
+
+func (f *fakeFvcClient) VolumeCreate(_ context.Context, req *proto.VolumeCreateRequest, _ ...grpc.CallOption) (*proto.VolumeCreateResponse, error) {
+	f.volumeCreate = req
+	return &proto.VolumeCreateResponse{Success: true, Message: "volume created", Volume: &proto.VolumeDetails{Name: req.Name, SizeBytes: req.SizeMb * 1024 * 1024, Path: "/volumes/" + req.Name + ".ext4"}}, nil
+}
+
+func (f *fakeFvcClient) VolumeList(context.Context, *proto.VolumeListRequest, ...grpc.CallOption) (*proto.VolumeListResponse, error) {
+	return &proto.VolumeListResponse{Success: true, Message: "volumes listed", Volumes: []*proto.VolumeDetails{{Name: "data", SizeBytes: 128 * 1024 * 1024, Path: "/volumes/data.ext4"}}}, nil
+}
+
+func (f *fakeFvcClient) VolumeInspect(context.Context, *proto.VolumeInspectRequest, ...grpc.CallOption) (*proto.VolumeInspectResponse, error) {
+	return nil, errors.New("unexpected VolumeInspect call")
+}
+
+func (f *fakeFvcClient) VolumeRemove(_ context.Context, req *proto.VolumeRemoveRequest, _ ...grpc.CallOption) (*proto.VolumeRemoveResponse, error) {
+	f.volumeRemove = req
+	return &proto.VolumeRemoveResponse{Success: true, Message: "volume removed", Volume: &proto.VolumeDetails{Name: req.Name, SizeBytes: 128 * 1024 * 1024, Path: "/volumes/" + req.Name + ".ext4"}}, nil
+}
+
+func (f *fakeFvcClient) VolumePrune(_ context.Context, req *proto.VolumePruneRequest, _ ...grpc.CallOption) (*proto.VolumePruneResponse, error) {
+	f.volumePrune = req
+	return &proto.VolumePruneResponse{Success: true, Message: "volume prune complete", RemovedVolumes: 1, FreedBytes: 128 * 1024 * 1024}, nil
 }
 
 func (f *fakeFvcClient) Ps(_ context.Context, req *proto.PsRequest, _ ...grpc.CallOption) (*proto.PsResponse, error) {
