@@ -3,12 +3,15 @@ package imagestore
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/lucaspose/fvc/internal"
@@ -17,22 +20,26 @@ import (
 
 // Config describes where image store artifacts live on disk.
 type Config struct {
-	BaseDir      string
-	CacheDir     string
-	ActiveDir    string
-	SnapshotDir  string
-	KernelPath   string
-	ImageBaseURL string
+	BaseDir                string
+	CacheDir               string
+	ActiveDir              string
+	SnapshotDir            string
+	KernelPath             string
+	ImageBaseURL           string
+	RequireChecksums       bool
+	AllowInsecureDownloads bool
 }
 
 // Store manages cached rootfs images and related artifacts.
 type Store struct {
-	baseDir      string
-	cacheDir     string
-	activeDir    string
-	snapshotDir  string
-	kernelPath   string
-	imageBaseURL string
+	baseDir                string
+	cacheDir               string
+	activeDir              string
+	snapshotDir            string
+	kernelPath             string
+	imageBaseURL           string
+	requireChecksums       bool
+	allowInsecureDownloads bool
 }
 
 // CachedImage is a rootfs image discovered in the local cache.
@@ -67,12 +74,14 @@ func New(cfg Config) *Store {
 		snapshotDir = filepath.Join(cfg.BaseDir, "snapshots")
 	}
 	return &Store{
-		baseDir:      cfg.BaseDir,
-		cacheDir:     cfg.CacheDir,
-		activeDir:    cfg.ActiveDir,
-		snapshotDir:  snapshotDir,
-		kernelPath:   cfg.KernelPath,
-		imageBaseURL: cfg.ImageBaseURL,
+		baseDir:                cfg.BaseDir,
+		cacheDir:               cfg.CacheDir,
+		activeDir:              cfg.ActiveDir,
+		snapshotDir:            snapshotDir,
+		kernelPath:             cfg.KernelPath,
+		imageBaseURL:           cfg.ImageBaseURL,
+		requireChecksums:       cfg.RequireChecksums,
+		allowInsecureDownloads: cfg.AllowInsecureDownloads,
 	}
 }
 
@@ -120,7 +129,11 @@ func (s *Store) PullImageIfNeededProgress(imageName string, progress ProgressFun
 	if err != nil {
 		return "", err
 	}
-	if err := storeio.DownloadAtomicProgress(remoteURL, localPath, progress); err != nil {
+	checksum, err := s.remoteChecksum(remoteURL)
+	if err != nil {
+		return "", err
+	}
+	if err := storeio.DownloadAtomicVerifiedProgress(remoteURL, localPath, checksum, progress); err != nil {
 		return "", fmt.Errorf("cannot download image %q from %s: %w", imageName, remoteURL, err)
 	}
 	return localPath, nil
@@ -166,10 +179,50 @@ func (s *Store) PullKernelIfNeededProgress(progress ProgressFunc) (string, error
 	if err != nil {
 		return "", err
 	}
-	if err := storeio.DownloadAtomicProgress(remoteURL, localPath, progress); err != nil {
+	checksum, err := s.remoteChecksum(remoteURL)
+	if err != nil {
+		return "", err
+	}
+	if err := storeio.DownloadAtomicVerifiedProgress(remoteURL, localPath, checksum, progress); err != nil {
 		return "", fmt.Errorf("cannot download kernel from %s: %w", remoteURL, err)
 	}
 	return localPath, nil
+}
+
+func (s *Store) remoteChecksum(remoteURL string) (string, error) {
+	if !s.requireChecksums {
+		return "", nil
+	}
+	if !s.allowInsecureDownloads && !secureDownloadURL(remoteURL) {
+		return "", fmt.Errorf("refusing insecure image download %s; use https or set FVC_ALLOW_INSECURE_DOWNLOADS=true for isolated development", remoteURL)
+	}
+	checksumURL := remoteURL + ".sha256"
+	client := http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Get(checksumURL)
+	if err != nil {
+		return "", fmt.Errorf("checksum request failed for %s: %w", checksumURL, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("checksum unavailable for %s: %s", remoteURL, resp.Status)
+	}
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	if err != nil {
+		return "", fmt.Errorf("checksum read failed for %s: %w", remoteURL, err)
+	}
+	fields := strings.Fields(string(data))
+	if len(fields) == 0 {
+		return "", fmt.Errorf("checksum file is empty for %s", remoteURL)
+	}
+	return fields[0], nil
+}
+
+func secureDownloadURL(rawURL string) bool {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	return parsed.Scheme == "https"
 }
 
 func (s *Store) CachedImagePath(imageName string) string {

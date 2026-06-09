@@ -44,6 +44,43 @@ func TestValidateResources(t *testing.T) {
 	}
 }
 
+func TestValidateNetworkMode(t *testing.T) {
+	for _, mode := range []string{"", NetworkModeNAT, NetworkModeNone, " nat "} {
+		if err := ValidateNetworkMode(mode); err != nil {
+			t.Fatalf("expected %q to be valid, got %v", mode, err)
+		}
+	}
+	if err := ValidateNetworkMode("bridge"); err == nil {
+		t.Fatal("expected unsupported network mode to be rejected")
+	}
+}
+
+func TestNormalizeVolumeSpec(t *testing.T) {
+	cases := map[string]string{
+		"data:/var/lib/app":    "data:/var/lib/app",
+		"cache:/cache:ro":      "cache:/cache:ro",
+		"logs_1:/var/logs:rw":  "logs_1:/var/logs",
+		" tmp-data:/tmp/data ": "tmp-data:/tmp/data",
+	}
+	for input, want := range cases {
+		got, err := NormalizeVolumeSpec(input)
+		if err != nil {
+			t.Fatalf("NormalizeVolumeSpec(%q) failed: %v", input, err)
+		}
+		if got != want {
+			t.Fatalf("NormalizeVolumeSpec(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestNormalizeVolumeSpecRejectsInvalid(t *testing.T) {
+	for _, input := range []string{"", "/host:/guest", "data:relative", "data:/", "data:/a/../b", "data:/guest:bad"} {
+		if _, err := NormalizeVolumeSpec(input); err == nil {
+			t.Fatalf("expected %q to be rejected", input)
+		}
+	}
+}
+
 func TestNormalizePortSpec(t *testing.T) {
 	cases := map[string]string{
 		"80":       "80:80",

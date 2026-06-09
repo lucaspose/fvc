@@ -1,11 +1,15 @@
 package storeio
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"hash"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -22,6 +26,24 @@ func DownloadAtomic(remoteURL, destPath string) error {
 
 // DownloadAtomicProgress is DownloadAtomic with transfer progress callbacks.
 func DownloadAtomicProgress(remoteURL, destPath string, progress ProgressFunc) error {
+	return DownloadAtomicVerifiedProgress(remoteURL, destPath, "", progress)
+}
+
+// DownloadAtomicVerifiedProgress downloads a remote file and verifies an
+// optional sha256 digest before publishing the destination path.
+func DownloadAtomicVerifiedProgress(remoteURL, destPath, expectedSHA256 string, progress ProgressFunc) error {
+	expectedSHA256 = strings.ToLower(strings.TrimSpace(expectedSHA256))
+	if strings.HasPrefix(expectedSHA256, "sha256:") {
+		expectedSHA256 = strings.TrimPrefix(expectedSHA256, "sha256:")
+	}
+	if expectedSHA256 != "" {
+		if len(expectedSHA256) != 64 {
+			return fmt.Errorf("expected sha256 digest must be 64 hex characters")
+		}
+		if _, err := hex.DecodeString(expectedSHA256); err != nil {
+			return fmt.Errorf("expected sha256 digest is invalid: %w", err)
+		}
+	}
 	client := http.Client{Timeout: 10 * time.Minute}
 	resp, err := client.Get(remoteURL)
 	if err != nil {
@@ -49,12 +71,20 @@ func DownloadAtomicProgress(remoteURL, destPath string, progress ProgressFunc) e
 	if progress != nil {
 		progress(0, total)
 	}
+	var digest hash.Hash
+	if expectedSHA256 != "" {
+		digest = sha256.New()
+	}
 	reader := &progressReader{
 		reader: io.LimitReader(resp.Body, maxTransferBytes+1),
 		total:  total,
 		emit:   progress,
 	}
-	written, err := io.Copy(tmp, reader)
+	var source io.Reader = reader
+	if digest != nil {
+		source = io.TeeReader(reader, digest)
+	}
+	written, err := io.Copy(tmp, source)
 	if closeErr := tmp.Close(); err == nil {
 		err = closeErr
 	}
@@ -66,6 +96,12 @@ func DownloadAtomicProgress(remoteURL, destPath string, progress ProgressFunc) e
 	}
 	if written > maxTransferBytes {
 		return fmt.Errorf("remote file exceeds maximum size")
+	}
+	if digest != nil {
+		actual := hex.EncodeToString(digest.Sum(nil))
+		if actual != expectedSHA256 {
+			return fmt.Errorf("download sha256 mismatch: expected %s, got %s", expectedSHA256, actual)
+		}
 	}
 
 	if err := os.Rename(tmpPath, destPath); err != nil {

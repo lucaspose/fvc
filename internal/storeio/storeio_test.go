@@ -62,3 +62,10 @@ func TestDownloadAtomicProgressPublishesSuccessfulResponse(t *testing.T) {
 		t.Fatalf("unexpected downloaded content %q", string(data))
 	}
 }
+
+func TestDownloadAtomicVerifiedRejectsInvalidDigest(t *testing.T) {
+	dest := filepath.Join(t.TempDir(), "out.bin")
+	if err := DownloadAtomicVerifiedProgress("http://127.0.0.1/never-called", dest, "not-a-digest", nil); err == nil {
+		t.Fatal("expected invalid digest to be rejected before download")
+	}
+}

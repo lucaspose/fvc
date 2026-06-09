@@ -18,6 +18,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -25,6 +26,8 @@ const (
 	dockerRegistryHost    = "registry-1.docker.io"
 	dockerAuthService     = "registry.docker.io"
 	maxDockerLayerBytes   = 10 << 30
+	maxDockerRootfsBytes  = 20 << 30
+	maxDockerLayerEntries = 1_000_000
 	defaultDockerImageMB  = 512
 	dockerManifestListMT  = "application/vnd.docker.distribution.manifest.list.v2+json"
 	dockerManifestMT      = "application/vnd.docker.distribution.manifest.v2+json"
@@ -553,6 +556,8 @@ func (d *digestVerifier) Verify() error {
 
 func applyTarLayer(rootfsDir string, reader io.Reader) error {
 	tarReader := tar.NewReader(reader)
+	var totalBytes int64
+	var entries int64
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
@@ -560,6 +565,17 @@ func applyTarLayer(rootfsDir string, reader io.Reader) error {
 		}
 		if err != nil {
 			return fmt.Errorf("layer tar read failed: %w", err)
+		}
+		entries++
+		if entries > maxDockerLayerEntries {
+			return fmt.Errorf("Docker layer has too many entries")
+		}
+		if header.Size < 0 {
+			return fmt.Errorf("Docker layer entry has negative size: %s", header.Name)
+		}
+		totalBytes += header.Size
+		if totalBytes > maxDockerRootfsBytes {
+			return fmt.Errorf("Docker layer expands beyond maximum rootfs size")
 		}
 		if err := applyTarEntry(rootfsDir, header, tarReader); err != nil {
 			return err
@@ -588,21 +604,25 @@ func applyTarEntry(rootfsDir string, header *tar.Header, reader io.Reader) error
 	if mode == 0 {
 		mode = 0644
 	}
+	isSymlink := false
 	switch header.Typeflag {
 	case tar.TypeDir:
-		if err := os.MkdirAll(targetPath, mode); err != nil {
+		if err := ensureDirNoSymlink(rootfsDir, targetPath, mode); err != nil {
 			return fmt.Errorf("directory create failed for %s: %w", name, err)
 		}
 		return os.Chmod(targetPath, mode)
 	case tar.TypeReg, tar.TypeRegA:
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		if header.Size > maxDockerLayerBytes {
+			return fmt.Errorf("file %s exceeds maximum Docker layer file size", name)
+		}
+		if err := ensureDirNoSymlink(rootfsDir, filepath.Dir(targetPath), 0755); err != nil {
 			return fmt.Errorf("file parent create failed for %s: %w", name, err)
 		}
-		file, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
+		file, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|syscall.O_NOFOLLOW, mode)
 		if err != nil {
 			return fmt.Errorf("file create failed for %s: %w", name, err)
 		}
-		_, copyErr := io.Copy(file, io.LimitReader(reader, maxDockerLayerBytes+1))
+		written, copyErr := io.Copy(file, reader)
 		closeErr := file.Close()
 		if copyErr != nil {
 			return fmt.Errorf("file extract failed for %s: %w", name, copyErr)
@@ -610,17 +630,21 @@ func applyTarEntry(rootfsDir string, header *tar.Header, reader io.Reader) error
 		if closeErr != nil {
 			return fmt.Errorf("file close failed for %s: %w", name, closeErr)
 		}
+		if written != header.Size {
+			return fmt.Errorf("file %s extracted size mismatch: expected %d, wrote %d", name, header.Size, written)
+		}
 		if err := os.Chmod(targetPath, mode); err != nil {
 			return fmt.Errorf("file chmod failed for %s: %w", name, err)
 		}
 	case tar.TypeSymlink:
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		if err := ensureDirNoSymlink(rootfsDir, filepath.Dir(targetPath), 0755); err != nil {
 			return fmt.Errorf("symlink parent create failed for %s: %w", name, err)
 		}
 		_ = os.Remove(targetPath)
 		if err := os.Symlink(header.Linkname, targetPath); err != nil {
 			return fmt.Errorf("symlink create failed for %s: %w", name, err)
 		}
+		isSymlink = true
 	case tar.TypeLink:
 		linkName := cleanLayerPath(header.Linkname)
 		if linkName == "" {
@@ -633,7 +657,7 @@ func applyTarEntry(rootfsDir string, header *tar.Header, reader io.Reader) error
 		if err := ensureNoSymlinkAncestors(rootfsDir, filepath.Dir(targetPath)); err != nil {
 			return err
 		}
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		if err := ensureDirNoSymlink(rootfsDir, filepath.Dir(targetPath), 0755); err != nil {
 			return fmt.Errorf("hardlink parent create failed for %s: %w", name, err)
 		}
 		_ = os.Remove(targetPath)
@@ -645,7 +669,7 @@ func applyTarEntry(rootfsDir string, header *tar.Header, reader io.Reader) error
 	default:
 		return fmt.Errorf("unsupported tar entry type %d for %s", header.Typeflag, name)
 	}
-	if !header.ModTime.IsZero() {
+	if !isSymlink && !header.ModTime.IsZero() {
 		_ = os.Chtimes(targetPath, header.ModTime, header.ModTime)
 	}
 	return nil
@@ -727,6 +751,45 @@ func ensureNoSymlinkAncestors(root, targetDir string) error {
 	return nil
 }
 
+func ensureDirNoSymlink(root, dir string, mode os.FileMode) error {
+	root = filepath.Clean(root)
+	dir = filepath.Clean(dir)
+	if dir != root && !strings.HasPrefix(dir, root+string(filepath.Separator)) {
+		return fmt.Errorf("directory escapes rootfs: %s", dir)
+	}
+	rel, err := filepath.Rel(root, dir)
+	if err != nil {
+		return err
+	}
+	current := root
+	if rel == "." {
+		return nil
+	}
+	for _, part := range strings.Split(rel, string(filepath.Separator)) {
+		if part == "" || part == "." {
+			continue
+		}
+		current = filepath.Join(current, part)
+		info, err := os.Lstat(current)
+		if err == nil {
+			if info.Mode()&os.ModeSymlink != 0 {
+				return fmt.Errorf("refusing layer path through symlink: %s", current)
+			}
+			if !info.IsDir() {
+				return fmt.Errorf("layer path component is not a directory: %s", current)
+			}
+			continue
+		}
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("path stat failed for %s: %w", current, err)
+		}
+		if err := os.Mkdir(current, mode); err != nil && !os.IsExist(err) {
+			return err
+		}
+	}
+	return nil
+}
+
 func rootfsImageSizeMB(rootfsDir string) (int64, error) {
 	var total int64
 	if err := filepath.WalkDir(rootfsDir, func(path string, entry os.DirEntry, err error) error {
@@ -739,6 +802,9 @@ func rootfsImageSizeMB(rootfsDir string) (int64, error) {
 		}
 		if info.Mode().IsRegular() {
 			total += info.Size()
+			if total > maxDockerRootfsBytes {
+				return fmt.Errorf("rootfs exceeds maximum size")
+			}
 		}
 		return nil
 	}); err != nil {

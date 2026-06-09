@@ -161,3 +161,38 @@ func TestImagePruneKeepsUsedImage(t *testing.T) {
 		t.Fatal("expected unused image to be removed")
 	}
 }
+
+func TestImageImportRejectsHostPathOutsideBaseDir(t *testing.T) {
+	baseDir := t.TempDir()
+	outsideDir := t.TempDir()
+	sourcePath := filepath.Join(outsideDir, "rootfs.ext4")
+	if err := os.WriteFile(sourcePath, []byte("rootfs"), 0644); err != nil {
+		t.Fatalf("failed to write source image: %v", err)
+	}
+	server := Server{Config: DaemonConfig{BaseDir: baseDir}}
+
+	res, err := server.ImageImport(context.Background(), &proto.ImageImportRequest{SourcePath: sourcePath, Image: "custom"})
+	if err != nil {
+		t.Fatalf("ImageImport returned transport error: %v", err)
+	}
+	if res.Success || !strings.Contains(res.Message, "restricted") {
+		t.Fatalf("expected restricted host path response, got %#v", res)
+	}
+}
+
+func TestImageExportRejectsSymlinkDestination(t *testing.T) {
+	baseDir := t.TempDir()
+	target := filepath.Join(baseDir, "target.ext4")
+	link := filepath.Join(baseDir, "link.ext4")
+	if err := os.WriteFile(target, []byte("rootfs"), 0644); err != nil {
+		t.Fatalf("failed to write target: %v", err)
+	}
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatalf("failed to create symlink: %v", err)
+	}
+	server := Server{Config: DaemonConfig{BaseDir: baseDir}}
+
+	if err := server.validateHostImagePath(link, true); err == nil || !strings.Contains(err.Error(), "symlink") {
+		t.Fatalf("expected symlink destination to be rejected, got %v", err)
+	}
+}

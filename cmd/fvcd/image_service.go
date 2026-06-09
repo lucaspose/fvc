@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/lucaspose/fvc/internal/vmstore"
 	"github.com/lucaspose/fvc/proto"
@@ -116,6 +119,9 @@ func (s *Server) ImageImport(ctx context.Context, req *proto.ImageImportRequest)
 	if req == nil || req.SourcePath == "" || req.Image == "" {
 		return &proto.ImageImportResponse{Success: false, Message: "source path and image are required"}, nil
 	}
+	if err := s.validateHostImagePath(req.SourcePath, false); err != nil {
+		return &proto.ImageImportResponse{Success: false, Message: err.Error()}, nil
+	}
 	info, err := s.Store.ImportImage(req.SourcePath, req.Image)
 	if err != nil {
 		return &proto.ImageImportResponse{Success: false, Message: err.Error()}, nil
@@ -131,11 +137,67 @@ func (s *Server) ImageExport(ctx context.Context, req *proto.ImageExportRequest)
 	if req == nil || req.Image == "" || req.DestPath == "" {
 		return &proto.ImageExportResponse{Success: false, Message: "image and destination path are required"}, nil
 	}
+	if err := s.validateHostImagePath(req.DestPath, true); err != nil {
+		return &proto.ImageExportResponse{Success: false, Message: err.Error()}, nil
+	}
 	path, err := s.Store.ExportImage(req.Image, req.DestPath)
 	if err != nil {
 		return &proto.ImageExportResponse{Success: false, Message: err.Error()}, nil
 	}
 	return &proto.ImageExportResponse{Success: true, Message: fmt.Sprintf("image exported: %s", req.Image), Path: path}, nil
+}
+
+func (s *Server) validateHostImagePath(path string, forWrite bool) error {
+	if s.Config.AllowHostImagePaths {
+		return nil
+	}
+	base := strings.TrimSpace(s.Config.BaseDir)
+	if base == "" {
+		return fmt.Errorf("host image path access requires daemon base dir")
+	}
+	baseAbs, err := filepath.Abs(base)
+	if err != nil {
+		return fmt.Errorf("daemon base dir resolve failed: %w", err)
+	}
+	baseReal, err := filepath.EvalSymlinks(baseAbs)
+	if err != nil {
+		return fmt.Errorf("daemon base dir symlink resolve failed: %w", err)
+	}
+
+	targetAbs, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("host image path resolve failed: %w", err)
+	}
+	targetReal := targetAbs
+	if forWrite {
+		parentReal, err := filepath.EvalSymlinks(filepath.Dir(targetAbs))
+		if err != nil {
+			return fmt.Errorf("host image destination parent resolve failed: %w", err)
+		}
+		targetReal = filepath.Join(parentReal, filepath.Base(targetAbs))
+	} else {
+		targetReal, err = filepath.EvalSymlinks(targetAbs)
+		if err != nil {
+			return fmt.Errorf("host image source resolve failed: %w", err)
+		}
+	}
+	if !pathWithin(baseReal, targetReal) {
+		return fmt.Errorf("host image paths are restricted to %s; set FVC_ALLOW_HOST_IMAGE_PATHS=true to override", baseReal)
+	}
+	if forWrite {
+		if info, err := os.Lstat(targetReal); err == nil && info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("refusing to export image through symlink: %s", targetReal)
+		}
+	}
+	return nil
+}
+
+func pathWithin(parent, child string) bool {
+	rel, err := filepath.Rel(parent, child)
+	if err != nil {
+		return false
+	}
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
 func (s *Server) ImageHistory(ctx context.Context, req *proto.ImageHistoryRequest) (*proto.ImageHistoryResponse, error) {

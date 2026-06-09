@@ -15,9 +15,9 @@ func (s *Server) PullImage(ctx context.Context, req *proto.PullImageRequest) (*p
 		return &proto.PullImageResponse{Success: false, Message: "image is required"}, nil
 	}
 	if strings.TrimSpace(req.GetSource()) == "docker" {
-		target := strings.TrimSpace(req.GetTarget())
-		if target == "" {
-			target = req.Image
+		target, err := dockerImportTarget(req.Image, req.GetTarget())
+		if err != nil {
+			return &proto.PullImageResponse{Success: false, Message: err.Error(), Image: req.Image}, nil
 		}
 		info, err := s.Store.ImportDockerImage(ctx, req.Image, target, s.commandRunner(), nil)
 		if err != nil {
@@ -45,8 +45,12 @@ func (s *Server) PullImageStream(req *proto.PullImageRequest, stream grpc.Server
 		return stream.Send(&proto.OperationEvent{Stage: "validate", Status: "error", Message: "image is required", ErrorMessage: "image is required"})
 	}
 	targetImage := req.Image
-	if strings.TrimSpace(req.GetSource()) == "docker" && strings.TrimSpace(req.GetTarget()) != "" {
-		targetImage = strings.TrimSpace(req.GetTarget())
+	if strings.TrimSpace(req.GetSource()) == "docker" {
+		target, err := dockerImportTarget(req.Image, req.GetTarget())
+		if err != nil {
+			return stream.Send(&proto.OperationEvent{Stage: "validate", Status: "error", Message: err.Error(), ErrorMessage: err.Error(), Image: req.Image})
+		}
+		targetImage = target
 	}
 	send := func(stage, eventStatus, message string, current, total int64) error {
 		if stream.Context().Err() != nil {

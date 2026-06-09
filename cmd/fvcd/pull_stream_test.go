@@ -129,14 +129,11 @@ func TestPullImageStreamReportsDockerTargetErrorWithoutNetwork(t *testing.T) {
 		t.Fatalf("PullImageStream returned transport error: %v", err)
 	}
 
-	if event := findOperationEvent(stream.events, "docker", "running"); event == nil {
-		t.Fatalf("expected docker running event, got %#v", stream.events)
-	}
-	event := findOperationEvent(stream.events, "docker", "error")
+	event := findOperationEvent(stream.events, "validate", "error")
 	if event == nil {
-		t.Fatalf("expected docker error event, got %#v", stream.events)
+		t.Fatalf("expected validate error event, got %#v", stream.events)
 	}
-	if !strings.Contains(event.GetErrorMessage(), "target image") {
+	if !strings.Contains(event.GetErrorMessage(), "invalid local image tag") {
 		t.Fatalf("unexpected docker error message: %q", event.GetErrorMessage())
 	}
 }
