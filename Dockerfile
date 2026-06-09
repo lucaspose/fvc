@@ -66,6 +66,7 @@ FROM debian:bookworm-slim AS final
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
+    e2fsprogs \
     iproute2 \
     iptables \
     procps \
@@ -102,6 +103,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     ca-certificates \
     curl \
     dbus \
+    e2fsprogs \
     iproute2 \
     iptables \
     kmod \

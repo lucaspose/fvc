@@ -8,9 +8,17 @@ BUILDER_ROOTFS="${FVC_TEST_BUILDER_ROOTFS:-dist/builder.ext4}"
 GUEST_AGENT_MODE="${FVC_TEST_GUEST_AGENT_MODE:-auto}"
 REBUILD_ARTIFACTS="${FVC_TEST_REBUILD_ARTIFACTS:-1}"
 TEST_ID="${FVC_TEST_ID:-$(date +%s)}"
+TEST_JAILER="${FVC_TEST_JAILER:-0}"
+JAILER_CHROOT_BASE="${FVC_TEST_JAILER_CHROOT_BASE:-/var/lib/fvc/j}"
+JAILER_UID="${FVC_TEST_JAILER_UID:-0}"
+JAILER_GID="${FVC_TEST_JAILER_GID:-0}"
 BASE_NAME="${FVC_TEST_BASE_NAME:-fvc-test-base-$TEST_ID}"
 IMAGE_NAME="${FVC_TEST_IMAGE_NAME:-fvc-test-image-$TEST_ID}"
 VM_NAME="${FVC_TEST_VM_NAME:-fvc-test-vm-$TEST_ID}"
+AUTO_RM_VM_NAME="${FVC_TEST_AUTO_RM_VM_NAME:-fvc-test-auto-rm-$TEST_ID}"
+NETWORK_NONE_VM_NAME="${FVC_TEST_NETWORK_NONE_VM_NAME:-fvc-test-net-none-$TEST_ID}"
+VOLUME_VM_NAME="${FVC_TEST_VOLUME_VM_NAME:-fvc-test-volume-$TEST_ID}"
+VOLUME_NAME="${FVC_TEST_VOLUME_NAME:-fvc-test-volume-$TEST_ID}"
 PROJECT_DIR="/var/lib/fvc/functional-$TEST_ID"
 REMOTE_BASE="/var/lib/fvc/$BASE_NAME.ext4"
 REMOTE_BUILDER="/var/lib/fvc/builder-functional-$TEST_ID.ext4"
@@ -67,6 +75,7 @@ print_summary() {
   printf '  test id:          %s\n' "$TEST_ID"
   printf '  container:        %s\n' "$CONTAINER"
   printf '  guest agent mode: %s\n' "$GUEST_AGENT_MODE"
+  printf '  jailer mode:      %s\n' "$TEST_JAILER"
   printf '  rebuild artifacts:%s\n' " $REBUILD_ARTIFACTS"
   printf '  base image:       %s\n' "$BASE_IMAGE"
   printf '  builder rootfs:   %s\n' "$BUILDER_ROOTFS"
@@ -169,13 +178,45 @@ ensure_fvcd_service_caps() {
   docker_exec_sh '
     set -eu
     service=/etc/systemd/system/fvcd.service
-    if ! grep -q "CAP_DAC_OVERRIDE" "$service"; then
-      sed -i "s/^CapabilityBoundingSet=.*/CapabilityBoundingSet=CAP_NET_ADMIN CAP_SYS_ADMIN CAP_SYS_RESOURCE CAP_DAC_OVERRIDE/" "$service"
-      sed -i "s/^AmbientCapabilities=.*/AmbientCapabilities=CAP_NET_ADMIN CAP_SYS_ADMIN CAP_SYS_RESOURCE CAP_DAC_OVERRIDE/" "$service"
+    required="CAP_NET_ADMIN CAP_SYS_ADMIN CAP_SYS_RESOURCE CAP_DAC_OVERRIDE CAP_CHOWN CAP_SETUID CAP_SETGID CAP_SYS_CHROOT CAP_MKNOD"
+    if ! grep -q "CAP_MKNOD" "$service"; then
+      sed -i "s/^CapabilityBoundingSet=.*/CapabilityBoundingSet=$required/" "$service"
+      sed -i "s/^AmbientCapabilities=.*/AmbientCapabilities=$required/" "$service"
       systemctl daemon-reload
       systemctl restart fvcd
     fi
   '
+}
+
+configure_jailer() {
+  docker_exec_sh "sed -i '/^FVC_JAILER_ENABLED=/d;/^FVC_JAILER_PATH=/d;/^FVC_JAILER_CHROOT_BASE_DIR=/d;/^FVC_JAILER_UID=/d;/^FVC_JAILER_GID=/d' /etc/fvc/fvcd.env"
+  if [ "$TEST_JAILER" != "1" ]; then
+    docker_exec_sh "printf '%s\n' 'FVC_JAILER_ENABLED=false' >> /etc/fvc/fvcd.env"
+    return 0
+  fi
+  log "configuring Firecracker jailer"
+  docker_exec_sh "command -v /usr/bin/jailer >/dev/null 2>&1" || fail "jailer binary is missing in the container"
+  docker_exec_sh "rm -rf '$JAILER_CHROOT_BASE' && mkdir -p '$JAILER_CHROOT_BASE'"
+  docker_exec_sh "printf '%s\n' \
+      'FVC_JAILER_ENABLED=true' \
+      'FVC_JAILER_PATH=/usr/bin/jailer' \
+      'FVC_JAILER_CHROOT_BASE_DIR=$JAILER_CHROOT_BASE' \
+      'FVC_JAILER_UID=$JAILER_UID' \
+      'FVC_JAILER_GID=$JAILER_GID' >> /etc/fvc/fvcd.env"
+}
+
+assert_jailer_active() {
+  if [ "$TEST_JAILER" != "1" ]; then
+    return 0
+  fi
+  docker_exec_sh "find '$JAILER_CHROOT_BASE/firecracker' -path '*/root/run/firecracker.socket' -type s | grep -q ." || fail "jailer mode is enabled but no jailed Firecracker API socket was found"
+}
+
+assert_jailer_clean() {
+  if [ "$TEST_JAILER" != "1" ]; then
+    return 0
+  fi
+  docker_exec_sh "if [ -d '$JAILER_CHROOT_BASE/firecracker' ] && find '$JAILER_CHROOT_BASE/firecracker' -mindepth 1 -maxdepth 1 -type d | grep -q .; then find '$JAILER_CHROOT_BASE/firecracker' -mindepth 1 -maxdepth 2 -type d; exit 1; fi" || fail "jailer chroot cleanup left runtime directories behind"
 }
 
 ensure_http_client() {
@@ -191,25 +232,45 @@ ensure_http_client() {
   '
 }
 
+ensure_volume_tools() {
+  log "checking volume tools"
+  if docker_exec_sh "command -v mkfs.ext4 >/dev/null 2>&1"; then
+    return 0
+  fi
+  docker_exec_sh '
+    set -eu
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends e2fsprogs
+    rm -rf /var/lib/apt/lists/*
+  '
+}
+
 cleanup() {
   set +e
   docker_exec_fvc stop "$VM_NAME" >/dev/null 2>&1
   docker_exec_fvc rm "$VM_NAME" >/dev/null 2>&1
+  docker_exec_fvc stop "$AUTO_RM_VM_NAME" >/dev/null 2>&1
+  docker_exec_fvc rm "$AUTO_RM_VM_NAME" >/dev/null 2>&1
+  docker_exec_fvc stop "$NETWORK_NONE_VM_NAME" >/dev/null 2>&1
+  docker_exec_fvc rm "$NETWORK_NONE_VM_NAME" >/dev/null 2>&1
+  docker_exec_fvc stop "$VOLUME_VM_NAME" >/dev/null 2>&1
+  docker_exec_fvc rm "$VOLUME_VM_NAME" >/dev/null 2>&1
   docker_exec_fvc image rm "$IMAGE_NAME" --force >/dev/null 2>&1
   docker_exec_fvc image rm "$BASE_NAME" --force >/dev/null 2>&1
-  docker_exec_sh "rm -rf '$PROJECT_DIR' '$REMOTE_BASE' '$REMOTE_BUILDER'" >/dev/null 2>&1
+  docker_exec_sh "rm -rf '$PROJECT_DIR' '$REMOTE_BASE' '$REMOTE_BUILDER' '$JAILER_CHROOT_BASE' '/var/lib/fvc/volumes/$VOLUME_NAME.ext4'" >/dev/null 2>&1
 }
 
 wait_for_exec() {
+  vm="${1:-$VM_NAME}"
   i=0
   while [ "$i" -lt 90 ]; do
-    if docker_exec_fvc exec "$VM_NAME" -- /bin/sh -lc 'printf ok' 2>/tmp/fvc-functional-exec.err | grep -q ok; then
+    if docker_exec_fvc exec "$vm" -- /bin/sh -lc 'printf ok' 2>/tmp/fvc-functional-exec.err | grep -q ok; then
       return 0
     fi
     i=$((i + 1))
     sleep 1
   done
-  docker_exec_fvc logs "$VM_NAME" --tail 200 || true
+  docker_exec_fvc logs "$vm" --tail 200 || true
   if [ -f /tmp/fvc-functional-exec.err ]; then
     cat /tmp/fvc-functional-exec.err >&2 || true
   fi
@@ -277,8 +338,9 @@ docker_exec /usr/bin/systemctl is-active --quiet fvcd || fail "fvcd service is n
 ensure_fvcd_service_caps
 prepare_loop_devices
 ensure_http_client
+ensure_volume_tools
 docker_exec_fvc doctor
-pass_step "checking daemon" "fvcd is active, runtime diagnostics are ready, and curl is available"
+pass_step "checking daemon" "fvcd is active, runtime diagnostics are ready, curl is available, and volume tools are installed"
 
 begin_step "copying rootfs images"
 docker cp "$BASE_IMAGE" "$CONTAINER:$REMOTE_BASE"
@@ -286,6 +348,7 @@ docker cp "$BUILDER_ROOTFS" "$CONTAINER:$REMOTE_BUILDER"
 pass_step "copying rootfs images" "$REMOTE_BASE and $REMOTE_BUILDER copied"
 
 begin_step "configuring fvcd build backend"
+configure_jailer
 docker_exec_sh "sed -i '/^FVC_BUILDER_ROOTFS_PATH=/d;/^FVC_BUILD_BACKEND=/d;/^FVC_GUEST_AGENT_MODE=/d' /etc/fvc/fvcd.env && \
   printf '%s\n' \
     'FVC_BUILDER_ROOTFS_PATH=$REMOTE_BUILDER' \
@@ -294,7 +357,7 @@ docker_exec_sh "sed -i '/^FVC_BUILDER_ROOTFS_PATH=/d;/^FVC_BUILD_BACKEND=/d;/^FV
 docker_exec systemctl restart fvcd
 sleep 1
 docker_exec_fvc doctor
-pass_step "configuring fvcd build backend" "microvm backend configured with guest agent mode $GUEST_AGENT_MODE"
+pass_step "configuring fvcd build backend" "microvm backend configured with guest agent mode $GUEST_AGENT_MODE and jailer=$TEST_JAILER"
 
 begin_step "creating build context"
 docker_exec_sh "rm -rf '$PROJECT_DIR' && mkdir -p '$PROJECT_DIR' && printf 'hello from fvc functional test\n' > '$PROJECT_DIR/index.html'"
@@ -329,6 +392,7 @@ pass_step "importing base image" "$BASE_NAME imported"
 
 begin_step "building image"
 docker_exec_sh "cd '$PROJECT_DIR' && /usr/bin/fvc build -t '$IMAGE_NAME' ."
+assert_jailer_clean
 pass_step "building image" "$IMAGE_NAME built from $BASE_NAME"
 
 begin_step "running VM"
@@ -336,7 +400,8 @@ docker_exec_fvc run --image "$IMAGE_NAME" --name "$VM_NAME" --publish-all
 pass_step "running VM" "$VM_NAME started with published exposed ports"
 
 begin_step "waiting for guest agent"
-wait_for_exec
+wait_for_exec "$VM_NAME"
+assert_jailer_active
 pass_step "waiting for guest agent" "guest exec endpoint is reachable"
 
 begin_step "checking exec output"
@@ -345,6 +410,21 @@ printf '%s\n' "$EXEC_OUTPUT"
 printf '%s\n' "$EXEC_OUTPUT" | grep -q 'hello from fvc functional test' || fail "missing copied file output"
 printf '%s\n' "$EXEC_OUTPUT" | grep -q 'built' || fail "missing run-step output"
 pass_step "checking exec output" "copy and run artifacts are visible inside the guest"
+
+begin_step "checking VM helper commands"
+docker_exec_fvc top "$VM_NAME" | grep -q 'httpd' || fail "top did not show the guest process"
+docker_exec_sh "printf copied-from-host > /tmp/fvc-functional-copy-in.txt"
+docker_exec_fvc cp /tmp/fvc-functional-copy-in.txt "$VM_NAME:/tmp/fvc-test/copied-in.txt"
+docker_exec_fvc exec "$VM_NAME" -- /bin/sh -lc 'cat /tmp/fvc-test/copied-in.txt' | grep -q 'copied-from-host' || fail "cp host-to-guest did not copy expected content"
+docker_exec_fvc cp "$VM_NAME:/tmp/fvc-test/index.html" /tmp/fvc-functional-copy-out.txt
+docker_exec_sh "grep -q 'hello from fvc functional test' /tmp/fvc-functional-copy-out.txt" || fail "cp guest-to-host did not copy expected content"
+docker_exec_fvc rename "$VM_NAME" "$VM_NAME-renamed"
+docker_exec_fvc inspect "$VM_NAME-renamed" | grep -q "$VM_NAME-renamed" || fail "rename did not persist new name"
+docker_exec_fvc rename "$VM_NAME-renamed" "$VM_NAME"
+docker_exec_fvc restart "$VM_NAME"
+wait_for_exec "$VM_NAME"
+assert_jailer_active
+pass_step "checking VM helper commands" "top, cp, rename and restart succeeded"
 
 begin_step "checking published HTTP port"
 wait_for_http
@@ -359,9 +439,71 @@ begin_step "checking lifecycle"
 docker_exec_fvc ps --all
 docker_exec_fvc inspect "$VM_NAME"
 docker_exec_fvc stop "$VM_NAME"
+docker_exec_fvc update --cpu 2 --ram 768 "$VM_NAME"
+docker_exec_fvc inspect "$VM_NAME" | grep -q '768 MB' || fail "update did not persist RAM change"
 docker_exec_fvc rm "$VM_NAME"
-pass_step "checking lifecycle" "ps, inspect, stop and rm succeeded"
+assert_jailer_clean
+pass_step "checking lifecycle" "ps, inspect, stop, update and rm succeeded"
+
+begin_step "checking network none mode"
+if docker_exec_fvc run --image "$IMAGE_NAME" --name "$NETWORK_NONE_VM_NAME" --network none -p 80:80 >/tmp/fvc-functional-network-none.err 2>&1; then
+  fail "network none accepted port publishing"
+fi
+grep -q 'port publishing requires --network nat' /tmp/fvc-functional-network-none.err || fail "network none port rejection message was not actionable"
+docker_exec_fvc run --image "$IMAGE_NAME" --name "$NETWORK_NONE_VM_NAME" --network none
+wait_for_exec "$NETWORK_NONE_VM_NAME"
+assert_jailer_active
+docker_exec_fvc inspect "$NETWORK_NONE_VM_NAME" | tee /tmp/fvc-functional-network-none-inspect.txt
+grep -q 'none' /tmp/fvc-functional-network-none-inspect.txt || fail "inspect did not report network none"
+if docker_exec_fvc ps --all | awk -v name="$NETWORK_NONE_VM_NAME" '$1 == name { print $9 }' | grep -q '[0-9]'; then
+  fail "network none VM unexpectedly has a guest IP"
+fi
+docker_exec_fvc stop "$NETWORK_NONE_VM_NAME"
+docker_exec_fvc rm "$NETWORK_NONE_VM_NAME"
+assert_jailer_clean
+pass_step "checking network none mode" "--network none rejects ports, persists in inspect, and runs without a guest IP"
+
+begin_step "checking named volumes"
+docker_exec_fvc volume create --size 128 "$VOLUME_NAME" >/tmp/fvc-functional-volume-create.out
+docker_exec_fvc volume inspect "$VOLUME_NAME" | grep -q "$VOLUME_NAME" || fail "volume inspect did not show created volume"
+docker_exec_fvc run --image "$IMAGE_NAME" --name "$VOLUME_VM_NAME" --network none -v "$VOLUME_NAME:/mnt/data"
+wait_for_exec "$VOLUME_VM_NAME"
+assert_jailer_active
+docker_exec_fvc exec "$VOLUME_VM_NAME" -- /bin/sh -lc 'printf persistent-volume-data >/mnt/data/value.txt && sync'
+if docker_exec_fvc volume rm "$VOLUME_NAME" >/tmp/fvc-functional-volume-rm.err 2>&1; then
+  fail "volume rm removed a volume referenced by a VM without --force"
+fi
+docker_exec_fvc stop "$VOLUME_VM_NAME"
+docker_exec_fvc rm "$VOLUME_VM_NAME"
+assert_jailer_clean
+docker_exec_fvc run --image "$IMAGE_NAME" --name "$VOLUME_VM_NAME" --network none -v "$VOLUME_NAME:/mnt/data"
+wait_for_exec "$VOLUME_VM_NAME"
+assert_jailer_active
+docker_exec_fvc exec "$VOLUME_VM_NAME" -- /bin/sh -lc 'cat /mnt/data/value.txt' | grep -q 'persistent-volume-data' || fail "named volume data did not persist across VM recreation"
+docker_exec_fvc stop "$VOLUME_VM_NAME"
+docker_exec_fvc rm "$VOLUME_VM_NAME"
+assert_jailer_clean
+docker_exec_fvc volume prune --dry-run | grep -q "$VOLUME_NAME" || fail "volume prune dry-run did not report unused volume"
+docker_exec_fvc volume prune --force | grep -q 'volume prune complete' || fail "volume prune did not complete"
+if docker_exec_fvc volume inspect "$VOLUME_NAME" >/tmp/fvc-functional-volume-inspect.err 2>&1; then
+  fail "volume still exists after prune"
+fi
+pass_step "checking named volumes" "create, inspect, protected rm, persistence and prune succeeded"
+
+begin_step "checking auto-remove lifecycle"
+docker_exec_fvc run --rm --image "$IMAGE_NAME" --name "$AUTO_RM_VM_NAME"
+wait_for_exec "$AUTO_RM_VM_NAME"
+assert_jailer_active
+docker_exec_fvc ps --all | grep -q "$AUTO_RM_VM_NAME" || fail "auto-remove VM did not appear in ps output"
+docker_exec_fvc stop "$AUTO_RM_VM_NAME"
+if docker_exec_fvc inspect "$AUTO_RM_VM_NAME" >/tmp/fvc-functional-auto-rm.err 2>&1; then
+  fail "auto-remove VM still exists after stop"
+fi
+grep -q 'vm not found' /tmp/fvc-functional-auto-rm.err || fail "auto-remove inspect did not report vm not found"
+assert_jailer_clean
+pass_step "checking auto-remove lifecycle" "run --rm removed the VM record and local runtime files after stop"
 
 cleanup
+assert_jailer_clean
 pass_step "cleanup" "temporary VM, images and rootfs copies removed"
 log "functional Docker test passed"
