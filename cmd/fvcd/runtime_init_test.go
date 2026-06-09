@@ -50,6 +50,9 @@ func TestRequiresRuntimeInit(t *testing.T) {
 	if !requiresRuntimeInit(GuestRuntimeConfig{Workdir: "/srv"}) {
 		t.Fatal("workdir should require runtime init")
 	}
+	if !requiresRuntimeInit(GuestRuntimeConfig{Volumes: []guestruntime.Volume{{Device: "/dev/vdb", Target: "/data"}}}) {
+		t.Fatal("volumes should require runtime init")
+	}
 }
 
 func TestGenerateRuntimeRandomSeed(t *testing.T) {

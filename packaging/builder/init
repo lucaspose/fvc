@@ -11,9 +11,11 @@ ip link set lo up || true
 
 cmdline="$(cat /proc/cmdline 2>/dev/null || true)"
 iparg=""
+agent_token=""
 for arg in $cmdline; do
   case "$arg" in
     ip=*) iparg="${arg#ip=}" ;;
+    fvc_build_agent_token=*) agent_token="${arg#fvc_build_agent_token=}" ;;
   esac
 done
 
@@ -33,5 +35,8 @@ if [ -n "$iparg" ]; then
 fi
 
 mkdir -p /mnt/fvc-target
+if [ -n "$agent_token" ]; then
+  export FVC_BUILD_AGENT_TOKEN="$agent_token"
+fi
 
 exec /usr/local/bin/fvc-build-agent serve --addr :9090

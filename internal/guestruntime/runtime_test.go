@@ -20,6 +20,9 @@ func TestRequiresInit(t *testing.T) {
 	if !RequiresInit(Config{Workdir: "/srv"}) {
 		t.Fatal("workdir should require runtime init")
 	}
+	if !RequiresInit(Config{Volumes: []Volume{{Device: "/dev/vdb", Target: "/data"}}}) {
+		t.Fatal("volumes should require runtime init")
+	}
 }
 
 func TestGenerateRandomSeed(t *testing.T) {
@@ -39,7 +42,7 @@ func TestInstallWritesInitAndRuntimeConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	mountDir := filepath.Join(dir, "mnt")
-	if err := Install(mountDir, initPath, Config{Cmd: []string{"/bin/app"}, Env: []string{"PORT=80"}, Workdir: "/srv"}); err != nil {
+	if err := Install(mountDir, initPath, Config{Cmd: []string{"/bin/app"}, Env: []string{"PORT=80"}, Workdir: "/srv", Volumes: []Volume{{Device: "/dev/vdb", Target: "/data", ReadOnly: true}}}); err != nil {
 		t.Fatalf("Install failed: %v", err)
 	}
 	if info, err := os.Stat(filepath.Join(mountDir, "usr/local/bin/fvc-init")); err != nil {
@@ -55,7 +58,7 @@ func TestInstallWritesInitAndRuntimeConfig(t *testing.T) {
 	if err := json.Unmarshal(data, &config); err != nil {
 		t.Fatal(err)
 	}
-	if config.Cmd[0] != "/bin/app" || config.Env[0] != "PORT=80" || config.Workdir != "/srv" || config.RandomSeed == "" {
+	if config.Cmd[0] != "/bin/app" || config.Env[0] != "PORT=80" || config.Workdir != "/srv" || config.RandomSeed == "" || len(config.Volumes) != 1 || !config.Volumes[0].ReadOnly {
 		t.Fatalf("unexpected config: %#v", config)
 	}
 }

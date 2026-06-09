@@ -29,7 +29,8 @@ func TestConsoleInfo(t *testing.T) {
 	if err := os.WriteFile(inputPath, []byte{}, 0600); err != nil {
 		t.Fatalf("failed to create input file: %v", err)
 	}
-	if _, err := db.Exec(`INSERT INTO vms (id, status, image, log_path, console_path) VALUES (?, ?, ?, ?, ?)`, "vm-console", "running", "ubuntu", logPath, inputPath); err != nil {
+	pid := os.Getpid()
+	if _, err := db.Exec(`INSERT INTO vms (id, pid, process_start_time, status, image, log_path, console_path) VALUES (?, ?, ?, ?, ?, ?, ?)`, "vm-console", pid, processStartTimeValue(pid), "running", "ubuntu", logPath, inputPath); err != nil {
 		t.Fatalf("failed to insert vm: %v", err)
 	}
 

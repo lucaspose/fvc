@@ -121,6 +121,12 @@ func TestNetworkPermissionHint(t *testing.T) {
 	}
 }
 
+func TestResolveAllowedHostCommandRejectsUnexpectedCommand(t *testing.T) {
+	if _, err := resolveAllowedHostCommand("sh"); err == nil {
+		t.Fatal("expected shell command to be rejected")
+	}
+}
+
 func containsCall(calls []string, expected string) bool {
 	for _, call := range calls {
 		if call == expected {

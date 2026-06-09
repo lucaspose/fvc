@@ -19,11 +19,18 @@ type Config struct {
 	Env        []string `json:"env,omitempty"`
 	Cmd        []string `json:"cmd,omitempty"`
 	Workdir    string   `json:"workdir,omitempty"`
+	Volumes    []Volume `json:"volumes,omitempty"`
 	RandomSeed string   `json:"random_seed,omitempty"`
 }
 
+type Volume struct {
+	Device   string `json:"device"`
+	Target   string `json:"target"`
+	ReadOnly bool   `json:"read_only,omitempty"`
+}
+
 func RequiresInit(config Config) bool {
-	return len(config.Cmd) > 0 || len(config.Env) > 0 || strings.TrimSpace(config.Workdir) != ""
+	return len(config.Cmd) > 0 || len(config.Env) > 0 || strings.TrimSpace(config.Workdir) != "" || len(config.Volumes) > 0
 }
 
 func GenerateRandomSeed() (string, error) {
@@ -70,8 +77,25 @@ func ValidateHostInit(path string) error {
 	if strings.TrimSpace(path) == "" {
 		return fmt.Errorf("runtime init is required by image metadata but FVC_RUNTIME_INIT_PATH is empty")
 	}
-	if _, err := os.Stat(path); err != nil {
+	if !filepath.IsAbs(path) {
+		return fmt.Errorf("runtime init path must be absolute: %s", path)
+	}
+	linkInfo, err := os.Lstat(path)
+	if err != nil {
 		return fmt.Errorf("runtime init unavailable at %s: %w", path, err)
+	}
+	if linkInfo.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("runtime init path must not be a symlink: %s", path)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("runtime init unavailable at %s: %w", path, err)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("runtime init path is a directory: %s", path)
+	}
+	if info.Mode()&0111 == 0 {
+		return fmt.Errorf("runtime init path is not executable: %s", path)
 	}
 	return nil
 }

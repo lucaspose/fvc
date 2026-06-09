@@ -33,7 +33,14 @@ type RuntimeConfig struct {
 	Env        []string `json:"env,omitempty"`
 	Cmd        []string `json:"cmd,omitempty"`
 	Workdir    string   `json:"workdir,omitempty"`
+	Volumes    []Volume `json:"volumes,omitempty"`
 	RandomSeed string   `json:"random_seed,omitempty"`
+}
+
+type Volume struct {
+	Device   string `json:"device"`
+	Target   string `json:"target"`
+	ReadOnly bool   `json:"read_only,omitempty"`
 }
 
 type guestExecRequest struct {
@@ -68,11 +75,17 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	if len(config.Cmd) == 0 {
-		return fmt.Errorf("runtime command is empty")
-	}
 	if err := seedKernelRandom(config.RandomSeed); err != nil {
 		fmt.Fprintf(os.Stderr, "fvc-init: random seed warning: %v\n", err)
+	}
+	if err := mountVolumes(config.Volumes); err != nil {
+		return err
+	}
+	if len(config.Cmd) == 0 {
+		config.Cmd = defaultInitCommand()
+		if len(config.Cmd) == 0 {
+			return fmt.Errorf("runtime command is empty")
+		}
 	}
 	agentToken := agentTokenFromCmdline()
 	if agentToken != "" {
@@ -640,4 +653,53 @@ func loadRuntimeConfig(path string) (RuntimeConfig, error) {
 		}
 	}
 	return config, nil
+}
+
+func mountVolumes(volumes []Volume) error {
+	for _, volume := range volumes {
+		device := strings.TrimSpace(volume.Device)
+		target := strings.TrimSpace(volume.Target)
+		if device == "" || !strings.HasPrefix(device, "/dev/") {
+			return fmt.Errorf("invalid volume device: %s", device)
+		}
+		if target == "" || !filepath.IsAbs(target) || target == "/" {
+			return fmt.Errorf("invalid volume target: %s", target)
+		}
+		if err := waitForBlockDevice(device, 5*time.Second); err != nil {
+			return err
+		}
+		if err := os.MkdirAll(target, 0755); err != nil {
+			return fmt.Errorf("volume target create failed for %s: %w", target, err)
+		}
+		flags := uintptr(0)
+		if volume.ReadOnly {
+			flags = syscall.MS_RDONLY
+		}
+		if err := syscall.Mount(device, target, "ext4", flags, ""); err != nil {
+			return fmt.Errorf("volume mount failed for %s at %s: %w", device, target, err)
+		}
+	}
+	return nil
+}
+
+func waitForBlockDevice(device string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for {
+		if info, err := os.Stat(device); err == nil && info.Mode()&os.ModeDevice != 0 {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("volume device did not appear: %s", device)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+func defaultInitCommand() []string {
+	for _, candidate := range []string{"/init", "/sbin/init"} {
+		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+			return []string{candidate}
+		}
+	}
+	return nil
 }

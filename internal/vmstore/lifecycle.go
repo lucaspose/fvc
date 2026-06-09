@@ -21,6 +21,11 @@ type StopState struct {
 	ProcessStartTime string
 	Status           string
 	VsockPath        string
+	DrivePath        string
+	LogPath          string
+	ConsolePath      string
+	AutoRemove       bool
+	NetworkMode      string
 	Network          NetworkFields
 }
 
@@ -32,14 +37,16 @@ type KillState struct {
 
 // StartState contains the persisted fields needed to restart a stopped VM.
 type StartState struct {
-	Status     string
-	Image      string
-	CPUs       int32
-	MemoryMB   int32
-	LogPath    string
-	DrivePath  string
-	Ports      []string
-	AgentToken string
+	Status      string
+	Image       string
+	CPUs        int32
+	MemoryMB    int32
+	LogPath     string
+	DrivePath   string
+	Ports       []string
+	AgentToken  string
+	NetworkMode string
+	Volumes     []string
 }
 
 // RemoveState contains the persisted fields needed to remove a VM.
@@ -51,6 +58,20 @@ type RemoveState struct {
 	ConsolePath string
 	VsockPath   string
 	Network     NetworkFields
+}
+
+// RuntimeState contains the persisted fields needed to refresh a running VM.
+type RuntimeState struct {
+	Status           string
+	PID              int
+	ProcessStartTime string
+	LogPath          string
+	DrivePath        string
+	ConsolePath      string
+	VsockPath        string
+	AutoRemove       bool
+	NetworkMode      string
+	Network          NetworkFields
 }
 
 // ConsoleState contains the persisted fields needed to attach to a VM console.
@@ -84,12 +105,15 @@ type RunRecord struct {
 	CPUs             int32
 	MemoryMB         int32
 	Ports            []string
+	NetworkMode      string
+	Volumes          []string
 	LogPath          string
 	DrivePath        string
 	ConsolePath      string
 	Network          NetworkFields
 	AgentToken       string
 	VsockPath        string
+	AutoRemove       bool
 }
 
 // RunningUpdate contains the fields updated when an existing VM restarts.
@@ -106,8 +130,8 @@ type RunningUpdate struct {
 func GetStopState(db *sql.DB, id string) (StopState, error) {
 	var state StopState
 	var portsValue string
-	err := db.QueryRow(`SELECT pid, COALESCE(process_start_time, ''), status, COALESCE(tap_name, ''), COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(ports, ''), COALESCE(vsock_path, '') FROM vms WHERE id = ?`, id).
-		Scan(&state.PID, &state.ProcessStartTime, &state.Status, &state.Network.TapName, &state.Network.GuestIP, &state.Network.MAC, &portsValue, &state.VsockPath)
+	err := db.QueryRow(`SELECT pid, COALESCE(process_start_time, ''), status, COALESCE(tap_name, ''), COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(ports, ''), COALESCE(vsock_path, ''), COALESCE(drive_path, ''), COALESCE(log_path, ''), COALESCE(console_path, ''), COALESCE(auto_remove, 0), COALESCE(network_mode, '') FROM vms WHERE id = ?`, id).
+		Scan(&state.PID, &state.ProcessStartTime, &state.Status, &state.Network.TapName, &state.Network.GuestIP, &state.Network.MAC, &portsValue, &state.VsockPath, &state.DrivePath, &state.LogPath, &state.ConsolePath, &state.AutoRemove, &state.NetworkMode)
 	state.Network.Ports = SplitPorts(portsValue)
 	return state, err
 }
@@ -115,8 +139,8 @@ func GetStopState(db *sql.DB, id string) (StopState, error) {
 func GetKillState(db *sql.DB, id string) (KillState, error) {
 	var state KillState
 	var portsValue string
-	err := db.QueryRow(`SELECT pid, COALESCE(process_start_time, ''), status, COALESCE(tap_name, ''), COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(console_path, ''), COALESCE(vsock_path, ''), COALESCE(ports, '') FROM vms WHERE id = ?`, id).
-		Scan(&state.PID, &state.ProcessStartTime, &state.Status, &state.Network.TapName, &state.Network.GuestIP, &state.Network.MAC, &state.ConsolePath, &state.VsockPath, &portsValue)
+	err := db.QueryRow(`SELECT pid, COALESCE(process_start_time, ''), status, COALESCE(tap_name, ''), COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(console_path, ''), COALESCE(vsock_path, ''), COALESCE(drive_path, ''), COALESCE(log_path, ''), COALESCE(auto_remove, 0), COALESCE(network_mode, ''), COALESCE(ports, '') FROM vms WHERE id = ?`, id).
+		Scan(&state.PID, &state.ProcessStartTime, &state.Status, &state.Network.TapName, &state.Network.GuestIP, &state.Network.MAC, &state.ConsolePath, &state.VsockPath, &state.DrivePath, &state.LogPath, &state.AutoRemove, &state.NetworkMode, &portsValue)
 	state.Network.Ports = SplitPorts(portsValue)
 	return state, err
 }
@@ -124,9 +148,11 @@ func GetKillState(db *sql.DB, id string) (KillState, error) {
 func GetStartState(db *sql.DB, id string) (StartState, error) {
 	var state StartState
 	var portsValue string
-	err := db.QueryRow(`SELECT status, image, cpus, memory_mb, COALESCE(log_path, ''), COALESCE(drive_path, ''), COALESCE(ports, ''), COALESCE(agent_token, '') FROM vms WHERE id = ?`, id).
-		Scan(&state.Status, &state.Image, &state.CPUs, &state.MemoryMB, &state.LogPath, &state.DrivePath, &portsValue, &state.AgentToken)
+	var volumesValue string
+	err := db.QueryRow(`SELECT status, image, cpus, memory_mb, COALESCE(log_path, ''), COALESCE(drive_path, ''), COALESCE(ports, ''), COALESCE(agent_token, ''), COALESCE(network_mode, ''), COALESCE(volumes, '') FROM vms WHERE id = ?`, id).
+		Scan(&state.Status, &state.Image, &state.CPUs, &state.MemoryMB, &state.LogPath, &state.DrivePath, &portsValue, &state.AgentToken, &state.NetworkMode, &volumesValue)
 	state.Ports = SplitPorts(portsValue)
+	state.Volumes = SplitList(volumesValue)
 	return state, err
 }
 
@@ -135,6 +161,15 @@ func GetRemoveState(db *sql.DB, id string) (RemoveState, error) {
 	var portsValue string
 	err := db.QueryRow(`SELECT status, pid, COALESCE(drive_path, ''), COALESCE(log_path, ''), COALESCE(console_path, ''), COALESCE(vsock_path, ''), COALESCE(tap_name, ''), COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(ports, '') FROM vms WHERE id = ?`, id).
 		Scan(&state.Status, &state.PID, &state.DrivePath, &state.LogPath, &state.ConsolePath, &state.VsockPath, &state.Network.TapName, &state.Network.GuestIP, &state.Network.MAC, &portsValue)
+	state.Network.Ports = SplitPorts(portsValue)
+	return state, err
+}
+
+func GetRuntimeState(db *sql.DB, id string) (RuntimeState, error) {
+	var state RuntimeState
+	var portsValue string
+	err := db.QueryRow(`SELECT status, pid, COALESCE(process_start_time, ''), COALESCE(log_path, ''), COALESCE(drive_path, ''), COALESCE(console_path, ''), COALESCE(vsock_path, ''), COALESCE(tap_name, ''), COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(ports, ''), COALESCE(auto_remove, 0), COALESCE(network_mode, '') FROM vms WHERE id = ?`, id).
+		Scan(&state.Status, &state.PID, &state.ProcessStartTime, &state.LogPath, &state.DrivePath, &state.ConsolePath, &state.VsockPath, &state.Network.TapName, &state.Network.GuestIP, &state.Network.MAC, &portsValue, &state.AutoRemove, &state.NetworkMode)
 	state.Network.Ports = SplitPorts(portsValue)
 	return state, err
 }
@@ -171,8 +206,8 @@ func Exists(db *sql.DB, id string) error {
 }
 
 func InsertRunning(db *sql.DB, record RunRecord) error {
-	query := `INSERT INTO vms (id, name, pid, process_start_time, status, image, cpus, memory_mb, ports, log_path, drive_path, console_path, tap_name, guest_ip, mac_address, exit_code, agent_token, vsock_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err := db.Exec(query, record.ID, record.Name, record.PID, record.ProcessStartTime, internal.VmRunning, record.Image, record.CPUs, record.MemoryMB, strings.Join(record.Ports, ","), record.LogPath, record.DrivePath, record.ConsolePath, record.Network.TapName, record.Network.GuestIP, record.Network.MAC, -1, record.AgentToken, record.VsockPath)
+	query := `INSERT INTO vms (id, name, pid, process_start_time, status, image, cpus, memory_mb, ports, network_mode, volumes, log_path, drive_path, console_path, tap_name, guest_ip, mac_address, exit_code, agent_token, vsock_path, auto_remove) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := db.Exec(query, record.ID, record.Name, record.PID, record.ProcessStartTime, internal.VmRunning, record.Image, record.CPUs, record.MemoryMB, strings.Join(record.Ports, ","), record.NetworkMode, strings.Join(record.Volumes, ","), record.LogPath, record.DrivePath, record.ConsolePath, record.Network.TapName, record.Network.GuestIP, record.Network.MAC, -1, record.AgentToken, record.VsockPath, record.AutoRemove)
 	return err
 }
 
@@ -203,5 +238,15 @@ func MarkStaleStopped(db *sql.DB, id string) error {
 
 func Delete(db *sql.DB, id string) error {
 	_, err := db.Exec(`DELETE FROM vms WHERE id = ?`, id)
+	return err
+}
+
+func Rename(db *sql.DB, id, name string) error {
+	_, err := db.Exec(`UPDATE vms SET name = ? WHERE id = ?`, name, id)
+	return err
+}
+
+func UpdateResources(db *sql.DB, id string, cpus, memoryMB int32) error {
+	_, err := db.Exec(`UPDATE vms SET cpus = ?, memory_mb = ? WHERE id = ?`, cpus, memoryMB, id)
 	return err
 }

@@ -18,12 +18,15 @@ func TestInsertRunningAndLifecycleReads(t *testing.T) {
 		CPUs:             2,
 		MemoryMB:         1024,
 		Ports:            []string{"8080:80", "443:443"},
+		NetworkMode:      "nat",
+		Volumes:          []string{"data:/data", "cache:/cache:ro"},
 		LogPath:          "/tmp/vm.log",
 		DrivePath:        "/tmp/vm.ext4",
 		ConsolePath:      "/tmp/vm.console",
 		Network:          NetworkFields{TapName: "tap0", GuestIP: "172.16.0.2", MAC: "02:FC:00:00:00:01"},
 		AgentToken:       "token",
 		VsockPath:        "/tmp/vm.vsock",
+		AutoRemove:       true,
 	})
 	if err != nil {
 		t.Fatalf("InsertRunning failed: %v", err)
@@ -33,15 +36,22 @@ func TestInsertRunningAndLifecycleReads(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetStopState failed: %v", err)
 	}
-	if stopState.PID != 123 || stopState.ProcessStartTime != "456" || stopState.Status != internal.VmRunning || stopState.Network.Ports[0] != "8080:80" || stopState.VsockPath == "" {
+	if stopState.PID != 123 || stopState.ProcessStartTime != "456" || stopState.Status != internal.VmRunning || stopState.Network.Ports[0] != "8080:80" || stopState.VsockPath == "" || !stopState.AutoRemove || stopState.NetworkMode != "nat" {
 		t.Fatalf("unexpected stop state: %#v", stopState)
+	}
+	runtimeState, err := GetRuntimeState(db, "vm-1")
+	if err != nil {
+		t.Fatalf("GetRuntimeState failed: %v", err)
+	}
+	if runtimeState.DrivePath != "/tmp/vm.ext4" || runtimeState.LogPath != "/tmp/vm.log" || !runtimeState.AutoRemove || runtimeState.NetworkMode != "nat" {
+		t.Fatalf("unexpected runtime state: %#v", runtimeState)
 	}
 
 	startState, err := GetStartState(db, "vm-1")
 	if err != nil {
 		t.Fatalf("GetStartState failed: %v", err)
 	}
-	if startState.Image != "ubuntu" || startState.CPUs != 2 || startState.MemoryMB != 1024 || startState.AgentToken != "token" {
+	if startState.Image != "ubuntu" || startState.CPUs != 2 || startState.MemoryMB != 1024 || startState.AgentToken != "token" || startState.NetworkMode != "nat" || len(startState.Volumes) != 2 {
 		t.Fatalf("unexpected start state: %#v", startState)
 	}
 

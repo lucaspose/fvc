@@ -60,6 +60,15 @@ func (s *Server) Ps(ctx context.Context, req *proto.PsRequest) (*proto.PsRespons
 	if err != nil {
 		return nil, err
 	}
+	for _, record := range records {
+		if record.Status == internal.VmRunning {
+			_, _ = s.refreshVMRuntimeState(record.ID)
+		}
+	}
+	records, err = vmstore.ListDetails(s.DB, req != nil && req.All)
+	if err != nil {
+		return nil, err
+	}
 	vms := make([]*proto.VmDetails, 0, len(records))
 	for _, record := range records {
 		vms = append(vms, vmDetailsProto(record))
@@ -77,6 +86,9 @@ func (s *Server) Inspect(ctx context.Context, req *proto.InspectRequest) (*proto
 	}
 	if err != nil {
 		return &proto.InspectResponse{Success: false, Message: fmt.Sprintf("vm lookup failed: %v", err)}, nil
+	}
+	if _, err := s.refreshVMRuntimeState(vmID); err != nil && err != sql.ErrNoRows {
+		return &proto.InspectResponse{Success: false, Message: err.Error()}, nil
 	}
 
 	vm, err := vmstore.GetDetails(s.DB, vmID)
@@ -100,11 +112,25 @@ func (s *Server) Stats(ctx context.Context, req *proto.StatsRequest) (*proto.Sta
 			return nil, fmt.Errorf("vm lookup failed: %v", err)
 		}
 		vmID = resolved
+		if _, err := s.refreshVMRuntimeState(vmID); err != nil && err != sql.ErrNoRows {
+			return nil, err
+		}
 	}
 
 	records, err := vmstore.ListStatsRecords(s.DB, vmID)
 	if err != nil {
 		return nil, err
+	}
+	if vmID == "" {
+		for _, record := range records {
+			if record.Status == internal.VmRunning {
+				_, _ = s.refreshVMRuntimeState(record.ID)
+			}
+		}
+		records, err = vmstore.ListStatsRecords(s.DB, vmID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	stats := make([]*proto.VmStats, 0, len(records))
@@ -146,6 +172,13 @@ func (s *Server) Wait(ctx context.Context, req *proto.WaitRequest) (*proto.WaitR
 	}
 
 	for {
+		refresh, err := s.refreshVMRuntimeState(vmID)
+		if err != nil && err != sql.ErrNoRows {
+			return &proto.WaitResponse{Success: false, Message: err.Error()}, nil
+		}
+		if refresh.AutoRemoved {
+			return &proto.WaitResponse{Success: true, Message: fmt.Sprintf("microVM removed: %s", vmID), Status: refresh.Status, ExitCode: refresh.ExitCode}, nil
+		}
 		status, err := vmstore.GetWaitStatus(s.DB, vmID)
 		if err == sql.ErrNoRows {
 			return &proto.WaitResponse{Success: false, Message: fmt.Sprintf("vm not found: %s", req.VmId)}, nil
@@ -252,9 +285,11 @@ func vmDetailsProto(vm vmstore.Details) *proto.VmDetails {
 		ConsolePath: vm.ConsolePath,
 		ExitCode:    vm.ExitCode,
 		Config: &proto.VmConfig{
-			Cpus:     vm.CPUs,
-			MemoryMb: vm.MemoryMB,
-			Ports:    append([]string(nil), vm.Ports...),
+			Cpus:        vm.CPUs,
+			MemoryMb:    vm.MemoryMB,
+			Ports:       append([]string(nil), vm.Ports...),
+			NetworkMode: vm.NetworkMode,
+			Volumes:     append([]string(nil), vm.Volumes...),
 		},
 	}
 }

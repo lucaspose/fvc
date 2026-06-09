@@ -107,14 +107,17 @@ func EnsureSchema(db *sql.DB) error {
 		memory_mb INTEGER DEFAULT 512,
 		name TEXT DEFAULT '',
 		ports TEXT DEFAULT '',
+		volumes TEXT DEFAULT '',
 		log_path TEXT,
 		drive_path TEXT,
 		console_path TEXT,
 		vsock_path TEXT DEFAULT '',
+		network_mode TEXT DEFAULT '',
 		tap_name TEXT,
 		guest_ip TEXT,
 		mac_address TEXT,
 		agent_token TEXT DEFAULT '',
+		auto_remove INTEGER DEFAULT 0,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);`
 	if _, err := db.Exec(query); err != nil {
@@ -126,10 +129,13 @@ func EnsureSchema(db *sql.DB) error {
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN drive_path TEXT`)
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN console_path TEXT`)
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN vsock_path TEXT DEFAULT ''`)
+	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN network_mode TEXT DEFAULT ''`)
+	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN volumes TEXT DEFAULT ''`)
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN tap_name TEXT`)
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN guest_ip TEXT`)
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN mac_address TEXT`)
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN agent_token TEXT DEFAULT ''`)
+	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN auto_remove INTEGER DEFAULT 0`)
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN name TEXT DEFAULT ''`)
 	_, _ = db.Exec(`ALTER TABLE vms ADD COLUMN ports TEXT DEFAULT ''`)
 	_, _ = db.Exec(`UPDATE vms SET tap_name = '', guest_ip = '', mac_address = '' WHERE status <> ?`, internal.VmRunning)

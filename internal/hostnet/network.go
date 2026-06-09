@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -26,12 +27,38 @@ type CommandRunner interface {
 
 type ExecRunner struct{}
 
+var allowedHostCommands = map[string]bool{
+	"ip":        true,
+	"iptables":  true,
+	"mkfs.ext4": true,
+	"mount":     true,
+	"sysctl":    true,
+	"truncate":  true,
+	"umount":    true,
+}
+
 func (ExecRunner) Run(name string, args ...string) error {
-	output, err := exec.Command(name, args...).CombinedOutput()
+	path, err := resolveAllowedHostCommand(name)
+	if err != nil {
+		return err
+	}
+	output, err := exec.Command(path, args...).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s %v failed: %v: %s", name, args, err, string(output))
 	}
 	return nil
+}
+
+func resolveAllowedHostCommand(name string) (string, error) {
+	base := filepath.Base(name)
+	if !allowedHostCommands[base] {
+		return "", fmt.Errorf("host command %q is not allowed", name)
+	}
+	path, err := exec.LookPath(name)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
 }
 
 type NetworkManager struct {

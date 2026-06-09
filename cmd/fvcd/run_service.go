@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -20,11 +19,17 @@ import (
 )
 
 type runConfig struct {
-	ImageName string
-	Name      string
-	CPUs      int32
-	MemoryMB  int32
-	Ports     []string
+	ImageName    string
+	ImageSource  string
+	DockerSource string
+	PullPolicy   string
+	Name         string
+	CPUs         int32
+	MemoryMB     int32
+	Ports        []string
+	NetworkMode  string
+	Volumes      []internal.VolumeSpec
+	AutoRemove   bool
 }
 
 func (s *Server) Run(ctx context.Context, req *proto.RunRequest) (*proto.RunResponse, error) {
@@ -96,12 +101,19 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 	if len(runCfg.Ports) > 0 && !s.Config.NetworkEnabled {
 		return fail("validate", "port publishing requires FVC_NETWORK_ENABLED=true")
 	}
+	runCfg.NetworkMode = effectiveNetworkMode(runCfg.NetworkMode, s.Config.NetworkEnabled)
+	if runCfg.NetworkMode == internal.NetworkModeNone && len(runCfg.Ports) > 0 {
+		return fail("validate", "port publishing requires --network nat")
+	}
+	if runCfg.NetworkMode == internal.NetworkModeNAT && !s.Config.NetworkEnabled {
+		return fail("validate", "network mode nat requires FVC_NETWORK_ENABLED=true")
+	}
 
 	if err := step("image", fmt.Sprintf("Resolving image %s", runCfg.ImageName)); err != nil {
 		return nil, err
 	}
-	if _, err := s.Store.PullImageIfNeededProgress(runCfg.ImageName, func(current, total int64) {
-		_ = sendEventProgress("image", "running", fmt.Sprintf("Downloading image %s", runCfg.ImageName), "", current, total)
+	if _, err := s.prepareRunImage(ctx, runCfg, func(stage, eventStatus, message string, current, total int64) error {
+		return sendEventProgress(stage, eventStatus, message, "", current, total)
 	}); err != nil {
 		return fail("image", "image pull failed: %v", err)
 	}
@@ -111,6 +123,14 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 	runtimeConfig, useRuntimeInit, err := s.imageRuntimeConfig(runCfg.ImageName)
 	if err != nil {
 		return fail("image", "image metadata lookup failed: %v", err)
+	}
+	preparedVolumes, err := s.prepareVolumeDrives(runCfg.Volumes)
+	if err != nil {
+		return fail("volumes", "volume setup failed: %v", err)
+	}
+	if len(preparedVolumes) > 0 {
+		runtimeConfig.Volumes = runtimeVolumes(preparedVolumes)
+		useRuntimeInit = true
 	}
 
 	if err := step("kernel", "Resolving kernel"); err != nil {
@@ -152,7 +172,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 	}
 
 	var netCfg *NetworkConfig
-	if s.Config.NetworkEnabled {
+	if runCfg.NetworkMode == internal.NetworkModeNAT {
 		if err := step("network", "Preparing network"); err != nil {
 			return nil, err
 		}
@@ -174,13 +194,12 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		}
 	}
 
-	socketPath := s.runtimePath(fmt.Sprintf("fvc-%s.socket", vmID))
 	logPath := filepath.Join(s.Config.LogDir, vmID+".log")
 	consolePath := s.runtimePath(fmt.Sprintf("fvc-%s.console.in", vmID))
 	vsockPath := s.runtimePath(fmt.Sprintf("fvc-%s.vsock", vmID))
-	_ = os.Remove(socketPath)
 	_ = os.Remove(consolePath)
 	_ = os.Remove(vsockPath)
+	s.cleanupJailerRuntime(vmID)
 
 	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
@@ -206,7 +225,13 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 	if err := step("firecracker", "Launching Firecracker"); err != nil {
 		return nil, err
 	}
-	cmd := exec.Command(s.Config.FirecrackerPath, "--api-sock", socketPath)
+	cmd, fcRuntime, err := s.firecrackerCommand(vmID)
+	if err != nil {
+		_ = os.Remove(vmDrivePath)
+		s.cleanupNetwork(netCfg, runCfg.Ports)
+		return fail("firecracker", "%v", err)
+	}
+	_ = os.Remove(fcRuntime.SocketPath)
 	cmd.Stdin = consoleInput
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
@@ -218,9 +243,17 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 
 	processPid := int32(cmd.Process.Pid)
 	processStartTime := processStartTimeValue(int(processPid))
-	go s.watchVM(cmd, vmID, socketPath, logPath, consolePath, vsockPath, processPid, netCfg, runCfg.Ports)
+	useVsock := useRuntimeInit && shouldConfigureVsock(s.Config.GuestAgentMode)
+	if err := s.prepareFirecrackerRuntime(&fcRuntime, kernelPath, vmDrivePath, vsockPath, preparedVolumes, useVsock); err != nil {
+		_ = cmd.Process.Kill()
+		_ = os.Remove(vmDrivePath)
+		s.cleanupNetwork(netCfg, runCfg.Ports)
+		s.cleanupJailerRuntime(vmID)
+		return fail("firecracker", "%v", err)
+	}
+	go s.watchVM(cmd, vmID, fcRuntime.SocketPath, logPath, vmDrivePath, consolePath, fcRuntime.VSockHostPath, processPid, netCfg, runCfg.Ports, runCfg.AutoRemove)
 
-	if err := waitForSocket(socketPath, 3*time.Second); err != nil {
+	if err := waitForSocket(fcRuntime.SocketPath, 3*time.Second); err != nil {
 		_ = cmd.Process.Kill()
 		return fail("firecracker", "firecracker API socket not ready: %v", err)
 	}
@@ -232,7 +265,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		return nil, err
 	}
 	agentToken := uuid.NewString()
-	if err := fcapi.ConfigureBootSource(socketPath, kernelPath, runtimeBootArgs(netCfg, s.Config.RuntimeRootDev, useRuntimeInit, agentToken, s.Config.GuestAgentMode)); err != nil {
+	if err := fcapi.ConfigureBootSource(fcRuntime.SocketPath, fcRuntime.KernelPath, runtimeBootArgs(netCfg, s.Config.RuntimeRootDev, useRuntimeInit, agentToken, s.Config.GuestAgentMode)); err != nil {
 		_ = cmd.Process.Kill()
 		return fail("boot", "boot source config failed: %v", err)
 	}
@@ -243,19 +276,31 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 	if err := step("drive", "Attaching root filesystem"); err != nil {
 		return nil, err
 	}
-	if err := fcapi.ConfigureDrive(socketPath, "rootfs", vmDrivePath, true, false); err != nil {
+	if err := fcapi.ConfigureDrive(fcRuntime.SocketPath, "rootfs", fcRuntime.RootDrivePath, true, false); err != nil {
 		_ = cmd.Process.Kill()
 		return fail("drive", "rootfs drive config failed: %v", err)
 	}
 	if err := complete("drive", "Root filesystem attached"); err != nil {
 		return nil, err
 	}
+	for _, volume := range preparedVolumes {
+		if err := step("volume", fmt.Sprintf("Attaching volume %s to %s", volume.Spec.Name, volume.Spec.Target)); err != nil {
+			return nil, err
+		}
+		if err := fcapi.ConfigureDrive(fcRuntime.SocketPath, volume.DriveID, fcRuntime.VolumePaths[volume.DriveID], false, volume.Spec.ReadOnly); err != nil {
+			_ = cmd.Process.Kill()
+			return fail("volume", "volume attach failed: %v", err)
+		}
+		if err := complete("volume", fmt.Sprintf("Volume attached: %s", internal.FormatVolumeSpec(volume.Spec))); err != nil {
+			return nil, err
+		}
+	}
 
 	if netCfg != nil {
 		if err := step("netif", "Attaching network interface"); err != nil {
 			return nil, err
 		}
-		if err := configureFirecrackerNetwork(socketPath, *netCfg); err != nil {
+		if err := configureFirecrackerNetwork(fcRuntime.SocketPath, *netCfg); err != nil {
 			_ = cmd.Process.Kill()
 			return fail("netif", "network interface config failed: %v", err)
 		}
@@ -263,11 +308,11 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 			return nil, err
 		}
 	}
-	if useRuntimeInit && shouldConfigureVsock(s.Config.GuestAgentMode) {
+	if useVsock {
 		if err := step("vsock", "Attaching guest agent vsock"); err != nil {
 			return nil, err
 		}
-		if err := configureFirecrackerVsock(socketPath, vsockPath, guestAgentCID(vmID)); err != nil {
+		if err := configureFirecrackerVsock(fcRuntime.SocketPath, fcRuntime.VSockConfigPath, guestAgentCID(vmID)); err != nil {
 			_ = cmd.Process.Kill()
 			return fail("vsock", "guest agent vsock config failed: %v", err)
 		}
@@ -279,7 +324,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 	if err := step("resources", fmt.Sprintf("Configuring resources cpu=%d memory=%dMB", runCfg.CPUs, runCfg.MemoryMB)); err != nil {
 		return nil, err
 	}
-	if err = fcapi.ConfigureMachine(socketPath, runCfg.CPUs, runCfg.MemoryMB); err != nil {
+	if err = fcapi.ConfigureMachine(fcRuntime.SocketPath, runCfg.CPUs, runCfg.MemoryMB); err != nil {
 		_ = cmd.Process.Kill()
 		return fail("resources", "machine resource config failed: %v", err)
 	}
@@ -290,15 +335,15 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 	if err := step("start", "Starting microVM"); err != nil {
 		return nil, err
 	}
-	if err = fcapi.StartInstance(socketPath); err != nil {
+	if err = fcapi.StartInstance(fcRuntime.SocketPath); err != nil {
 		_ = cmd.Process.Kill()
 		return fail("start", "instance start failed: %v", err)
 	}
 
 	tapName, guestIP, mac := networkFields(netCfg)
 	storedVsockPath := ""
-	if useRuntimeInit && shouldConfigureVsock(s.Config.GuestAgentMode) {
-		storedVsockPath = vsockPath
+	if useVsock {
+		storedVsockPath = fcRuntime.VSockHostPath
 	}
 	if err := vmstore.InsertRunning(s.DB, vmstore.RunRecord{
 		ID:               vmID,
@@ -309,16 +354,20 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		CPUs:             runCfg.CPUs,
 		MemoryMB:         runCfg.MemoryMB,
 		Ports:            runCfg.Ports,
+		NetworkMode:      runCfg.NetworkMode,
+		Volumes:          formatVolumeSpecs(runCfg.Volumes),
 		LogPath:          logPath,
 		DrivePath:        vmDrivePath,
 		ConsolePath:      consolePath,
 		Network:          vmstore.NetworkFields{TapName: tapName, GuestIP: guestIP, MAC: mac},
 		AgentToken:       agentToken,
 		VsockPath:        storedVsockPath,
+		AutoRemove:       runCfg.AutoRemove,
 	}); err != nil {
 		_ = cmd.Process.Kill()
 		return fail("state", "state save failed: %v", err)
 	}
+	go s.monitorGuestExit(cmd.Process, vmID, fcRuntime.SocketPath, logPath, vmDrivePath, consolePath, storedVsockPath, processPid, processStartTime, netCfg, runCfg.Ports, runCfg.AutoRemove)
 	log.Printf("run %s: started successfully", vmID)
 	if err := sendEvent("done", "complete", "MicroVM started", ""); err != nil {
 		return nil, err
@@ -327,6 +376,74 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		VmId:   vmID,
 		Status: internal.VmRunning,
 	}, nil
+}
+
+func (s *Server) prepareRunImage(ctx context.Context, cfg runConfig, progress DockerImportProgressFunc) (ImageInfo, error) {
+	if cfg.ImageSource == "docker" {
+		exists := s.imageCached(cfg.ImageName)
+		switch cfg.PullPolicy {
+		case "never":
+			if !exists {
+				return ImageInfo{}, fmt.Errorf("image %s is not cached; remove --pull never or run fvc pull --from docker %s -t %s", cfg.ImageName, cfg.DockerSource, cfg.ImageName)
+			}
+			return s.Store.InspectImage(cfg.ImageName)
+		case "always":
+			if exists {
+				used, err := s.imageInUse(cfg.ImageName)
+				if err != nil {
+					return ImageInfo{}, err
+				}
+				if used {
+					return ImageInfo{}, fmt.Errorf("image %s is used by one or more microVMs; cannot refresh it with --pull always", cfg.ImageName)
+				}
+				if err := s.Store.RemoveImage(cfg.ImageName); err != nil {
+					return ImageInfo{}, err
+				}
+			}
+		case "missing":
+			if exists {
+				return s.Store.InspectImage(cfg.ImageName)
+			}
+		}
+		return s.Store.ImportDockerImage(ctx, cfg.DockerSource, cfg.ImageName, s.commandRunner(), progress)
+	}
+
+	exists := s.imageCached(cfg.ImageName)
+	if cfg.PullPolicy == "never" {
+		if !exists {
+			return ImageInfo{}, fmt.Errorf("image %s is not cached; remove --pull never or run fvc pull %s", cfg.ImageName, cfg.ImageName)
+		}
+		return s.Store.InspectImage(cfg.ImageName)
+	}
+	if cfg.PullPolicy == "always" && exists {
+		used, err := s.imageInUse(cfg.ImageName)
+		if err != nil {
+			return ImageInfo{}, err
+		}
+		if used {
+			return ImageInfo{}, fmt.Errorf("image %s is used by one or more microVMs; cannot refresh it with --pull always", cfg.ImageName)
+		}
+		if err := s.Store.RemoveImage(cfg.ImageName); err != nil {
+			return ImageInfo{}, err
+		}
+	}
+	path, err := s.Store.PullImageIfNeededProgress(cfg.ImageName, func(current, total int64) {
+		if progress != nil {
+			_ = progress("image", "running", fmt.Sprintf("Downloading image %s", cfg.ImageName), current, total)
+		}
+	})
+	if err != nil {
+		return ImageInfo{}, err
+	}
+	return s.Store.InspectCachedImage(cfg.ImageName, path, false)
+}
+
+func (s *Server) imageCached(imageName string) bool {
+	if s.Store == nil {
+		return false
+	}
+	_, err := os.Stat(s.Store.cachedImagePath(imageName))
+	return err == nil
 }
 
 func validateRunRequest(req *proto.RunRequest) (runConfig, error) {
@@ -341,6 +458,24 @@ func validateRunRequest(req *proto.RunRequest) (runConfig, error) {
 	if err := internal.ValidateImageRef(imageName); err != nil {
 		return runConfig{}, err
 	}
+	imageSource := strings.TrimSpace(req.GetImageSource())
+	if imageSource == "" {
+		imageSource = "local"
+	}
+	if imageSource != "local" && imageSource != "docker" {
+		return runConfig{}, fmt.Errorf("unsupported image source %q", imageSource)
+	}
+	pullPolicy := strings.TrimSpace(req.GetPullPolicy())
+	if pullPolicy == "" {
+		pullPolicy = "missing"
+	}
+	if pullPolicy != "missing" && pullPolicy != "always" && pullPolicy != "never" {
+		return runConfig{}, fmt.Errorf("unsupported pull policy %q", pullPolicy)
+	}
+	dockerSource := strings.TrimSpace(req.GetDockerSource())
+	if imageSource == "docker" && dockerSource == "" {
+		dockerSource = imageName
+	}
 	name := strings.TrimSpace(req.Name)
 	if err := internal.ValidateVMName(name); err != nil {
 		return runConfig{}, err
@@ -349,6 +484,11 @@ func validateRunRequest(req *proto.RunRequest) (runConfig, error) {
 	cpus := int32(1)
 	memoryMb := int32(512)
 	var ports []string
+	var volumeValues []string
+	networkMode := strings.TrimSpace(req.GetConfig().GetNetworkMode())
+	if err := internal.ValidateNetworkMode(networkMode); err != nil {
+		return runConfig{}, err
+	}
 	if req.Config != nil {
 		cpus = req.Config.Cpus
 		memoryMb = req.Config.MemoryMb
@@ -359,11 +499,39 @@ func validateRunRequest(req *proto.RunRequest) (runConfig, error) {
 			}
 			ports = append(ports, normalized)
 		}
+		volumeValues = append(volumeValues, req.Config.Volumes...)
+	}
+	volumes, err := parseVolumeSpecs(volumeValues)
+	if err != nil {
+		return runConfig{}, fmt.Errorf("volume: %w", err)
 	}
 	if err := internal.ValidateResources(cpus, memoryMb); err != nil {
 		return runConfig{}, err
 	}
-	return runConfig{ImageName: imageName, Name: name, CPUs: cpus, MemoryMB: memoryMb, Ports: ports}, nil
+	return runConfig{
+		ImageName:    imageName,
+		ImageSource:  imageSource,
+		DockerSource: dockerSource,
+		PullPolicy:   pullPolicy,
+		Name:         name,
+		CPUs:         cpus,
+		MemoryMB:     memoryMb,
+		Ports:        ports,
+		NetworkMode:  networkMode,
+		Volumes:      volumes,
+		AutoRemove:   req.GetAutoRemove(),
+	}, nil
+}
+
+func effectiveNetworkMode(mode string, daemonNetworkEnabled bool) string {
+	mode = strings.TrimSpace(mode)
+	if mode != "" {
+		return mode
+	}
+	if daemonNetworkEnabled {
+		return internal.NetworkModeNAT
+	}
+	return internal.NetworkModeNone
 }
 
 func runFailed(format string, args ...any) *proto.RunResponse {

@@ -18,18 +18,115 @@ import (
 	"github.com/lucaspose/fvc/proto"
 )
 
-func (s *Server) watchVM(cmd *exec.Cmd, id string, sock string, logPath string, consolePath string, vsockPath string, pid int32, netCfg *NetworkConfig, ports []string) {
+type runtimeRefreshResult struct {
+	Changed     bool
+	Status      string
+	ExitCode    int32
+	AutoRemoved bool
+}
+
+func (s *Server) watchVM(cmd *exec.Cmd, id string, sock string, logPath string, drivePath string, consolePath string, vsockPath string, pid int32, netCfg *NetworkConfig, ports []string, autoRemove bool) {
 	_ = cmd.Wait()
 	log.Printf("vm %s: firecracker process %d stopped", id, pid)
-	_ = os.Remove(sock)
-	_ = os.Remove(consolePath)
+	exitCode := exitCodeFromLog(logPath)
+	s.cleanupRuntimeFiles(sock, consolePath, vsockPath)
+	s.cleanupJailerRuntime(id)
+	s.cleanupNetwork(netCfg, ports)
+	_ = vmstore.MarkStoppedIfRunning(s.DB, id, exitCode)
+	if autoRemove {
+		s.removeAutoRemovedVM(id, drivePath, logPath, consolePath, vsockPath)
+	}
+}
+
+func (s *Server) monitorGuestExit(process *os.Process, id string, sock string, logPath string, drivePath string, consolePath string, vsockPath string, pid int32, processStartTime string, netCfg *NetworkConfig, ports []string, autoRemove bool) {
+	ticker := time.NewTicker(250 * time.Millisecond)
+	defer ticker.Stop()
+	for range ticker.C {
+		exitCode := exitCodeFromLog(logPath)
+		if exitCode < 0 {
+			if !processMatches(int(pid), processStartTime) {
+				return
+			}
+			continue
+		}
+		log.Printf("vm %s: guest process exited with code %d", id, exitCode)
+		_ = vmstore.MarkStoppedIfRunning(s.DB, id, exitCode)
+		if process != nil {
+			_ = process.Kill()
+		}
+		s.cleanupRuntimeFiles(sock, consolePath, vsockPath)
+		s.cleanupJailerRuntime(id)
+		s.cleanupNetwork(netCfg, ports)
+		if autoRemove {
+			s.removeAutoRemovedVM(id, drivePath, logPath, consolePath, vsockPath)
+		}
+		return
+	}
+}
+
+func (s *Server) refreshVMRuntimeState(id string) (runtimeRefreshResult, error) {
+	state, err := vmstore.GetRuntimeState(s.DB, id)
+	if err == sql.ErrNoRows {
+		return runtimeRefreshResult{}, err
+	}
+	if err != nil {
+		return runtimeRefreshResult{}, fmt.Errorf("runtime state lookup failed: %w", err)
+	}
+	if state.Status != internal.VmRunning {
+		return runtimeRefreshResult{}, nil
+	}
+	exitCode := exitCodeFromLog(state.LogPath)
+	processAlive := state.PID > 0 && processMatches(state.PID, state.ProcessStartTime)
+	if exitCode < 0 && processAlive {
+		return runtimeRefreshResult{}, nil
+	}
+	if processAlive && exitCode >= 0 {
+		if process, findErr := os.FindProcess(state.PID); findErr == nil {
+			_ = process.Kill()
+		}
+	}
+	s.cleanupRuntimeFiles(s.runtimePath(fmt.Sprintf("fvc-%s.socket", id)), state.ConsolePath, state.VsockPath)
+	s.cleanupJailerRuntime(id)
+	s.cleanupNetwork(networkConfigFromStore(state.Network), state.Network.Ports)
+	if err := vmstore.MarkStoppedIfRunning(s.DB, id, exitCode); err != nil {
+		return runtimeRefreshResult{}, err
+	}
+	status := internal.VmStopped
+	if exitCode >= 0 {
+		status = internal.VmExited
+	}
+	result := runtimeRefreshResult{Changed: true, Status: status, ExitCode: exitCode}
+	if state.AutoRemove {
+		s.removeAutoRemovedVM(id, state.DrivePath, state.LogPath, state.ConsolePath, state.VsockPath)
+		result.AutoRemoved = true
+	}
+	return result, nil
+}
+
+func (s *Server) cleanupRuntimeFiles(socketPath, consolePath, vsockPath string) {
+	if socketPath != "" {
+		_ = os.Remove(socketPath)
+	}
+	if consolePath != "" {
+		_ = os.Remove(consolePath)
+	}
 	if vsockPath != "" {
 		_ = os.Remove(vsockPath)
 	}
-	s.cleanupNetwork(netCfg, ports)
+}
 
-	exitCode := exitCodeFromLog(logPath)
-	_ = vmstore.MarkStoppedIfRunning(s.DB, id, exitCode)
+func (s *Server) removeAutoRemovedVM(id, drivePath, logPath, consolePath, vsockPath string) {
+	if drivePath != "" {
+		_ = os.Remove(drivePath)
+	}
+	if logPath != "" {
+		_ = os.Remove(logPath)
+	}
+	s.cleanupRuntimeFiles(s.runtimePath(fmt.Sprintf("fvc-%s.socket", id)), consolePath, vsockPath)
+	s.cleanupJailerRuntime(id)
+	if err := vmstore.Delete(s.DB, id); err != nil {
+		log.Printf("vm %s: auto-remove state cleanup failed: %v", id, err)
+	}
 }
 
 func (s *Server) Stop(ctx context.Context, req *proto.StopRequest) (*proto.StopResponse, error) {
@@ -43,6 +140,9 @@ func (s *Server) Stop(ctx context.Context, req *proto.StopRequest) (*proto.StopR
 	if err != nil {
 		return &proto.StopResponse{Success: false, Message: fmt.Sprintf("vm lookup failed: %v", err)}, nil
 	}
+	if _, err := s.refreshVMRuntimeState(vmID); err != nil && err != sql.ErrNoRows {
+		return &proto.StopResponse{Success: false, Message: err.Error()}, nil
+	}
 	state, err := vmstore.GetStopState(s.DB, vmID)
 	if err != nil {
 		return &proto.StopResponse{
@@ -52,10 +152,14 @@ func (s *Server) Stop(ctx context.Context, req *proto.StopRequest) (*proto.StopR
 	}
 	if state.Status == internal.VmStopped || state.Status == internal.VmDown || state.PID == 0 || !processMatches(state.PID, state.ProcessStartTime) {
 		s.cleanupNetwork(networkConfigFromStore(state.Network), state.Network.Ports)
+		s.cleanupJailerRuntime(vmID)
 		if state.VsockPath != "" {
 			_ = os.Remove(state.VsockPath)
 		}
 		_ = vmstore.MarkStaleStopped(s.DB, vmID)
+		if state.AutoRemove {
+			s.removeAutoRemovedVM(vmID, state.DrivePath, state.LogPath, state.ConsolePath, state.VsockPath)
+		}
 		return &proto.StopResponse{
 			Success: true,
 			Message: "microVM is already stopped",
@@ -89,6 +193,7 @@ func (s *Server) Stop(ctx context.Context, req *proto.StopRequest) (*proto.StopR
 		_ = process.Kill()
 	}
 	s.cleanupNetwork(networkConfigFromStore(state.Network), state.Network.Ports)
+	s.cleanupJailerRuntime(vmID)
 	if state.VsockPath != "" {
 		_ = os.Remove(state.VsockPath)
 	}
@@ -98,6 +203,9 @@ func (s *Server) Stop(ctx context.Context, req *proto.StopRequest) (*proto.StopR
 			Success: false,
 			Message: fmt.Sprintf("process stopped but state update failed: %v", err),
 		}, nil
+	}
+	if state.AutoRemove {
+		s.removeAutoRemovedVM(vmID, state.DrivePath, state.LogPath, state.ConsolePath, state.VsockPath)
 	}
 	return &proto.StopResponse{
 		Success: true,
@@ -116,6 +224,9 @@ func (s *Server) Kill(ctx context.Context, req *proto.KillRequest) (*proto.KillR
 	if err != nil {
 		return &proto.KillResponse{Success: false, Message: fmt.Sprintf("vm lookup failed: %v", err)}, nil
 	}
+	if _, err := s.refreshVMRuntimeState(vmID); err != nil && err != sql.ErrNoRows {
+		return &proto.KillResponse{Success: false, Message: err.Error()}, nil
+	}
 
 	state, err := vmstore.GetKillState(s.DB, vmID)
 	if err == sql.ErrNoRows {
@@ -126,7 +237,11 @@ func (s *Server) Kill(ctx context.Context, req *proto.KillRequest) (*proto.KillR
 	}
 	if state.Status != internal.VmRunning || state.PID == 0 || !processMatches(state.PID, state.ProcessStartTime) {
 		s.cleanupNetwork(networkConfigFromStore(state.Network), state.Network.Ports)
+		s.cleanupJailerRuntime(vmID)
 		_ = vmstore.MarkStaleStopped(s.DB, vmID)
+		if state.AutoRemove {
+			s.removeAutoRemovedVM(vmID, state.DrivePath, state.LogPath, state.ConsolePath, state.VsockPath)
+		}
 		return &proto.KillResponse{Success: true, Message: "microVM is already stopped"}, nil
 	}
 
@@ -142,6 +257,7 @@ func (s *Server) Kill(ctx context.Context, req *proto.KillRequest) (*proto.KillR
 	}
 
 	s.cleanupNetwork(networkConfigFromStore(state.Network), state.Network.Ports)
+	s.cleanupJailerRuntime(vmID)
 	_ = os.Remove(s.runtimePath(fmt.Sprintf("fvc-%s.socket", vmID)))
 	if state.ConsolePath != "" {
 		_ = os.Remove(state.ConsolePath)
@@ -151,6 +267,9 @@ func (s *Server) Kill(ctx context.Context, req *proto.KillRequest) (*proto.KillR
 	}
 	if err := vmstore.MarkStopped(s.DB, vmID); err != nil {
 		return &proto.KillResponse{Success: false, Message: fmt.Sprintf("process killed but state update failed: %v", err)}, nil
+	}
+	if state.AutoRemove {
+		s.removeAutoRemovedVM(vmID, state.DrivePath, state.LogPath, state.ConsolePath, state.VsockPath)
 	}
 	return &proto.KillResponse{Success: true, Message: fmt.Sprintf("microVM killed: %s", vmID)}, nil
 }
@@ -165,6 +284,9 @@ func (s *Server) Start(ctx context.Context, req *proto.StartRequest) (*proto.Sta
 	}
 	if err != nil {
 		return &proto.StartResponse{Success: false, Message: fmt.Sprintf("vm lookup failed: %v", err)}, nil
+	}
+	if _, err := s.refreshVMRuntimeState(vmID); err != nil && err != sql.ErrNoRows {
+		return &proto.StartResponse{Success: false, Message: err.Error()}, nil
 	}
 
 	state, err := vmstore.GetStartState(s.DB, vmID)
@@ -183,8 +305,12 @@ func (s *Server) Start(ctx context.Context, req *proto.StartRequest) (*proto.Sta
 	if _, err := os.Stat(state.DrivePath); err != nil {
 		return &proto.StartResponse{Success: false, Message: fmt.Sprintf("microVM cannot be restarted: drive unavailable: %v", err)}, nil
 	}
-	if len(state.Ports) > 0 && !s.Config.NetworkEnabled {
-		return &proto.StartResponse{Success: false, Message: "port publishing requires FVC_NETWORK_ENABLED=true"}, nil
+	networkMode := effectiveNetworkMode(state.NetworkMode, s.Config.NetworkEnabled)
+	if len(state.Ports) > 0 && networkMode != internal.NetworkModeNAT {
+		return &proto.StartResponse{Success: false, Message: "port publishing requires network mode nat"}, nil
+	}
+	if networkMode == internal.NetworkModeNAT && !s.Config.NetworkEnabled {
+		return &proto.StartResponse{Success: false, Message: "network mode nat requires FVC_NETWORK_ENABLED=true"}, nil
 	}
 	if strings.TrimSpace(state.AgentToken) == "" {
 		state.AgentToken = uuid.NewString()
@@ -194,12 +320,27 @@ func (s *Server) Start(ctx context.Context, req *proto.StartRequest) (*proto.Sta
 	if err != nil {
 		return &proto.StartResponse{Success: false, Message: fmt.Sprintf("kernel pull failed: %v", err)}, nil
 	}
-	_, useRuntimeInit, err := s.imageRuntimeConfig(state.Image)
+	volumeSpecs, err := parseVolumeSpecs(state.Volumes)
+	if err != nil {
+		return &proto.StartResponse{Success: false, Message: fmt.Sprintf("volume config failed: %v", err)}, nil
+	}
+	preparedVolumes, err := s.prepareVolumeDrives(volumeSpecs)
+	if err != nil {
+		return &proto.StartResponse{Success: false, Message: fmt.Sprintf("volume setup failed: %v", err)}, nil
+	}
+	runtimeConfig, useRuntimeInit, err := s.imageRuntimeConfig(state.Image)
 	if err != nil {
 		return &proto.StartResponse{Success: false, Message: fmt.Sprintf("image metadata lookup failed: %v", err)}, nil
 	}
+	if len(preparedVolumes) > 0 {
+		runtimeConfig.Volumes = runtimeVolumes(preparedVolumes)
+		useRuntimeInit = true
+		if err := s.prepareRuntimeRootfs(state.DrivePath, runtimeConfig); err != nil {
+			return &proto.StartResponse{Success: false, Message: fmt.Sprintf("runtime rootfs preparation failed: %v", err)}, nil
+		}
+	}
 	var netCfg *NetworkConfig
-	if s.Config.NetworkEnabled {
+	if networkMode == internal.NetworkModeNAT {
 		cfg, err := s.networkManager().Setup(vmID)
 		if err != nil {
 			return &proto.StartResponse{Success: false, Message: fmt.Sprintf("network setup failed: %v", err)}, nil
@@ -212,17 +353,13 @@ func (s *Server) Start(ctx context.Context, req *proto.StartRequest) (*proto.Sta
 	}
 	consolePath := s.runtimePath(fmt.Sprintf("fvc-%s.console.in", vmID))
 	vsockPath := s.runtimePath(fmt.Sprintf("fvc-%s.vsock", vmID))
-	pid, processStartTime, err := s.launchFirecracker(vmID, kernelPath, state.DrivePath, state.LogPath, consolePath, vsockPath, state.CPUs, state.MemoryMB, netCfg, state.Ports, useRuntimeInit, state.AgentToken)
+	pid, processStartTime, storedVsockPath, err := s.launchFirecracker(vmID, kernelPath, state.DrivePath, state.LogPath, consolePath, vsockPath, state.CPUs, state.MemoryMB, netCfg, state.Ports, preparedVolumes, useRuntimeInit, state.AgentToken)
 	if err != nil {
 		s.cleanupNetwork(netCfg, state.Ports)
 		return &proto.StartResponse{Success: false, Message: err.Error()}, nil
 	}
 
 	tapName, guestIP, mac := networkFields(netCfg)
-	storedVsockPath := ""
-	if useRuntimeInit && shouldConfigureVsock(s.Config.GuestAgentMode) {
-		storedVsockPath = vsockPath
-	}
 	if err := vmstore.MarkRunning(s.DB, vmstore.RunningUpdate{
 		ID:               vmID,
 		PID:              pid,
@@ -253,6 +390,9 @@ func (s *Server) Rm(ctx context.Context, req *proto.RmRequest) (*proto.RmRespons
 	if err != nil {
 		return &proto.RmResponse{Success: false, Message: fmt.Sprintf("vm lookup failed: %v", err)}, nil
 	}
+	if _, err := s.refreshVMRuntimeState(vmID); err != nil && err != sql.ErrNoRows {
+		return &proto.RmResponse{Success: false, Message: err.Error()}, nil
+	}
 
 	state, err := vmstore.GetRemoveState(s.DB, vmID)
 	if err == sql.ErrNoRows {
@@ -266,6 +406,7 @@ func (s *Server) Rm(ctx context.Context, req *proto.RmRequest) (*proto.RmRespons
 	}
 
 	s.cleanupNetwork(networkConfigFromStore(state.Network), state.Network.Ports)
+	s.cleanupJailerRuntime(vmID)
 	if state.DrivePath != "" {
 		_ = os.Remove(state.DrivePath)
 	}
@@ -284,6 +425,79 @@ func (s *Server) Rm(ctx context.Context, req *proto.RmRequest) (*proto.RmRespons
 	return &proto.RmResponse{Success: true, Message: fmt.Sprintf("microVM removed: %s", vmID)}, nil
 }
 
+func (s *Server) Rename(ctx context.Context, req *proto.RenameRequest) (*proto.RenameResponse, error) {
+	if req == nil || req.VmId == "" {
+		return &proto.RenameResponse{Success: false, Message: "vm id is required"}, nil
+	}
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		return &proto.RenameResponse{Success: false, Message: "new name is required"}, nil
+	}
+	if err := internal.ValidateVMName(name); err != nil {
+		return &proto.RenameResponse{Success: false, Message: fmt.Sprintf("invalid vm name: %v", err)}, nil
+	}
+	vmID, err := s.resolveVMRef(req.VmId)
+	if err == sql.ErrNoRows {
+		return &proto.RenameResponse{Success: false, Message: fmt.Sprintf("vm not found: %s", req.VmId)}, nil
+	}
+	if err != nil {
+		return &proto.RenameResponse{Success: false, Message: fmt.Sprintf("vm lookup failed: %v", err)}, nil
+	}
+	if exists, err := s.vmNameExists(name, vmID); err != nil {
+		return &proto.RenameResponse{Success: false, Message: fmt.Sprintf("vm name check failed: %v", err)}, nil
+	} else if exists {
+		return &proto.RenameResponse{Success: false, Message: fmt.Sprintf("vm name already exists: %s", name)}, nil
+	}
+	if err := vmstore.Rename(s.DB, vmID, name); err != nil {
+		return &proto.RenameResponse{Success: false, Message: fmt.Sprintf("rename failed: %v", err)}, nil
+	}
+	return &proto.RenameResponse{Success: true, Message: fmt.Sprintf("microVM renamed: %s -> %s", vmID, name)}, nil
+}
+
+func (s *Server) Update(ctx context.Context, req *proto.UpdateRequest) (*proto.UpdateResponse, error) {
+	if req == nil || req.VmId == "" {
+		return &proto.UpdateResponse{Success: false, Message: "vm id is required"}, nil
+	}
+	if req.Cpus == 0 && req.MemoryMb == 0 {
+		return &proto.UpdateResponse{Success: false, Message: "nothing to update; set --cpu or --ram"}, nil
+	}
+	vmID, err := s.resolveVMRef(req.VmId)
+	if err == sql.ErrNoRows {
+		return &proto.UpdateResponse{Success: false, Message: fmt.Sprintf("vm not found: %s", req.VmId)}, nil
+	}
+	if err != nil {
+		return &proto.UpdateResponse{Success: false, Message: fmt.Sprintf("vm lookup failed: %v", err)}, nil
+	}
+	if _, err := s.refreshVMRuntimeState(vmID); err != nil && err != sql.ErrNoRows {
+		return &proto.UpdateResponse{Success: false, Message: err.Error()}, nil
+	}
+	details, err := vmstore.GetDetails(s.DB, vmID)
+	if err == sql.ErrNoRows {
+		return &proto.UpdateResponse{Success: false, Message: fmt.Sprintf("vm not found: %s", req.VmId)}, nil
+	}
+	if err != nil {
+		return &proto.UpdateResponse{Success: false, Message: fmt.Sprintf("state lookup failed: %v", err)}, nil
+	}
+	if details.Status == internal.VmRunning {
+		return &proto.UpdateResponse{Success: false, Message: "cannot update resources for a running microVM; stop it first"}, nil
+	}
+	cpus := details.CPUs
+	memoryMB := details.MemoryMB
+	if req.Cpus != 0 {
+		cpus = req.Cpus
+	}
+	if req.MemoryMb != 0 {
+		memoryMB = req.MemoryMb
+	}
+	if err := internal.ValidateResources(cpus, memoryMB); err != nil {
+		return &proto.UpdateResponse{Success: false, Message: fmt.Sprintf("invalid resources: %v", err)}, nil
+	}
+	if err := vmstore.UpdateResources(s.DB, vmID, cpus, memoryMB); err != nil {
+		return &proto.UpdateResponse{Success: false, Message: fmt.Sprintf("resource update failed: %v", err)}, nil
+	}
+	return &proto.UpdateResponse{Success: true, Message: fmt.Sprintf("microVM updated: %s cpu=%d ram=%dMB", vmID, cpus, memoryMB)}, nil
+}
+
 func (s *Server) ConsoleInfo(ctx context.Context, req *proto.ConsoleInfoRequest) (*proto.ConsoleInfoResponse, error) {
 	if req == nil || req.VmId == "" {
 		return &proto.ConsoleInfoResponse{Success: false, Message: "vm id is required"}, nil
@@ -294,6 +508,9 @@ func (s *Server) ConsoleInfo(ctx context.Context, req *proto.ConsoleInfoRequest)
 	}
 	if err != nil {
 		return &proto.ConsoleInfoResponse{Success: false, Message: fmt.Sprintf("vm lookup failed: %v", err)}, nil
+	}
+	if _, err := s.refreshVMRuntimeState(vmID); err != nil && err != sql.ErrNoRows {
+		return &proto.ConsoleInfoResponse{Success: false, Message: err.Error()}, nil
 	}
 
 	state, err := vmstore.GetConsoleState(s.DB, vmID)

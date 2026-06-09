@@ -109,9 +109,24 @@ func TestEnsureSchemaAddsNetworkColumns(t *testing.T) {
 		t.Fatalf("ensureSchema failed: %v", err)
 	}
 
-	_, err = db.Exec(`INSERT INTO vms (id, status, image, tap_name, guest_ip, mac_address) VALUES (?, ?, ?, ?, ?, ?)`, "vm-net", "stopped", "ubuntu", "fvc123", "172.16.0.2", "02:FC:00:00:00:01")
+	_, err = db.Exec(`INSERT INTO vms (id, status, image, tap_name, guest_ip, mac_address, network_mode) VALUES (?, ?, ?, ?, ?, ?, ?)`, "vm-net", "stopped", "ubuntu", "fvc123", "172.16.0.2", "02:FC:00:00:00:01", "nat")
 	if err != nil {
 		t.Fatalf("expected network columns to exist: %v", err)
+	}
+}
+
+func TestEnsureSchemaAddsVolumes(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("failed to open db: %v", err)
+	}
+	defer db.Close()
+	if err := ensureSchema(db); err != nil {
+		t.Fatalf("ensureSchema failed: %v", err)
+	}
+
+	if _, err := db.Exec(`INSERT INTO vms (id, status, image, volumes) VALUES (?, ?, ?, ?)`, "vm-vol", "stopped", "ubuntu", "data:/data"); err != nil {
+		t.Fatalf("expected volumes column to exist: %v", err)
 	}
 }
 

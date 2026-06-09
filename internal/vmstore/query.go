@@ -19,6 +19,8 @@ type Details struct {
 	CPUs        int32
 	MemoryMB    int32
 	Ports       []string
+	NetworkMode string
+	Volumes     []string
 	GuestIP     string
 	MACAddress  string
 	TapName     string
@@ -49,7 +51,7 @@ type detailsScanner interface {
 
 // DetailsSelect returns the canonical SELECT fragment for VM details rows.
 func DetailsSelect() string {
-	return `SELECT id, COALESCE(name, ''), pid, status, image, cpus, memory_mb, COALESCE(ports, ''), COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(tap_name, ''), COALESCE(log_path, ''), COALESCE(drive_path, ''), COALESCE(console_path, ''), COALESCE(exit_code, -1) FROM vms`
+	return `SELECT id, COALESCE(name, ''), pid, status, image, cpus, memory_mb, COALESCE(ports, ''), COALESCE(network_mode, ''), COALESCE(volumes, ''), COALESCE(guest_ip, ''), COALESCE(mac_address, ''), COALESCE(tap_name, ''), COALESCE(log_path, ''), COALESCE(drive_path, ''), COALESCE(console_path, ''), COALESCE(exit_code, -1) FROM vms`
 }
 
 // ListDetails returns VM details, optionally restricted to running VMs.
@@ -87,8 +89,12 @@ func GetDetails(db *sql.DB, id string) (Details, error) {
 func ScanDetails(scanner detailsScanner) (Details, error) {
 	var vm Details
 	var portsValue string
-	if err := scanner.Scan(&vm.ID, &vm.Name, &vm.PID, &vm.Status, &vm.Image, &vm.CPUs, &vm.MemoryMB, &portsValue, &vm.GuestIP, &vm.MACAddress, &vm.TapName, &vm.LogPath, &vm.DrivePath, &vm.ConsolePath, &vm.ExitCode); err != nil {
+	var volumesValue string
+	if err := scanner.Scan(&vm.ID, &vm.Name, &vm.PID, &vm.Status, &vm.Image, &vm.CPUs, &vm.MemoryMB, &portsValue, &vm.NetworkMode, &volumesValue, &vm.GuestIP, &vm.MACAddress, &vm.TapName, &vm.LogPath, &vm.DrivePath, &vm.ConsolePath, &vm.ExitCode); err != nil {
 		return Details{}, err
+	}
+	if vm.NetworkMode == "" {
+		vm.NetworkMode = "nat"
 	}
 	if vm.Status != internal.VmRunning {
 		vm.GuestIP = ""
@@ -96,6 +102,7 @@ func ScanDetails(scanner detailsScanner) (Details, error) {
 		vm.TapName = ""
 	}
 	vm.Ports = SplitPorts(portsValue)
+	vm.Volumes = SplitList(volumesValue)
 	return vm, nil
 }
 
@@ -159,15 +166,19 @@ func ParseDBTime(value string) (time.Time, error) {
 
 // SplitPorts decodes the comma-separated port list stored in SQLite.
 func SplitPorts(value string) []string {
+	return SplitList(value)
+}
+
+func SplitList(value string) []string {
 	if strings.TrimSpace(value) == "" {
 		return nil
 	}
 	parts := strings.Split(value, ",")
-	ports := make([]string, 0, len(parts))
+	values := make([]string, 0, len(parts))
 	for _, part := range parts {
 		if trimmed := strings.TrimSpace(part); trimmed != "" {
-			ports = append(ports, trimmed)
+			values = append(values, trimmed)
 		}
 	}
-	return ports
+	return values
 }

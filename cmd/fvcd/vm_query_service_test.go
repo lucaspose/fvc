@@ -3,8 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/lucaspose/fvc/internal"
+	"github.com/lucaspose/fvc/internal/vmstore"
 	"github.com/lucaspose/fvc/proto"
 	_ "modernc.org/sqlite"
 )
@@ -18,8 +23,9 @@ func TestInspect(t *testing.T) {
 	if err := ensureSchema(db); err != nil {
 		t.Fatalf("ensureSchema failed: %v", err)
 	}
-	_, err = db.Exec(`INSERT INTO vms (id, pid, status, image, cpus, memory_mb, log_path, drive_path, console_path, tap_name, guest_ip, mac_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		"vm-inspect", 123, "running", "ubuntu", 2, 1024, "/tmp/vm.log", "/tmp/vm.ext4", "/tmp/vm.in", "fvc123", "172.16.0.2", "02:FC:00:00:00:01")
+	pid := os.Getpid()
+	_, err = db.Exec(`INSERT INTO vms (id, pid, process_start_time, status, image, cpus, memory_mb, log_path, drive_path, console_path, tap_name, guest_ip, mac_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		"vm-inspect", pid, processStartTimeValue(pid), "running", "ubuntu", 2, 1024, "/tmp/vm.log", "/tmp/vm.ext4", "/tmp/vm.in", "fvc123", "172.16.0.2", "02:FC:00:00:00:01")
 	if err != nil {
 		t.Fatalf("failed to insert vm: %v", err)
 	}
@@ -71,7 +77,8 @@ func TestPsAcceptsNilRequest(t *testing.T) {
 	if err := ensureSchema(db); err != nil {
 		t.Fatalf("ensureSchema failed: %v", err)
 	}
-	if _, err := db.Exec(`INSERT INTO vms (id, status, image) VALUES (?, ?, ?)`, "vm-running", "running", "ubuntu"); err != nil {
+	pid := os.Getpid()
+	if _, err := db.Exec(`INSERT INTO vms (id, pid, process_start_time, status, image) VALUES (?, ?, ?, ?, ?)`, "vm-running", pid, processStartTimeValue(pid), "running", "ubuntu"); err != nil {
 		t.Fatalf("failed to insert vm: %v", err)
 	}
 
@@ -82,6 +89,37 @@ func TestPsAcceptsNilRequest(t *testing.T) {
 	}
 	if len(res.Vms) != 1 {
 		t.Fatalf("expected one running vm, got %d", len(res.Vms))
+	}
+}
+
+func TestInspectRefreshesExitedVMFromLog(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("failed to open db: %v", err)
+	}
+	defer db.Close()
+	if err := ensureSchema(db); err != nil {
+		t.Fatalf("ensureSchema failed: %v", err)
+	}
+	logPath := filepath.Join(t.TempDir(), "vm.log")
+	if err := os.WriteFile(logPath, []byte("boot\nFVC_EXIT_CODE=42\n"), 0644); err != nil {
+		t.Fatalf("failed to write log: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO vms (id, pid, status, image, log_path, tap_name, guest_ip, mac_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		"vm-exited", 0, internal.VmRunning, "ubuntu", logPath, "tap0", "172.16.0.2", "02:FC:00:00:00:01"); err != nil {
+		t.Fatalf("failed to insert vm: %v", err)
+	}
+
+	server := Server{DB: db}
+	res, err := server.Inspect(context.Background(), &proto.InspectRequest{VmId: "vm-exited"})
+	if err != nil {
+		t.Fatalf("Inspect returned transport error: %v", err)
+	}
+	if !res.Success || res.Vm.GetStatus() != internal.VmExited || res.Vm.GetExitCode() != 42 {
+		t.Fatalf("expected exited vm with code 42, got %#v", res)
+	}
+	if res.Vm.GetGuestIp() != "" || res.Vm.GetTapName() != "" || res.Vm.GetMacAddress() != "" {
+		t.Fatalf("expected exited network fields hidden, got %#v", res.Vm)
 	}
 }
 
@@ -131,5 +169,200 @@ func TestWaitReturnsImmediatelyForStoppedVM(t *testing.T) {
 	}
 	if !res.Success || res.Status != "stopped" {
 		t.Fatalf("unexpected wait response: %#v", res)
+	}
+}
+
+func TestWaitRefreshesExitedVMFromLog(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("failed to open db: %v", err)
+	}
+	defer db.Close()
+	if err := ensureSchema(db); err != nil {
+		t.Fatalf("ensureSchema failed: %v", err)
+	}
+	logPath := filepath.Join(t.TempDir(), "vm.log")
+	if err := os.WriteFile(logPath, []byte("FVC_EXIT_CODE=0\n"), 0644); err != nil {
+		t.Fatalf("failed to write log: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO vms (id, pid, status, image, log_path) VALUES (?, ?, ?, ?, ?)`, "vm-wait-exit", 0, internal.VmRunning, "ubuntu", logPath); err != nil {
+		t.Fatalf("failed to insert vm: %v", err)
+	}
+
+	server := Server{DB: db}
+	res, err := server.Wait(context.Background(), &proto.WaitRequest{VmId: "vm-wait-exit", TimeoutSeconds: 1})
+	if err != nil {
+		t.Fatalf("Wait failed: %v", err)
+	}
+	if !res.Success || res.Status != internal.VmExited || res.ExitCode != 0 {
+		t.Fatalf("unexpected wait response: %#v", res)
+	}
+}
+
+func TestInspectRefreshAutoRemovesExitedVM(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("failed to open db: %v", err)
+	}
+	defer db.Close()
+	if err := ensureSchema(db); err != nil {
+		t.Fatalf("ensureSchema failed: %v", err)
+	}
+	dir := t.TempDir()
+	logPath := filepath.Join(dir, "vm.log")
+	drivePath := filepath.Join(dir, "vm.ext4")
+	consolePath := filepath.Join(dir, "vm.console")
+	vsockPath := filepath.Join(dir, "vm.vsock")
+	for path, data := range map[string][]byte{
+		logPath:     []byte("FVC_EXIT_CODE=0\n"),
+		drivePath:   []byte("drive"),
+		consolePath: []byte("console"),
+		vsockPath:   []byte("vsock"),
+	} {
+		if err := os.WriteFile(path, data, 0644); err != nil {
+			t.Fatalf("failed to write %s: %v", path, err)
+		}
+	}
+	if _, err := db.Exec(`INSERT INTO vms (id, pid, status, image, log_path, drive_path, console_path, vsock_path, auto_remove) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		"vm-auto-rm", 0, internal.VmRunning, "ubuntu", logPath, drivePath, consolePath, vsockPath, 1); err != nil {
+		t.Fatalf("failed to insert vm: %v", err)
+	}
+
+	server := Server{DB: db, Config: DaemonConfig{RuntimeDir: dir}}
+	res, err := server.Inspect(context.Background(), &proto.InspectRequest{VmId: "vm-auto-rm"})
+	if err != nil {
+		t.Fatalf("Inspect returned transport error: %v", err)
+	}
+	if res.Success || !strings.Contains(res.Message, "vm not found") {
+		t.Fatalf("expected auto-removed vm to be hidden, got %#v", res)
+	}
+	if _, err := os.Stat(drivePath); !os.IsNotExist(err) {
+		t.Fatalf("expected drive to be removed, stat err=%v", err)
+	}
+	if _, err := os.Stat(logPath); !os.IsNotExist(err) {
+		t.Fatalf("expected log to be removed, stat err=%v", err)
+	}
+	if _, err := vmstore.GetRuntimeState(db, "vm-auto-rm"); err != sql.ErrNoRows {
+		t.Fatalf("expected vm row to be removed, got %v", err)
+	}
+}
+
+func TestWaitRefreshAutoRemoveReturnsExitStatus(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("failed to open db: %v", err)
+	}
+	defer db.Close()
+	if err := ensureSchema(db); err != nil {
+		t.Fatalf("ensureSchema failed: %v", err)
+	}
+	dir := t.TempDir()
+	logPath := filepath.Join(dir, "vm.log")
+	drivePath := filepath.Join(dir, "vm.ext4")
+	if err := os.WriteFile(logPath, []byte("FVC_EXIT_CODE=17\n"), 0644); err != nil {
+		t.Fatalf("failed to write log: %v", err)
+	}
+	if err := os.WriteFile(drivePath, []byte("drive"), 0644); err != nil {
+		t.Fatalf("failed to write drive: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO vms (id, pid, status, image, log_path, drive_path, auto_remove) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		"vm-wait-auto-rm", 0, internal.VmRunning, "ubuntu", logPath, drivePath, 1); err != nil {
+		t.Fatalf("failed to insert vm: %v", err)
+	}
+
+	server := Server{DB: db, Config: DaemonConfig{RuntimeDir: dir}}
+	res, err := server.Wait(context.Background(), &proto.WaitRequest{VmId: "vm-wait-auto-rm", TimeoutSeconds: 1})
+	if err != nil {
+		t.Fatalf("Wait failed: %v", err)
+	}
+	if !res.Success || res.Status != internal.VmExited || res.ExitCode != 17 {
+		t.Fatalf("unexpected wait response: %#v", res)
+	}
+	if _, err := vmstore.GetRuntimeState(db, "vm-wait-auto-rm"); err != sql.ErrNoRows {
+		t.Fatalf("expected vm row to be removed, got %v", err)
+	}
+}
+
+func TestRenameUpdatesVMName(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("failed to open db: %v", err)
+	}
+	defer db.Close()
+	if err := ensureSchema(db); err != nil {
+		t.Fatalf("ensureSchema failed: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO vms (id, name, status, image) VALUES (?, ?, ?, ?)`, "vm-rename", "old", internal.VmStopped, "ubuntu"); err != nil {
+		t.Fatalf("failed to insert vm: %v", err)
+	}
+
+	server := Server{DB: db}
+	res, err := server.Rename(context.Background(), &proto.RenameRequest{VmId: "vm-rename", Name: "new-name"})
+	if err != nil {
+		t.Fatalf("Rename returned transport error: %v", err)
+	}
+	if !res.Success {
+		t.Fatalf("expected rename success, got %#v", res)
+	}
+	details, err := vmstore.GetDetails(db, "vm-rename")
+	if err != nil {
+		t.Fatalf("GetDetails failed: %v", err)
+	}
+	if details.Name != "new-name" {
+		t.Fatalf("expected renamed VM, got %#v", details)
+	}
+}
+
+func TestUpdateRefusesRunningVM(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("failed to open db: %v", err)
+	}
+	defer db.Close()
+	if err := ensureSchema(db); err != nil {
+		t.Fatalf("ensureSchema failed: %v", err)
+	}
+	pid := os.Getpid()
+	if _, err := db.Exec(`INSERT INTO vms (id, pid, process_start_time, status, image, cpus, memory_mb) VALUES (?, ?, ?, ?, ?, ?, ?)`, "vm-update-running", pid, processStartTimeValue(pid), internal.VmRunning, "ubuntu", 1, 512); err != nil {
+		t.Fatalf("failed to insert vm: %v", err)
+	}
+
+	server := Server{DB: db}
+	res, err := server.Update(context.Background(), &proto.UpdateRequest{VmId: "vm-update-running", Cpus: 2})
+	if err != nil {
+		t.Fatalf("Update returned transport error: %v", err)
+	}
+	if res.Success || !strings.Contains(res.Message, "running") {
+		t.Fatalf("expected running update rejection, got %#v", res)
+	}
+}
+
+func TestUpdateResourcesForStoppedVM(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("failed to open db: %v", err)
+	}
+	defer db.Close()
+	if err := ensureSchema(db); err != nil {
+		t.Fatalf("ensureSchema failed: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO vms (id, status, image, cpus, memory_mb) VALUES (?, ?, ?, ?, ?)`, "vm-update", internal.VmStopped, "ubuntu", 1, 512); err != nil {
+		t.Fatalf("failed to insert vm: %v", err)
+	}
+
+	server := Server{DB: db}
+	res, err := server.Update(context.Background(), &proto.UpdateRequest{VmId: "vm-update", Cpus: 2, MemoryMb: 1024})
+	if err != nil {
+		t.Fatalf("Update returned transport error: %v", err)
+	}
+	if !res.Success {
+		t.Fatalf("expected update success, got %#v", res)
+	}
+	details, err := vmstore.GetDetails(db, "vm-update")
+	if err != nil {
+		t.Fatalf("GetDetails failed: %v", err)
+	}
+	if details.CPUs != 2 || details.MemoryMB != 1024 {
+		t.Fatalf("expected updated resources, got %#v", details)
 	}
 }

@@ -10,8 +10,8 @@ import (
 
 func TestListDetailsHidesStoppedNetworkFields(t *testing.T) {
 	db := openTestDB(t)
-	_, err := db.Exec(`INSERT INTO vms (id, name, pid, status, image, cpus, memory_mb, ports, guest_ip, mac_address, tap_name, log_path, drive_path, console_path, exit_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		"vm-stopped", "web", 0, internal.VmStopped, "ubuntu", 2, 1024, "80:80,443:443", "172.16.0.2", "02:FC:00:00:00:01", "tap0", "/tmp/vm.log", "/tmp/vm.ext4", "/tmp/vm.in", 7)
+	_, err := db.Exec(`INSERT INTO vms (id, name, pid, status, image, cpus, memory_mb, ports, volumes, guest_ip, mac_address, tap_name, log_path, drive_path, console_path, exit_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		"vm-stopped", "web", 0, internal.VmStopped, "ubuntu", 2, 1024, "80:80,443:443", "data:/data", "172.16.0.2", "02:FC:00:00:00:01", "tap0", "/tmp/vm.log", "/tmp/vm.ext4", "/tmp/vm.in", 7)
 	if err != nil {
 		t.Fatalf("insert vm failed: %v", err)
 	}
@@ -24,7 +24,7 @@ func TestListDetailsHidesStoppedNetworkFields(t *testing.T) {
 		t.Fatalf("expected one VM, got %d", len(vms))
 	}
 	vm := vms[0]
-	if vm.ID != "vm-stopped" || vm.Name != "web" || vm.CPUs != 2 || vm.MemoryMB != 1024 || vm.ExitCode != 7 {
+	if vm.ID != "vm-stopped" || vm.Name != "web" || vm.CPUs != 2 || vm.MemoryMB != 1024 || vm.ExitCode != 7 || vm.NetworkMode != "nat" {
 		t.Fatalf("unexpected VM details: %#v", vm)
 	}
 	if vm.GuestIP != "" || vm.MACAddress != "" || vm.TapName != "" {
@@ -32,6 +32,9 @@ func TestListDetailsHidesStoppedNetworkFields(t *testing.T) {
 	}
 	if len(vm.Ports) != 2 || vm.Ports[0] != "80:80" || vm.Ports[1] != "443:443" {
 		t.Fatalf("unexpected ports: %#v", vm.Ports)
+	}
+	if len(vm.Volumes) != 1 || vm.Volumes[0] != "data:/data" {
+		t.Fatalf("unexpected volumes: %#v", vm.Volumes)
 	}
 }
 

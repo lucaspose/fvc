@@ -38,15 +38,52 @@ func TestValidateRunRequestRejectsInvalidResources(t *testing.T) {
 
 func TestValidateRunRequestAcceptsNameAndPorts(t *testing.T) {
 	cfg, err := validateRunRequest(&proto.RunRequest{
-		Source: "debian",
-		Name:   "api",
-		Config: &proto.VmConfig{Cpus: 2, MemoryMb: 512, Ports: []string{"8080:80", "443"}},
+		Source:       "debian",
+		ImageSource:  "docker",
+		DockerSource: "debian:bookworm",
+		PullPolicy:   "never",
+		Name:         "api",
+		AutoRemove:   true,
+		Config:       &proto.VmConfig{Cpus: 2, MemoryMb: 512, Ports: []string{"8080:80", "443"}, NetworkMode: "nat", Volumes: []string{"data:/var/lib/app", "cache:/cache:ro"}},
 	})
 	if err != nil {
 		t.Fatalf("expected request to be valid, got %v", err)
 	}
-	if cfg.Name != "api" || strings.Join(cfg.Ports, ",") != "8080:80,443:443" {
+	if cfg.Name != "api" || strings.Join(cfg.Ports, ",") != "8080:80,443:443" || len(cfg.Volumes) != 2 || !cfg.Volumes[1].ReadOnly || !cfg.AutoRemove || cfg.ImageSource != "docker" || cfg.DockerSource != "debian:bookworm" || cfg.PullPolicy != "never" || cfg.NetworkMode != "nat" {
 		t.Fatalf("unexpected run config: %#v", cfg)
+	}
+}
+
+func TestValidateRunRequestRejectsInvalidVolume(t *testing.T) {
+	_, err := validateRunRequest(&proto.RunRequest{Source: "debian", Config: &proto.VmConfig{Cpus: 1, MemoryMb: 512, Volumes: []string{"/host:/guest"}}})
+	if err == nil || !strings.Contains(err.Error(), "volume") {
+		t.Fatalf("expected volume validation error, got %v", err)
+	}
+}
+
+func TestValidateRunRequestRejectsUnsupportedImageSource(t *testing.T) {
+	_, err := validateRunRequest(&proto.RunRequest{Source: "debian", ImageSource: "oci"})
+	if err == nil || !strings.Contains(err.Error(), "unsupported image source") {
+		t.Fatalf("expected image source validation error, got %v", err)
+	}
+}
+
+func TestValidateRunRequestRejectsUnsupportedNetworkMode(t *testing.T) {
+	_, err := validateRunRequest(&proto.RunRequest{Source: "debian", Config: &proto.VmConfig{Cpus: 1, MemoryMb: 512, NetworkMode: "bridge"}})
+	if err == nil || !strings.Contains(err.Error(), "unsupported network mode") {
+		t.Fatalf("expected network mode validation error, got %v", err)
+	}
+}
+
+func TestEffectiveNetworkModeTracksDaemonDefault(t *testing.T) {
+	if got := effectiveNetworkMode("", true); got != "nat" {
+		t.Fatalf("expected nat, got %s", got)
+	}
+	if got := effectiveNetworkMode("", false); got != "none" {
+		t.Fatalf("expected none, got %s", got)
+	}
+	if got := effectiveNetworkMode("none", true); got != "none" {
+		t.Fatalf("expected explicit none, got %s", got)
 	}
 }
 
