@@ -30,6 +30,10 @@ type RunRequest struct {
 	Source        string                 `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"` // Le chemin du Vmfile ou le nom de l'image
 	Config        *VmConfig              `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	AutoRemove    bool                   `protobuf:"varint,4,opt,name=auto_remove,json=autoRemove,proto3" json:"auto_remove,omitempty"`
+	ImageSource   string                 `protobuf:"bytes,5,opt,name=image_source,json=imageSource,proto3" json:"image_source,omitempty"`
+	DockerSource  string                 `protobuf:"bytes,6,opt,name=docker_source,json=dockerSource,proto3" json:"docker_source,omitempty"`
+	PullPolicy    string                 `protobuf:"bytes,7,opt,name=pull_policy,json=pullPolicy,proto3" json:"pull_policy,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -81,6 +85,34 @@ func (x *RunRequest) GetConfig() *VmConfig {
 func (x *RunRequest) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+func (x *RunRequest) GetAutoRemove() bool {
+	if x != nil {
+		return x.AutoRemove
+	}
+	return false
+}
+
+func (x *RunRequest) GetImageSource() string {
+	if x != nil {
+		return x.ImageSource
+	}
+	return ""
+}
+
+func (x *RunRequest) GetDockerSource() string {
+	if x != nil {
+		return x.DockerSource
+	}
+	return ""
+}
+
+func (x *RunRequest) GetPullPolicy() string {
+	if x != nil {
+		return x.PullPolicy
 	}
 	return ""
 }
@@ -650,6 +682,222 @@ func (x *RmResponse) GetMessage() string {
 	return ""
 }
 
+type RenameRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RenameRequest) Reset() {
+	*x = RenameRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RenameRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RenameRequest) ProtoMessage() {}
+
+func (x *RenameRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RenameRequest.ProtoReflect.Descriptor instead.
+func (*RenameRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RenameRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+func (x *RenameRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type RenameResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RenameResponse) Reset() {
+	*x = RenameResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RenameResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RenameResponse) ProtoMessage() {}
+
+func (x *RenameResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RenameResponse.ProtoReflect.Descriptor instead.
+func (*RenameResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RenameResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *RenameResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type UpdateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
+	Cpus          int32                  `protobuf:"varint,2,opt,name=cpus,proto3" json:"cpus,omitempty"`
+	MemoryMb      int32                  `protobuf:"varint,3,opt,name=memory_mb,json=memoryMb,proto3" json:"memory_mb,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateRequest) Reset() {
+	*x = UpdateRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateRequest) ProtoMessage() {}
+
+func (x *UpdateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateRequest.ProtoReflect.Descriptor instead.
+func (*UpdateRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *UpdateRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+func (x *UpdateRequest) GetCpus() int32 {
+	if x != nil {
+		return x.Cpus
+	}
+	return 0
+}
+
+func (x *UpdateRequest) GetMemoryMb() int32 {
+	if x != nil {
+		return x.MemoryMb
+	}
+	return 0
+}
+
+type UpdateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateResponse) Reset() {
+	*x = UpdateResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateResponse) ProtoMessage() {}
+
+func (x *UpdateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateResponse.ProtoReflect.Descriptor instead.
+func (*UpdateResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *UpdateResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *UpdateResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 type ConsoleInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
@@ -659,7 +907,7 @@ type ConsoleInfoRequest struct {
 
 func (x *ConsoleInfoRequest) Reset() {
 	*x = ConsoleInfoRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[10]
+	mi := &file_proto_fvc_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -671,7 +919,7 @@ func (x *ConsoleInfoRequest) String() string {
 func (*ConsoleInfoRequest) ProtoMessage() {}
 
 func (x *ConsoleInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[10]
+	mi := &file_proto_fvc_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -684,7 +932,7 @@ func (x *ConsoleInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConsoleInfoRequest.ProtoReflect.Descriptor instead.
 func (*ConsoleInfoRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{10}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ConsoleInfoRequest) GetVmId() string {
@@ -707,7 +955,7 @@ type ConsoleInfoResponse struct {
 
 func (x *ConsoleInfoResponse) Reset() {
 	*x = ConsoleInfoResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[11]
+	mi := &file_proto_fvc_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -719,7 +967,7 @@ func (x *ConsoleInfoResponse) String() string {
 func (*ConsoleInfoResponse) ProtoMessage() {}
 
 func (x *ConsoleInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[11]
+	mi := &file_proto_fvc_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -732,7 +980,7 @@ func (x *ConsoleInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConsoleInfoResponse.ProtoReflect.Descriptor instead.
 func (*ConsoleInfoResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{11}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ConsoleInfoResponse) GetSuccess() bool {
@@ -782,7 +1030,7 @@ type ExecRequest struct {
 
 func (x *ExecRequest) Reset() {
 	*x = ExecRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[12]
+	mi := &file_proto_fvc_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -794,7 +1042,7 @@ func (x *ExecRequest) String() string {
 func (*ExecRequest) ProtoMessage() {}
 
 func (x *ExecRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[12]
+	mi := &file_proto_fvc_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -807,7 +1055,7 @@ func (x *ExecRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecRequest.ProtoReflect.Descriptor instead.
 func (*ExecRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{12}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ExecRequest) GetVmId() string {
@@ -850,7 +1098,7 @@ type ExecEvent struct {
 
 func (x *ExecEvent) Reset() {
 	*x = ExecEvent{}
-	mi := &file_proto_fvc_proto_msgTypes[13]
+	mi := &file_proto_fvc_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -862,7 +1110,7 @@ func (x *ExecEvent) String() string {
 func (*ExecEvent) ProtoMessage() {}
 
 func (x *ExecEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[13]
+	mi := &file_proto_fvc_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -875,7 +1123,7 @@ func (x *ExecEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecEvent.ProtoReflect.Descriptor instead.
 func (*ExecEvent) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{13}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ExecEvent) GetStream() string {
@@ -915,7 +1163,7 @@ type InspectRequest struct {
 
 func (x *InspectRequest) Reset() {
 	*x = InspectRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[14]
+	mi := &file_proto_fvc_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -927,7 +1175,7 @@ func (x *InspectRequest) String() string {
 func (*InspectRequest) ProtoMessage() {}
 
 func (x *InspectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[14]
+	mi := &file_proto_fvc_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -940,7 +1188,7 @@ func (x *InspectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InspectRequest.ProtoReflect.Descriptor instead.
 func (*InspectRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{14}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *InspectRequest) GetVmId() string {
@@ -961,7 +1209,7 @@ type InspectResponse struct {
 
 func (x *InspectResponse) Reset() {
 	*x = InspectResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[15]
+	mi := &file_proto_fvc_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -973,7 +1221,7 @@ func (x *InspectResponse) String() string {
 func (*InspectResponse) ProtoMessage() {}
 
 func (x *InspectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[15]
+	mi := &file_proto_fvc_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -986,7 +1234,7 @@ func (x *InspectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InspectResponse.ProtoReflect.Descriptor instead.
 func (*InspectResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{15}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *InspectResponse) GetSuccess() bool {
@@ -1021,7 +1269,7 @@ type PullImageRequest struct {
 
 func (x *PullImageRequest) Reset() {
 	*x = PullImageRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[16]
+	mi := &file_proto_fvc_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1033,7 +1281,7 @@ func (x *PullImageRequest) String() string {
 func (*PullImageRequest) ProtoMessage() {}
 
 func (x *PullImageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[16]
+	mi := &file_proto_fvc_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1046,7 +1294,7 @@ func (x *PullImageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PullImageRequest.ProtoReflect.Descriptor instead.
 func (*PullImageRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{16}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *PullImageRequest) GetImage() string {
@@ -1082,7 +1330,7 @@ type PullImageResponse struct {
 
 func (x *PullImageResponse) Reset() {
 	*x = PullImageResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[17]
+	mi := &file_proto_fvc_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1094,7 +1342,7 @@ func (x *PullImageResponse) String() string {
 func (*PullImageResponse) ProtoMessage() {}
 
 func (x *PullImageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[17]
+	mi := &file_proto_fvc_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1107,7 +1355,7 @@ func (x *PullImageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PullImageResponse.ProtoReflect.Descriptor instead.
 func (*PullImageResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{17}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *PullImageResponse) GetSuccess() bool {
@@ -1146,7 +1394,7 @@ type ListImagesRequest struct {
 
 func (x *ListImagesRequest) Reset() {
 	*x = ListImagesRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[18]
+	mi := &file_proto_fvc_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1158,7 +1406,7 @@ func (x *ListImagesRequest) String() string {
 func (*ListImagesRequest) ProtoMessage() {}
 
 func (x *ListImagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[18]
+	mi := &file_proto_fvc_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1171,7 +1419,7 @@ func (x *ListImagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListImagesRequest.ProtoReflect.Descriptor instead.
 func (*ListImagesRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{18}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{22}
 }
 
 type ImageDetails struct {
@@ -1193,7 +1441,7 @@ type ImageDetails struct {
 
 func (x *ImageDetails) Reset() {
 	*x = ImageDetails{}
-	mi := &file_proto_fvc_proto_msgTypes[19]
+	mi := &file_proto_fvc_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1205,7 +1453,7 @@ func (x *ImageDetails) String() string {
 func (*ImageDetails) ProtoMessage() {}
 
 func (x *ImageDetails) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[19]
+	mi := &file_proto_fvc_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1218,7 +1466,7 @@ func (x *ImageDetails) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageDetails.ProtoReflect.Descriptor instead.
 func (*ImageDetails) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{19}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ImageDetails) GetImage() string {
@@ -1307,7 +1555,7 @@ type ListImagesResponse struct {
 
 func (x *ListImagesResponse) Reset() {
 	*x = ListImagesResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[20]
+	mi := &file_proto_fvc_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1319,7 +1567,7 @@ func (x *ListImagesResponse) String() string {
 func (*ListImagesResponse) ProtoMessage() {}
 
 func (x *ListImagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[20]
+	mi := &file_proto_fvc_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1332,7 +1580,7 @@ func (x *ListImagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListImagesResponse.ProtoReflect.Descriptor instead.
 func (*ListImagesResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{20}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListImagesResponse) GetImages() []*ImageDetails {
@@ -1351,7 +1599,7 @@ type PruneRequest struct {
 
 func (x *PruneRequest) Reset() {
 	*x = PruneRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[21]
+	mi := &file_proto_fvc_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1363,7 +1611,7 @@ func (x *PruneRequest) String() string {
 func (*PruneRequest) ProtoMessage() {}
 
 func (x *PruneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[21]
+	mi := &file_proto_fvc_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1376,7 +1624,7 @@ func (x *PruneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PruneRequest.ProtoReflect.Descriptor instead.
 func (*PruneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{21}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *PruneRequest) GetDryRun() bool {
@@ -1397,7 +1645,7 @@ type PruneItem struct {
 
 func (x *PruneItem) Reset() {
 	*x = PruneItem{}
-	mi := &file_proto_fvc_proto_msgTypes[22]
+	mi := &file_proto_fvc_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1409,7 +1657,7 @@ func (x *PruneItem) String() string {
 func (*PruneItem) ProtoMessage() {}
 
 func (x *PruneItem) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[22]
+	mi := &file_proto_fvc_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1422,7 +1670,7 @@ func (x *PruneItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PruneItem.ProtoReflect.Descriptor instead.
 func (*PruneItem) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{22}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *PruneItem) GetKind() string {
@@ -1460,7 +1708,7 @@ type PruneResponse struct {
 
 func (x *PruneResponse) Reset() {
 	*x = PruneResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[23]
+	mi := &file_proto_fvc_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1472,7 +1720,7 @@ func (x *PruneResponse) String() string {
 func (*PruneResponse) ProtoMessage() {}
 
 func (x *PruneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[23]
+	mi := &file_proto_fvc_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1485,7 +1733,7 @@ func (x *PruneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PruneResponse.ProtoReflect.Descriptor instead.
 func (*PruneResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{23}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *PruneResponse) GetSuccess() bool {
@@ -1539,7 +1787,7 @@ type StatsRequest struct {
 
 func (x *StatsRequest) Reset() {
 	*x = StatsRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[24]
+	mi := &file_proto_fvc_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1551,7 +1799,7 @@ func (x *StatsRequest) String() string {
 func (*StatsRequest) ProtoMessage() {}
 
 func (x *StatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[24]
+	mi := &file_proto_fvc_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1564,7 +1812,7 @@ func (x *StatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatsRequest.ProtoReflect.Descriptor instead.
 func (*StatsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{24}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *StatsRequest) GetVmId() string {
@@ -1589,7 +1837,7 @@ type VmStats struct {
 
 func (x *VmStats) Reset() {
 	*x = VmStats{}
-	mi := &file_proto_fvc_proto_msgTypes[25]
+	mi := &file_proto_fvc_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1601,7 +1849,7 @@ func (x *VmStats) String() string {
 func (*VmStats) ProtoMessage() {}
 
 func (x *VmStats) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[25]
+	mi := &file_proto_fvc_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1614,7 +1862,7 @@ func (x *VmStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VmStats.ProtoReflect.Descriptor instead.
 func (*VmStats) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{25}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *VmStats) GetVmId() string {
@@ -1675,7 +1923,7 @@ type StatsResponse struct {
 
 func (x *StatsResponse) Reset() {
 	*x = StatsResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[26]
+	mi := &file_proto_fvc_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1687,7 +1935,7 @@ func (x *StatsResponse) String() string {
 func (*StatsResponse) ProtoMessage() {}
 
 func (x *StatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[26]
+	mi := &file_proto_fvc_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1700,7 +1948,7 @@ func (x *StatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatsResponse.ProtoReflect.Descriptor instead.
 func (*StatsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{26}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *StatsResponse) GetStats() []*VmStats {
@@ -1720,7 +1968,7 @@ type WaitRequest struct {
 
 func (x *WaitRequest) Reset() {
 	*x = WaitRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[27]
+	mi := &file_proto_fvc_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1732,7 +1980,7 @@ func (x *WaitRequest) String() string {
 func (*WaitRequest) ProtoMessage() {}
 
 func (x *WaitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[27]
+	mi := &file_proto_fvc_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1745,7 +1993,7 @@ func (x *WaitRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WaitRequest.ProtoReflect.Descriptor instead.
 func (*WaitRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{27}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *WaitRequest) GetVmId() string {
@@ -1774,7 +2022,7 @@ type WaitResponse struct {
 
 func (x *WaitResponse) Reset() {
 	*x = WaitResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[28]
+	mi := &file_proto_fvc_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1786,7 +2034,7 @@ func (x *WaitResponse) String() string {
 func (*WaitResponse) ProtoMessage() {}
 
 func (x *WaitResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[28]
+	mi := &file_proto_fvc_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1799,7 +2047,7 @@ func (x *WaitResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WaitResponse.ProtoReflect.Descriptor instead.
 func (*WaitResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{28}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *WaitResponse) GetSuccess() bool {
@@ -1839,7 +2087,7 @@ type KillRequest struct {
 
 func (x *KillRequest) Reset() {
 	*x = KillRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[29]
+	mi := &file_proto_fvc_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1851,7 +2099,7 @@ func (x *KillRequest) String() string {
 func (*KillRequest) ProtoMessage() {}
 
 func (x *KillRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[29]
+	mi := &file_proto_fvc_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1864,7 +2112,7 @@ func (x *KillRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KillRequest.ProtoReflect.Descriptor instead.
 func (*KillRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{29}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *KillRequest) GetVmId() string {
@@ -1884,7 +2132,7 @@ type KillResponse struct {
 
 func (x *KillResponse) Reset() {
 	*x = KillResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[30]
+	mi := &file_proto_fvc_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1896,7 +2144,7 @@ func (x *KillResponse) String() string {
 func (*KillResponse) ProtoMessage() {}
 
 func (x *KillResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[30]
+	mi := &file_proto_fvc_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1909,7 +2157,7 @@ func (x *KillResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KillResponse.ProtoReflect.Descriptor instead.
 func (*KillResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{30}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *KillResponse) GetSuccess() bool {
@@ -1936,7 +2184,7 @@ type SnapshotCreateRequest struct {
 
 func (x *SnapshotCreateRequest) Reset() {
 	*x = SnapshotCreateRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[31]
+	mi := &file_proto_fvc_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1948,7 +2196,7 @@ func (x *SnapshotCreateRequest) String() string {
 func (*SnapshotCreateRequest) ProtoMessage() {}
 
 func (x *SnapshotCreateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[31]
+	mi := &file_proto_fvc_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1961,7 +2209,7 @@ func (x *SnapshotCreateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotCreateRequest.ProtoReflect.Descriptor instead.
 func (*SnapshotCreateRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{31}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *SnapshotCreateRequest) GetVmId() string {
@@ -1989,7 +2237,7 @@ type SnapshotCreateResponse struct {
 
 func (x *SnapshotCreateResponse) Reset() {
 	*x = SnapshotCreateResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[32]
+	mi := &file_proto_fvc_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2001,7 +2249,7 @@ func (x *SnapshotCreateResponse) String() string {
 func (*SnapshotCreateResponse) ProtoMessage() {}
 
 func (x *SnapshotCreateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[32]
+	mi := &file_proto_fvc_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2014,7 +2262,7 @@ func (x *SnapshotCreateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotCreateResponse.ProtoReflect.Descriptor instead.
 func (*SnapshotCreateResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{32}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *SnapshotCreateResponse) GetSuccess() bool {
@@ -2047,7 +2295,7 @@ type SnapshotListRequest struct {
 
 func (x *SnapshotListRequest) Reset() {
 	*x = SnapshotListRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[33]
+	mi := &file_proto_fvc_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2059,7 +2307,7 @@ func (x *SnapshotListRequest) String() string {
 func (*SnapshotListRequest) ProtoMessage() {}
 
 func (x *SnapshotListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[33]
+	mi := &file_proto_fvc_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2072,7 +2320,7 @@ func (x *SnapshotListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotListRequest.ProtoReflect.Descriptor instead.
 func (*SnapshotListRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{33}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *SnapshotListRequest) GetVmId() string {
@@ -2093,7 +2341,7 @@ type SnapshotDetails struct {
 
 func (x *SnapshotDetails) Reset() {
 	*x = SnapshotDetails{}
-	mi := &file_proto_fvc_proto_msgTypes[34]
+	mi := &file_proto_fvc_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2105,7 +2353,7 @@ func (x *SnapshotDetails) String() string {
 func (*SnapshotDetails) ProtoMessage() {}
 
 func (x *SnapshotDetails) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[34]
+	mi := &file_proto_fvc_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2118,7 +2366,7 @@ func (x *SnapshotDetails) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotDetails.ProtoReflect.Descriptor instead.
 func (*SnapshotDetails) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{34}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *SnapshotDetails) GetName() string {
@@ -2153,7 +2401,7 @@ type SnapshotListResponse struct {
 
 func (x *SnapshotListResponse) Reset() {
 	*x = SnapshotListResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[35]
+	mi := &file_proto_fvc_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2165,7 +2413,7 @@ func (x *SnapshotListResponse) String() string {
 func (*SnapshotListResponse) ProtoMessage() {}
 
 func (x *SnapshotListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[35]
+	mi := &file_proto_fvc_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2178,7 +2426,7 @@ func (x *SnapshotListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotListResponse.ProtoReflect.Descriptor instead.
 func (*SnapshotListResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{35}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *SnapshotListResponse) GetSuccess() bool {
@@ -2212,7 +2460,7 @@ type SnapshotRestoreRequest struct {
 
 func (x *SnapshotRestoreRequest) Reset() {
 	*x = SnapshotRestoreRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[36]
+	mi := &file_proto_fvc_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2224,7 +2472,7 @@ func (x *SnapshotRestoreRequest) String() string {
 func (*SnapshotRestoreRequest) ProtoMessage() {}
 
 func (x *SnapshotRestoreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[36]
+	mi := &file_proto_fvc_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2237,7 +2485,7 @@ func (x *SnapshotRestoreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotRestoreRequest.ProtoReflect.Descriptor instead.
 func (*SnapshotRestoreRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{36}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *SnapshotRestoreRequest) GetVmId() string {
@@ -2265,7 +2513,7 @@ type SnapshotRestoreResponse struct {
 
 func (x *SnapshotRestoreResponse) Reset() {
 	*x = SnapshotRestoreResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[37]
+	mi := &file_proto_fvc_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2277,7 +2525,7 @@ func (x *SnapshotRestoreResponse) String() string {
 func (*SnapshotRestoreResponse) ProtoMessage() {}
 
 func (x *SnapshotRestoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[37]
+	mi := &file_proto_fvc_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2290,7 +2538,7 @@ func (x *SnapshotRestoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotRestoreResponse.ProtoReflect.Descriptor instead.
 func (*SnapshotRestoreResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{37}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *SnapshotRestoreResponse) GetSuccess() bool {
@@ -2324,7 +2572,7 @@ type SnapshotRemoveRequest struct {
 
 func (x *SnapshotRemoveRequest) Reset() {
 	*x = SnapshotRemoveRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[38]
+	mi := &file_proto_fvc_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2336,7 +2584,7 @@ func (x *SnapshotRemoveRequest) String() string {
 func (*SnapshotRemoveRequest) ProtoMessage() {}
 
 func (x *SnapshotRemoveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[38]
+	mi := &file_proto_fvc_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2349,7 +2597,7 @@ func (x *SnapshotRemoveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotRemoveRequest.ProtoReflect.Descriptor instead.
 func (*SnapshotRemoveRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{38}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *SnapshotRemoveRequest) GetVmId() string {
@@ -2376,7 +2624,7 @@ type SnapshotRemoveResponse struct {
 
 func (x *SnapshotRemoveResponse) Reset() {
 	*x = SnapshotRemoveResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[39]
+	mi := &file_proto_fvc_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2388,7 +2636,7 @@ func (x *SnapshotRemoveResponse) String() string {
 func (*SnapshotRemoveResponse) ProtoMessage() {}
 
 func (x *SnapshotRemoveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[39]
+	mi := &file_proto_fvc_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2401,7 +2649,7 @@ func (x *SnapshotRemoveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotRemoveResponse.ProtoReflect.Descriptor instead.
 func (*SnapshotRemoveResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{39}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *SnapshotRemoveResponse) GetSuccess() bool {
@@ -2428,7 +2676,7 @@ type BuildImageRequest struct {
 
 func (x *BuildImageRequest) Reset() {
 	*x = BuildImageRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[40]
+	mi := &file_proto_fvc_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2440,7 +2688,7 @@ func (x *BuildImageRequest) String() string {
 func (*BuildImageRequest) ProtoMessage() {}
 
 func (x *BuildImageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[40]
+	mi := &file_proto_fvc_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2453,7 +2701,7 @@ func (x *BuildImageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildImageRequest.ProtoReflect.Descriptor instead.
 func (*BuildImageRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{40}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *BuildImageRequest) GetContextPath() string {
@@ -2482,7 +2730,7 @@ type BuildImageResponse struct {
 
 func (x *BuildImageResponse) Reset() {
 	*x = BuildImageResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[41]
+	mi := &file_proto_fvc_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2494,7 +2742,7 @@ func (x *BuildImageResponse) String() string {
 func (*BuildImageResponse) ProtoMessage() {}
 
 func (x *BuildImageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[41]
+	mi := &file_proto_fvc_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2507,7 +2755,7 @@ func (x *BuildImageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildImageResponse.ProtoReflect.Descriptor instead.
 func (*BuildImageResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{41}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *BuildImageResponse) GetSuccess() bool {
@@ -2547,7 +2795,7 @@ type ImageInspectRequest struct {
 
 func (x *ImageInspectRequest) Reset() {
 	*x = ImageInspectRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[42]
+	mi := &file_proto_fvc_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2559,7 +2807,7 @@ func (x *ImageInspectRequest) String() string {
 func (*ImageInspectRequest) ProtoMessage() {}
 
 func (x *ImageInspectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[42]
+	mi := &file_proto_fvc_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2572,7 +2820,7 @@ func (x *ImageInspectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageInspectRequest.ProtoReflect.Descriptor instead.
 func (*ImageInspectRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{42}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ImageInspectRequest) GetImage() string {
@@ -2593,7 +2841,7 @@ type ImageInspectResponse struct {
 
 func (x *ImageInspectResponse) Reset() {
 	*x = ImageInspectResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[43]
+	mi := &file_proto_fvc_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2605,7 +2853,7 @@ func (x *ImageInspectResponse) String() string {
 func (*ImageInspectResponse) ProtoMessage() {}
 
 func (x *ImageInspectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[43]
+	mi := &file_proto_fvc_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2618,7 +2866,7 @@ func (x *ImageInspectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageInspectResponse.ProtoReflect.Descriptor instead.
 func (*ImageInspectResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{43}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ImageInspectResponse) GetSuccess() bool {
@@ -2652,7 +2900,7 @@ type ImageRemoveRequest struct {
 
 func (x *ImageRemoveRequest) Reset() {
 	*x = ImageRemoveRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[44]
+	mi := &file_proto_fvc_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2664,7 +2912,7 @@ func (x *ImageRemoveRequest) String() string {
 func (*ImageRemoveRequest) ProtoMessage() {}
 
 func (x *ImageRemoveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[44]
+	mi := &file_proto_fvc_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2677,7 +2925,7 @@ func (x *ImageRemoveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageRemoveRequest.ProtoReflect.Descriptor instead.
 func (*ImageRemoveRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{44}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *ImageRemoveRequest) GetImage() string {
@@ -2704,7 +2952,7 @@ type ImageRemoveResponse struct {
 
 func (x *ImageRemoveResponse) Reset() {
 	*x = ImageRemoveResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[45]
+	mi := &file_proto_fvc_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2716,7 +2964,7 @@ func (x *ImageRemoveResponse) String() string {
 func (*ImageRemoveResponse) ProtoMessage() {}
 
 func (x *ImageRemoveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[45]
+	mi := &file_proto_fvc_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2729,7 +2977,7 @@ func (x *ImageRemoveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageRemoveResponse.ProtoReflect.Descriptor instead.
 func (*ImageRemoveResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{45}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *ImageRemoveResponse) GetSuccess() bool {
@@ -2756,7 +3004,7 @@ type ImageTagRequest struct {
 
 func (x *ImageTagRequest) Reset() {
 	*x = ImageTagRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[46]
+	mi := &file_proto_fvc_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2768,7 +3016,7 @@ func (x *ImageTagRequest) String() string {
 func (*ImageTagRequest) ProtoMessage() {}
 
 func (x *ImageTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[46]
+	mi := &file_proto_fvc_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2781,7 +3029,7 @@ func (x *ImageTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageTagRequest.ProtoReflect.Descriptor instead.
 func (*ImageTagRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{46}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *ImageTagRequest) GetSource() string {
@@ -2809,7 +3057,7 @@ type ImageTagResponse struct {
 
 func (x *ImageTagResponse) Reset() {
 	*x = ImageTagResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[47]
+	mi := &file_proto_fvc_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2821,7 +3069,7 @@ func (x *ImageTagResponse) String() string {
 func (*ImageTagResponse) ProtoMessage() {}
 
 func (x *ImageTagResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[47]
+	mi := &file_proto_fvc_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2834,7 +3082,7 @@ func (x *ImageTagResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageTagResponse.ProtoReflect.Descriptor instead.
 func (*ImageTagResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{47}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ImageTagResponse) GetSuccess() bool {
@@ -2868,7 +3116,7 @@ type ImageImportRequest struct {
 
 func (x *ImageImportRequest) Reset() {
 	*x = ImageImportRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[48]
+	mi := &file_proto_fvc_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2880,7 +3128,7 @@ func (x *ImageImportRequest) String() string {
 func (*ImageImportRequest) ProtoMessage() {}
 
 func (x *ImageImportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[48]
+	mi := &file_proto_fvc_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2893,7 +3141,7 @@ func (x *ImageImportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageImportRequest.ProtoReflect.Descriptor instead.
 func (*ImageImportRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{48}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ImageImportRequest) GetSourcePath() string {
@@ -2921,7 +3169,7 @@ type ImageImportResponse struct {
 
 func (x *ImageImportResponse) Reset() {
 	*x = ImageImportResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[49]
+	mi := &file_proto_fvc_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2933,7 +3181,7 @@ func (x *ImageImportResponse) String() string {
 func (*ImageImportResponse) ProtoMessage() {}
 
 func (x *ImageImportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[49]
+	mi := &file_proto_fvc_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2946,7 +3194,7 @@ func (x *ImageImportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageImportResponse.ProtoReflect.Descriptor instead.
 func (*ImageImportResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{49}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *ImageImportResponse) GetSuccess() bool {
@@ -2980,7 +3228,7 @@ type ImageExportRequest struct {
 
 func (x *ImageExportRequest) Reset() {
 	*x = ImageExportRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[50]
+	mi := &file_proto_fvc_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2992,7 +3240,7 @@ func (x *ImageExportRequest) String() string {
 func (*ImageExportRequest) ProtoMessage() {}
 
 func (x *ImageExportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[50]
+	mi := &file_proto_fvc_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3005,7 +3253,7 @@ func (x *ImageExportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageExportRequest.ProtoReflect.Descriptor instead.
 func (*ImageExportRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{50}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *ImageExportRequest) GetImage() string {
@@ -3033,7 +3281,7 @@ type ImageExportResponse struct {
 
 func (x *ImageExportResponse) Reset() {
 	*x = ImageExportResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[51]
+	mi := &file_proto_fvc_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3045,7 +3293,7 @@ func (x *ImageExportResponse) String() string {
 func (*ImageExportResponse) ProtoMessage() {}
 
 func (x *ImageExportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[51]
+	mi := &file_proto_fvc_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3058,7 +3306,7 @@ func (x *ImageExportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageExportResponse.ProtoReflect.Descriptor instead.
 func (*ImageExportResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{51}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *ImageExportResponse) GetSuccess() bool {
@@ -3091,7 +3339,7 @@ type ImageHistoryRequest struct {
 
 func (x *ImageHistoryRequest) Reset() {
 	*x = ImageHistoryRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[52]
+	mi := &file_proto_fvc_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3103,7 +3351,7 @@ func (x *ImageHistoryRequest) String() string {
 func (*ImageHistoryRequest) ProtoMessage() {}
 
 func (x *ImageHistoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[52]
+	mi := &file_proto_fvc_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3116,7 +3364,7 @@ func (x *ImageHistoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageHistoryRequest.ProtoReflect.Descriptor instead.
 func (*ImageHistoryRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{52}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *ImageHistoryRequest) GetImage() string {
@@ -3137,7 +3385,7 @@ type ImageHistoryEntry struct {
 
 func (x *ImageHistoryEntry) Reset() {
 	*x = ImageHistoryEntry{}
-	mi := &file_proto_fvc_proto_msgTypes[53]
+	mi := &file_proto_fvc_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3149,7 +3397,7 @@ func (x *ImageHistoryEntry) String() string {
 func (*ImageHistoryEntry) ProtoMessage() {}
 
 func (x *ImageHistoryEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[53]
+	mi := &file_proto_fvc_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3162,7 +3410,7 @@ func (x *ImageHistoryEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageHistoryEntry.ProtoReflect.Descriptor instead.
 func (*ImageHistoryEntry) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{53}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *ImageHistoryEntry) GetAction() string {
@@ -3197,7 +3445,7 @@ type ImageHistoryResponse struct {
 
 func (x *ImageHistoryResponse) Reset() {
 	*x = ImageHistoryResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[54]
+	mi := &file_proto_fvc_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3209,7 +3457,7 @@ func (x *ImageHistoryResponse) String() string {
 func (*ImageHistoryResponse) ProtoMessage() {}
 
 func (x *ImageHistoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[54]
+	mi := &file_proto_fvc_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3222,7 +3470,7 @@ func (x *ImageHistoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageHistoryResponse.ProtoReflect.Descriptor instead.
 func (*ImageHistoryResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{54}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *ImageHistoryResponse) GetSuccess() bool {
@@ -3255,7 +3503,7 @@ type ImagePruneRequest struct {
 
 func (x *ImagePruneRequest) Reset() {
 	*x = ImagePruneRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[55]
+	mi := &file_proto_fvc_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3267,7 +3515,7 @@ func (x *ImagePruneRequest) String() string {
 func (*ImagePruneRequest) ProtoMessage() {}
 
 func (x *ImagePruneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[55]
+	mi := &file_proto_fvc_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3280,7 +3528,7 @@ func (x *ImagePruneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImagePruneRequest.ProtoReflect.Descriptor instead.
 func (*ImagePruneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{55}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *ImagePruneRequest) GetDryRun() bool {
@@ -3304,7 +3552,7 @@ type ImagePruneResponse struct {
 
 func (x *ImagePruneResponse) Reset() {
 	*x = ImagePruneResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[56]
+	mi := &file_proto_fvc_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3316,7 +3564,7 @@ func (x *ImagePruneResponse) String() string {
 func (*ImagePruneResponse) ProtoMessage() {}
 
 func (x *ImagePruneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[56]
+	mi := &file_proto_fvc_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3329,7 +3577,7 @@ func (x *ImagePruneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImagePruneResponse.ProtoReflect.Descriptor instead.
 func (*ImagePruneResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{56}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *ImagePruneResponse) GetSuccess() bool {
@@ -3374,6 +3622,642 @@ func (x *ImagePruneResponse) GetDryRun() bool {
 	return false
 }
 
+type VolumeCreateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	SizeMb        int64                  `protobuf:"varint,2,opt,name=size_mb,json=sizeMb,proto3" json:"size_mb,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeCreateRequest) Reset() {
+	*x = VolumeCreateRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeCreateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeCreateRequest) ProtoMessage() {}
+
+func (x *VolumeCreateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeCreateRequest.ProtoReflect.Descriptor instead.
+func (*VolumeCreateRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *VolumeCreateRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *VolumeCreateRequest) GetSizeMb() int64 {
+	if x != nil {
+		return x.SizeMb
+	}
+	return 0
+}
+
+type VolumeDetails struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Path              string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	SizeBytes         int64                  `protobuf:"varint,3,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	UsedBy            int32                  `protobuf:"varint,4,opt,name=used_by,json=usedBy,proto3" json:"used_by,omitempty"`
+	AttachedToRunning bool                   `protobuf:"varint,5,opt,name=attached_to_running,json=attachedToRunning,proto3" json:"attached_to_running,omitempty"`
+	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *VolumeDetails) Reset() {
+	*x = VolumeDetails{}
+	mi := &file_proto_fvc_proto_msgTypes[62]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeDetails) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeDetails) ProtoMessage() {}
+
+func (x *VolumeDetails) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[62]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeDetails.ProtoReflect.Descriptor instead.
+func (*VolumeDetails) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{62}
+}
+
+func (x *VolumeDetails) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *VolumeDetails) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *VolumeDetails) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+func (x *VolumeDetails) GetUsedBy() int32 {
+	if x != nil {
+		return x.UsedBy
+	}
+	return 0
+}
+
+func (x *VolumeDetails) GetAttachedToRunning() bool {
+	if x != nil {
+		return x.AttachedToRunning
+	}
+	return false
+}
+
+func (x *VolumeDetails) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+type VolumeCreateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Volume        *VolumeDetails         `protobuf:"bytes,3,opt,name=volume,proto3" json:"volume,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeCreateResponse) Reset() {
+	*x = VolumeCreateResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[63]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeCreateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeCreateResponse) ProtoMessage() {}
+
+func (x *VolumeCreateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[63]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeCreateResponse.ProtoReflect.Descriptor instead.
+func (*VolumeCreateResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{63}
+}
+
+func (x *VolumeCreateResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *VolumeCreateResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *VolumeCreateResponse) GetVolume() *VolumeDetails {
+	if x != nil {
+		return x.Volume
+	}
+	return nil
+}
+
+type VolumeListRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeListRequest) Reset() {
+	*x = VolumeListRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[64]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeListRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeListRequest) ProtoMessage() {}
+
+func (x *VolumeListRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[64]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeListRequest.ProtoReflect.Descriptor instead.
+func (*VolumeListRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{64}
+}
+
+type VolumeListResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Volumes       []*VolumeDetails       `protobuf:"bytes,3,rep,name=volumes,proto3" json:"volumes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeListResponse) Reset() {
+	*x = VolumeListResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[65]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeListResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeListResponse) ProtoMessage() {}
+
+func (x *VolumeListResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[65]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeListResponse.ProtoReflect.Descriptor instead.
+func (*VolumeListResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{65}
+}
+
+func (x *VolumeListResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *VolumeListResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *VolumeListResponse) GetVolumes() []*VolumeDetails {
+	if x != nil {
+		return x.Volumes
+	}
+	return nil
+}
+
+type VolumeInspectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeInspectRequest) Reset() {
+	*x = VolumeInspectRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[66]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeInspectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeInspectRequest) ProtoMessage() {}
+
+func (x *VolumeInspectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[66]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeInspectRequest.ProtoReflect.Descriptor instead.
+func (*VolumeInspectRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{66}
+}
+
+func (x *VolumeInspectRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type VolumeInspectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Volume        *VolumeDetails         `protobuf:"bytes,3,opt,name=volume,proto3" json:"volume,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeInspectResponse) Reset() {
+	*x = VolumeInspectResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[67]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeInspectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeInspectResponse) ProtoMessage() {}
+
+func (x *VolumeInspectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[67]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeInspectResponse.ProtoReflect.Descriptor instead.
+func (*VolumeInspectResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{67}
+}
+
+func (x *VolumeInspectResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *VolumeInspectResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *VolumeInspectResponse) GetVolume() *VolumeDetails {
+	if x != nil {
+		return x.Volume
+	}
+	return nil
+}
+
+type VolumeRemoveRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Force         bool                   `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeRemoveRequest) Reset() {
+	*x = VolumeRemoveRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[68]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeRemoveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeRemoveRequest) ProtoMessage() {}
+
+func (x *VolumeRemoveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[68]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeRemoveRequest.ProtoReflect.Descriptor instead.
+func (*VolumeRemoveRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{68}
+}
+
+func (x *VolumeRemoveRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *VolumeRemoveRequest) GetForce() bool {
+	if x != nil {
+		return x.Force
+	}
+	return false
+}
+
+type VolumeRemoveResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Volume        *VolumeDetails         `protobuf:"bytes,3,opt,name=volume,proto3" json:"volume,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeRemoveResponse) Reset() {
+	*x = VolumeRemoveResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeRemoveResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeRemoveResponse) ProtoMessage() {}
+
+func (x *VolumeRemoveResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeRemoveResponse.ProtoReflect.Descriptor instead.
+func (*VolumeRemoveResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{69}
+}
+
+func (x *VolumeRemoveResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *VolumeRemoveResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *VolumeRemoveResponse) GetVolume() *VolumeDetails {
+	if x != nil {
+		return x.Volume
+	}
+	return nil
+}
+
+type VolumePruneRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DryRun        bool                   `protobuf:"varint,1,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumePruneRequest) Reset() {
+	*x = VolumePruneRequest{}
+	mi := &file_proto_fvc_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumePruneRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumePruneRequest) ProtoMessage() {}
+
+func (x *VolumePruneRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumePruneRequest.ProtoReflect.Descriptor instead.
+func (*VolumePruneRequest) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *VolumePruneRequest) GetDryRun() bool {
+	if x != nil {
+		return x.DryRun
+	}
+	return false
+}
+
+type VolumePruneResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Success        bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message        string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	RemovedVolumes int32                  `protobuf:"varint,3,opt,name=removed_volumes,json=removedVolumes,proto3" json:"removed_volumes,omitempty"`
+	FreedBytes     int64                  `protobuf:"varint,4,opt,name=freed_bytes,json=freedBytes,proto3" json:"freed_bytes,omitempty"`
+	Volumes        []*VolumeDetails       `protobuf:"bytes,5,rep,name=volumes,proto3" json:"volumes,omitempty"`
+	DryRun         bool                   `protobuf:"varint,6,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *VolumePruneResponse) Reset() {
+	*x = VolumePruneResponse{}
+	mi := &file_proto_fvc_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumePruneResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumePruneResponse) ProtoMessage() {}
+
+func (x *VolumePruneResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_fvc_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumePruneResponse.ProtoReflect.Descriptor instead.
+func (*VolumePruneResponse) Descriptor() ([]byte, []int) {
+	return file_proto_fvc_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *VolumePruneResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *VolumePruneResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *VolumePruneResponse) GetRemovedVolumes() int32 {
+	if x != nil {
+		return x.RemovedVolumes
+	}
+	return 0
+}
+
+func (x *VolumePruneResponse) GetFreedBytes() int64 {
+	if x != nil {
+		return x.FreedBytes
+	}
+	return 0
+}
+
+func (x *VolumePruneResponse) GetVolumes() []*VolumeDetails {
+	if x != nil {
+		return x.Volumes
+	}
+	return nil
+}
+
+func (x *VolumePruneResponse) GetDryRun() bool {
+	if x != nil {
+		return x.DryRun
+	}
+	return false
+}
+
 // --- Messages pour la commande PS ---
 type PsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -3384,7 +4268,7 @@ type PsRequest struct {
 
 func (x *PsRequest) Reset() {
 	*x = PsRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[57]
+	mi := &file_proto_fvc_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3396,7 +4280,7 @@ func (x *PsRequest) String() string {
 func (*PsRequest) ProtoMessage() {}
 
 func (x *PsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[57]
+	mi := &file_proto_fvc_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3409,7 +4293,7 @@ func (x *PsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PsRequest.ProtoReflect.Descriptor instead.
 func (*PsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{57}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *PsRequest) GetAll() bool {
@@ -3425,13 +4309,15 @@ type VmConfig struct {
 	MemoryMb      int32                  `protobuf:"varint,2,opt,name=memory_mb,json=memoryMb,proto3" json:"memory_mb,omitempty"`
 	Ports         []string               `protobuf:"bytes,3,rep,name=ports,proto3" json:"ports,omitempty"`
 	PublishAll    bool                   `protobuf:"varint,4,opt,name=publish_all,json=publishAll,proto3" json:"publish_all,omitempty"`
+	NetworkMode   string                 `protobuf:"bytes,5,opt,name=network_mode,json=networkMode,proto3" json:"network_mode,omitempty"`
+	Volumes       []string               `protobuf:"bytes,6,rep,name=volumes,proto3" json:"volumes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VmConfig) Reset() {
 	*x = VmConfig{}
-	mi := &file_proto_fvc_proto_msgTypes[58]
+	mi := &file_proto_fvc_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3443,7 +4329,7 @@ func (x *VmConfig) String() string {
 func (*VmConfig) ProtoMessage() {}
 
 func (x *VmConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[58]
+	mi := &file_proto_fvc_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3456,7 +4342,7 @@ func (x *VmConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VmConfig.ProtoReflect.Descriptor instead.
 func (*VmConfig) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{58}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *VmConfig) GetCpus() int32 {
@@ -3487,6 +4373,20 @@ func (x *VmConfig) GetPublishAll() bool {
 	return false
 }
 
+func (x *VmConfig) GetNetworkMode() string {
+	if x != nil {
+		return x.NetworkMode
+	}
+	return ""
+}
+
+func (x *VmConfig) GetVolumes() []string {
+	if x != nil {
+		return x.Volumes
+	}
+	return nil
+}
+
 type VmDetails struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
@@ -3509,7 +4409,7 @@ type VmDetails struct {
 
 func (x *VmDetails) Reset() {
 	*x = VmDetails{}
-	mi := &file_proto_fvc_proto_msgTypes[59]
+	mi := &file_proto_fvc_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3521,7 +4421,7 @@ func (x *VmDetails) String() string {
 func (*VmDetails) ProtoMessage() {}
 
 func (x *VmDetails) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[59]
+	mi := &file_proto_fvc_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3534,7 +4434,7 @@ func (x *VmDetails) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VmDetails.ProtoReflect.Descriptor instead.
 func (*VmDetails) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{59}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *VmDetails) GetVmId() string {
@@ -3644,7 +4544,7 @@ type PsResponse struct {
 
 func (x *PsResponse) Reset() {
 	*x = PsResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[60]
+	mi := &file_proto_fvc_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3656,7 +4556,7 @@ func (x *PsResponse) String() string {
 func (*PsResponse) ProtoMessage() {}
 
 func (x *PsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[60]
+	mi := &file_proto_fvc_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3669,7 +4569,7 @@ func (x *PsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PsResponse.ProtoReflect.Descriptor instead.
 func (*PsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{60}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *PsResponse) GetVms() []*VmDetails {
@@ -3691,7 +4591,7 @@ type LogsRequest struct {
 
 func (x *LogsRequest) Reset() {
 	*x = LogsRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[61]
+	mi := &file_proto_fvc_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3703,7 +4603,7 @@ func (x *LogsRequest) String() string {
 func (*LogsRequest) ProtoMessage() {}
 
 func (x *LogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[61]
+	mi := &file_proto_fvc_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3716,7 +4616,7 @@ func (x *LogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogsRequest.ProtoReflect.Descriptor instead.
 func (*LogsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{61}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *LogsRequest) GetVmId() string {
@@ -3750,7 +4650,7 @@ type LogsResponse struct {
 
 func (x *LogsResponse) Reset() {
 	*x = LogsResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[62]
+	mi := &file_proto_fvc_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3762,7 +4662,7 @@ func (x *LogsResponse) String() string {
 func (*LogsResponse) ProtoMessage() {}
 
 func (x *LogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[62]
+	mi := &file_proto_fvc_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3775,7 +4675,7 @@ func (x *LogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogsResponse.ProtoReflect.Descriptor instead.
 func (*LogsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{62}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *LogsResponse) GetLine() string {
@@ -3800,7 +4700,7 @@ type DiagnosticsRequest struct {
 
 func (x *DiagnosticsRequest) Reset() {
 	*x = DiagnosticsRequest{}
-	mi := &file_proto_fvc_proto_msgTypes[63]
+	mi := &file_proto_fvc_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3812,7 +4712,7 @@ func (x *DiagnosticsRequest) String() string {
 func (*DiagnosticsRequest) ProtoMessage() {}
 
 func (x *DiagnosticsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[63]
+	mi := &file_proto_fvc_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3825,7 +4725,7 @@ func (x *DiagnosticsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiagnosticsRequest.ProtoReflect.Descriptor instead.
 func (*DiagnosticsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{63}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{78}
 }
 
 type DiagnosticCheck struct {
@@ -3839,7 +4739,7 @@ type DiagnosticCheck struct {
 
 func (x *DiagnosticCheck) Reset() {
 	*x = DiagnosticCheck{}
-	mi := &file_proto_fvc_proto_msgTypes[64]
+	mi := &file_proto_fvc_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3851,7 +4751,7 @@ func (x *DiagnosticCheck) String() string {
 func (*DiagnosticCheck) ProtoMessage() {}
 
 func (x *DiagnosticCheck) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[64]
+	mi := &file_proto_fvc_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3864,7 +4764,7 @@ func (x *DiagnosticCheck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiagnosticCheck.ProtoReflect.Descriptor instead.
 func (*DiagnosticCheck) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{64}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *DiagnosticCheck) GetName() string {
@@ -3902,7 +4802,7 @@ type DiagnosticsResponse struct {
 
 func (x *DiagnosticsResponse) Reset() {
 	*x = DiagnosticsResponse{}
-	mi := &file_proto_fvc_proto_msgTypes[65]
+	mi := &file_proto_fvc_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3914,7 +4814,7 @@ func (x *DiagnosticsResponse) String() string {
 func (*DiagnosticsResponse) ProtoMessage() {}
 
 func (x *DiagnosticsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_fvc_proto_msgTypes[65]
+	mi := &file_proto_fvc_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3927,7 +4827,7 @@ func (x *DiagnosticsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiagnosticsResponse.ProtoReflect.Descriptor instead.
 func (*DiagnosticsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_fvc_proto_rawDescGZIP(), []int{65}
+	return file_proto_fvc_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *DiagnosticsResponse) GetChecks() []*DiagnosticCheck {
@@ -3976,12 +4876,18 @@ var File_proto_fvc_proto protoreflect.FileDescriptor
 
 const file_proto_fvc_proto_rawDesc = "" +
 	"\n" +
-	"\x0fproto/fvc.proto\x12\x03fvc\x1a\x1fgoogle/protobuf/timestamp.proto\"_\n" +
+	"\x0fproto/fvc.proto\x12\x03fvc\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe9\x01\n" +
 	"\n" +
 	"RunRequest\x12\x16\n" +
 	"\x06source\x18\x01 \x01(\tR\x06source\x12%\n" +
 	"\x06config\x18\x02 \x01(\v2\r.fvc.VmConfigR\x06config\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\"_\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1f\n" +
+	"\vauto_remove\x18\x04 \x01(\bR\n" +
+	"autoRemove\x12!\n" +
+	"\fimage_source\x18\x05 \x01(\tR\vimageSource\x12#\n" +
+	"\rdocker_source\x18\x06 \x01(\tR\fdockerSource\x12\x1f\n" +
+	"\vpull_policy\x18\a \x01(\tR\n" +
+	"pullPolicy\"_\n" +
 	"\vRunResponse\x12\x13\n" +
 	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12#\n" +
@@ -4020,6 +4926,19 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\"@\n" +
 	"\n" +
 	"RmResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"8\n" +
+	"\rRenameRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"D\n" +
+	"\x0eRenameResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"U\n" +
+	"\rUpdateRequest\x12\x13\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x12\n" +
+	"\x04cpus\x18\x02 \x01(\x05R\x04cpus\x12\x1b\n" +
+	"\tmemory_mb\x18\x03 \x01(\x05R\bmemoryMb\"D\n" +
+	"\x0eUpdateResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\")\n" +
 	"\x12ConsoleInfoRequest\x12\x13\n" +
@@ -4211,15 +5130,61 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\vfreed_bytes\x18\x04 \x01(\x03R\n" +
 	"freedBytes\x12)\n" +
 	"\x06images\x18\x05 \x03(\v2\x11.fvc.ImageDetailsR\x06images\x12\x17\n" +
+	"\adry_run\x18\x06 \x01(\bR\x06dryRun\"B\n" +
+	"\x13VolumeCreateRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x17\n" +
+	"\asize_mb\x18\x02 \x01(\x03R\x06sizeMb\"\xda\x01\n" +
+	"\rVolumeDetails\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x03 \x01(\x03R\tsizeBytes\x12\x17\n" +
+	"\aused_by\x18\x04 \x01(\x05R\x06usedBy\x12.\n" +
+	"\x13attached_to_running\x18\x05 \x01(\bR\x11attachedToRunning\x129\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"v\n" +
+	"\x14VolumeCreateResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12*\n" +
+	"\x06volume\x18\x03 \x01(\v2\x12.fvc.VolumeDetailsR\x06volume\"\x13\n" +
+	"\x11VolumeListRequest\"v\n" +
+	"\x12VolumeListResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12,\n" +
+	"\avolumes\x18\x03 \x03(\v2\x12.fvc.VolumeDetailsR\avolumes\"*\n" +
+	"\x14VolumeInspectRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"w\n" +
+	"\x15VolumeInspectResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12*\n" +
+	"\x06volume\x18\x03 \x01(\v2\x12.fvc.VolumeDetailsR\x06volume\"?\n" +
+	"\x13VolumeRemoveRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05force\x18\x02 \x01(\bR\x05force\"v\n" +
+	"\x14VolumeRemoveResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12*\n" +
+	"\x06volume\x18\x03 \x01(\v2\x12.fvc.VolumeDetailsR\x06volume\"-\n" +
+	"\x12VolumePruneRequest\x12\x17\n" +
+	"\adry_run\x18\x01 \x01(\bR\x06dryRun\"\xda\x01\n" +
+	"\x13VolumePruneResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12'\n" +
+	"\x0fremoved_volumes\x18\x03 \x01(\x05R\x0eremovedVolumes\x12\x1f\n" +
+	"\vfreed_bytes\x18\x04 \x01(\x03R\n" +
+	"freedBytes\x12,\n" +
+	"\avolumes\x18\x05 \x03(\v2\x12.fvc.VolumeDetailsR\avolumes\x12\x17\n" +
 	"\adry_run\x18\x06 \x01(\bR\x06dryRun\"\x1d\n" +
 	"\tPsRequest\x12\x10\n" +
-	"\x03all\x18\x01 \x01(\bR\x03all\"r\n" +
+	"\x03all\x18\x01 \x01(\bR\x03all\"\xaf\x01\n" +
 	"\bVmConfig\x12\x12\n" +
 	"\x04cpus\x18\x01 \x01(\x05R\x04cpus\x12\x1b\n" +
 	"\tmemory_mb\x18\x02 \x01(\x05R\bmemoryMb\x12\x14\n" +
 	"\x05ports\x18\x03 \x03(\tR\x05ports\x12\x1f\n" +
 	"\vpublish_all\x18\x04 \x01(\bR\n" +
-	"publishAll\"\xa7\x03\n" +
+	"publishAll\x12!\n" +
+	"\fnetwork_mode\x18\x05 \x01(\tR\vnetworkMode\x12\x18\n" +
+	"\avolumes\x18\x06 \x03(\tR\avolumes\"\xa7\x03\n" +
 	"\tVmDetails\x12\x13\n" +
 	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x10\n" +
 	"\x03pid\x18\x02 \x01(\x05R\x03pid\x12\x16\n" +
@@ -4261,14 +5226,16 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\bdata_dir\x18\x04 \x01(\tR\adataDir\x12\x1f\n" +
 	"\vruntime_dir\x18\x05 \x01(\tR\n" +
 	"runtimeDir\x12'\n" +
-	"\x0fnetwork_enabled\x18\x06 \x01(\bR\x0enetworkEnabled2\x94\x0e\n" +
+	"\x0fnetwork_enabled\x18\x06 \x01(\bR\x0enetworkEnabled2\xcd\x11\n" +
 	"\n" +
 	"FvcService\x12(\n" +
 	"\x03Run\x12\x0f.fvc.RunRequest\x1a\x10.fvc.RunResponse\x12-\n" +
 	"\tRunStream\x12\x0f.fvc.RunRequest\x1a\r.fvc.RunEvent0\x01\x12+\n" +
 	"\x04Stop\x12\x10.fvc.StopRequest\x1a\x11.fvc.StopResponse\x12.\n" +
 	"\x05Start\x12\x11.fvc.StartRequest\x1a\x12.fvc.StartResponse\x12%\n" +
-	"\x02Rm\x12\x0e.fvc.RmRequest\x1a\x0f.fvc.RmResponse\x12@\n" +
+	"\x02Rm\x12\x0e.fvc.RmRequest\x1a\x0f.fvc.RmResponse\x121\n" +
+	"\x06Rename\x12\x12.fvc.RenameRequest\x1a\x13.fvc.RenameResponse\x121\n" +
+	"\x06Update\x12\x12.fvc.UpdateRequest\x1a\x13.fvc.UpdateResponse\x12@\n" +
 	"\vConsoleInfo\x12\x17.fvc.ConsoleInfoRequest\x1a\x18.fvc.ConsoleInfoResponse\x12*\n" +
 	"\x04Exec\x12\x10.fvc.ExecRequest\x1a\x0e.fvc.ExecEvent0\x01\x124\n" +
 	"\aInspect\x12\x13.fvc.InspectRequest\x1a\x14.fvc.InspectResponse\x12:\n" +
@@ -4294,7 +5261,13 @@ const file_proto_fvc_proto_rawDesc = "" +
 	"\vImageExport\x12\x17.fvc.ImageExportRequest\x1a\x18.fvc.ImageExportResponse\x12C\n" +
 	"\fImageHistory\x12\x18.fvc.ImageHistoryRequest\x1a\x19.fvc.ImageHistoryResponse\x12=\n" +
 	"\n" +
-	"ImagePrune\x12\x16.fvc.ImagePruneRequest\x1a\x17.fvc.ImagePruneResponse\x12%\n" +
+	"ImagePrune\x12\x16.fvc.ImagePruneRequest\x1a\x17.fvc.ImagePruneResponse\x12C\n" +
+	"\fVolumeCreate\x12\x18.fvc.VolumeCreateRequest\x1a\x19.fvc.VolumeCreateResponse\x12=\n" +
+	"\n" +
+	"VolumeList\x12\x16.fvc.VolumeListRequest\x1a\x17.fvc.VolumeListResponse\x12F\n" +
+	"\rVolumeInspect\x12\x19.fvc.VolumeInspectRequest\x1a\x1a.fvc.VolumeInspectResponse\x12C\n" +
+	"\fVolumeRemove\x12\x18.fvc.VolumeRemoveRequest\x1a\x19.fvc.VolumeRemoveResponse\x12@\n" +
+	"\vVolumePrune\x12\x17.fvc.VolumePruneRequest\x1a\x18.fvc.VolumePruneResponse\x12%\n" +
 	"\x02Ps\x12\x0e.fvc.PsRequest\x1a\x0f.fvc.PsResponse\x123\n" +
 	"\n" +
 	"StreamLogs\x12\x10.fvc.LogsRequest\x1a\x11.fvc.LogsResponse0\x01\x12@\n" +
@@ -4312,7 +5285,7 @@ func file_proto_fvc_proto_rawDescGZIP() []byte {
 	return file_proto_fvc_proto_rawDescData
 }
 
-var file_proto_fvc_proto_msgTypes = make([]protoimpl.MessageInfo, 67)
+var file_proto_fvc_proto_msgTypes = make([]protoimpl.MessageInfo, 82)
 var file_proto_fvc_proto_goTypes = []any{
 	(*RunRequest)(nil),              // 0: fvc.RunRequest
 	(*RunResponse)(nil),             // 1: fvc.RunResponse
@@ -4324,154 +5297,189 @@ var file_proto_fvc_proto_goTypes = []any{
 	(*StartResponse)(nil),           // 7: fvc.StartResponse
 	(*RmRequest)(nil),               // 8: fvc.RmRequest
 	(*RmResponse)(nil),              // 9: fvc.RmResponse
-	(*ConsoleInfoRequest)(nil),      // 10: fvc.ConsoleInfoRequest
-	(*ConsoleInfoResponse)(nil),     // 11: fvc.ConsoleInfoResponse
-	(*ExecRequest)(nil),             // 12: fvc.ExecRequest
-	(*ExecEvent)(nil),               // 13: fvc.ExecEvent
-	(*InspectRequest)(nil),          // 14: fvc.InspectRequest
-	(*InspectResponse)(nil),         // 15: fvc.InspectResponse
-	(*PullImageRequest)(nil),        // 16: fvc.PullImageRequest
-	(*PullImageResponse)(nil),       // 17: fvc.PullImageResponse
-	(*ListImagesRequest)(nil),       // 18: fvc.ListImagesRequest
-	(*ImageDetails)(nil),            // 19: fvc.ImageDetails
-	(*ListImagesResponse)(nil),      // 20: fvc.ListImagesResponse
-	(*PruneRequest)(nil),            // 21: fvc.PruneRequest
-	(*PruneItem)(nil),               // 22: fvc.PruneItem
-	(*PruneResponse)(nil),           // 23: fvc.PruneResponse
-	(*StatsRequest)(nil),            // 24: fvc.StatsRequest
-	(*VmStats)(nil),                 // 25: fvc.VmStats
-	(*StatsResponse)(nil),           // 26: fvc.StatsResponse
-	(*WaitRequest)(nil),             // 27: fvc.WaitRequest
-	(*WaitResponse)(nil),            // 28: fvc.WaitResponse
-	(*KillRequest)(nil),             // 29: fvc.KillRequest
-	(*KillResponse)(nil),            // 30: fvc.KillResponse
-	(*SnapshotCreateRequest)(nil),   // 31: fvc.SnapshotCreateRequest
-	(*SnapshotCreateResponse)(nil),  // 32: fvc.SnapshotCreateResponse
-	(*SnapshotListRequest)(nil),     // 33: fvc.SnapshotListRequest
-	(*SnapshotDetails)(nil),         // 34: fvc.SnapshotDetails
-	(*SnapshotListResponse)(nil),    // 35: fvc.SnapshotListResponse
-	(*SnapshotRestoreRequest)(nil),  // 36: fvc.SnapshotRestoreRequest
-	(*SnapshotRestoreResponse)(nil), // 37: fvc.SnapshotRestoreResponse
-	(*SnapshotRemoveRequest)(nil),   // 38: fvc.SnapshotRemoveRequest
-	(*SnapshotRemoveResponse)(nil),  // 39: fvc.SnapshotRemoveResponse
-	(*BuildImageRequest)(nil),       // 40: fvc.BuildImageRequest
-	(*BuildImageResponse)(nil),      // 41: fvc.BuildImageResponse
-	(*ImageInspectRequest)(nil),     // 42: fvc.ImageInspectRequest
-	(*ImageInspectResponse)(nil),    // 43: fvc.ImageInspectResponse
-	(*ImageRemoveRequest)(nil),      // 44: fvc.ImageRemoveRequest
-	(*ImageRemoveResponse)(nil),     // 45: fvc.ImageRemoveResponse
-	(*ImageTagRequest)(nil),         // 46: fvc.ImageTagRequest
-	(*ImageTagResponse)(nil),        // 47: fvc.ImageTagResponse
-	(*ImageImportRequest)(nil),      // 48: fvc.ImageImportRequest
-	(*ImageImportResponse)(nil),     // 49: fvc.ImageImportResponse
-	(*ImageExportRequest)(nil),      // 50: fvc.ImageExportRequest
-	(*ImageExportResponse)(nil),     // 51: fvc.ImageExportResponse
-	(*ImageHistoryRequest)(nil),     // 52: fvc.ImageHistoryRequest
-	(*ImageHistoryEntry)(nil),       // 53: fvc.ImageHistoryEntry
-	(*ImageHistoryResponse)(nil),    // 54: fvc.ImageHistoryResponse
-	(*ImagePruneRequest)(nil),       // 55: fvc.ImagePruneRequest
-	(*ImagePruneResponse)(nil),      // 56: fvc.ImagePruneResponse
-	(*PsRequest)(nil),               // 57: fvc.PsRequest
-	(*VmConfig)(nil),                // 58: fvc.VmConfig
-	(*VmDetails)(nil),               // 59: fvc.VmDetails
-	(*PsResponse)(nil),              // 60: fvc.PsResponse
-	(*LogsRequest)(nil),             // 61: fvc.LogsRequest
-	(*LogsResponse)(nil),            // 62: fvc.LogsResponse
-	(*DiagnosticsRequest)(nil),      // 63: fvc.DiagnosticsRequest
-	(*DiagnosticCheck)(nil),         // 64: fvc.DiagnosticCheck
-	(*DiagnosticsResponse)(nil),     // 65: fvc.DiagnosticsResponse
-	nil,                             // 66: fvc.ImageDetails.LabelsEntry
-	(*timestamppb.Timestamp)(nil),   // 67: google.protobuf.Timestamp
+	(*RenameRequest)(nil),           // 10: fvc.RenameRequest
+	(*RenameResponse)(nil),          // 11: fvc.RenameResponse
+	(*UpdateRequest)(nil),           // 12: fvc.UpdateRequest
+	(*UpdateResponse)(nil),          // 13: fvc.UpdateResponse
+	(*ConsoleInfoRequest)(nil),      // 14: fvc.ConsoleInfoRequest
+	(*ConsoleInfoResponse)(nil),     // 15: fvc.ConsoleInfoResponse
+	(*ExecRequest)(nil),             // 16: fvc.ExecRequest
+	(*ExecEvent)(nil),               // 17: fvc.ExecEvent
+	(*InspectRequest)(nil),          // 18: fvc.InspectRequest
+	(*InspectResponse)(nil),         // 19: fvc.InspectResponse
+	(*PullImageRequest)(nil),        // 20: fvc.PullImageRequest
+	(*PullImageResponse)(nil),       // 21: fvc.PullImageResponse
+	(*ListImagesRequest)(nil),       // 22: fvc.ListImagesRequest
+	(*ImageDetails)(nil),            // 23: fvc.ImageDetails
+	(*ListImagesResponse)(nil),      // 24: fvc.ListImagesResponse
+	(*PruneRequest)(nil),            // 25: fvc.PruneRequest
+	(*PruneItem)(nil),               // 26: fvc.PruneItem
+	(*PruneResponse)(nil),           // 27: fvc.PruneResponse
+	(*StatsRequest)(nil),            // 28: fvc.StatsRequest
+	(*VmStats)(nil),                 // 29: fvc.VmStats
+	(*StatsResponse)(nil),           // 30: fvc.StatsResponse
+	(*WaitRequest)(nil),             // 31: fvc.WaitRequest
+	(*WaitResponse)(nil),            // 32: fvc.WaitResponse
+	(*KillRequest)(nil),             // 33: fvc.KillRequest
+	(*KillResponse)(nil),            // 34: fvc.KillResponse
+	(*SnapshotCreateRequest)(nil),   // 35: fvc.SnapshotCreateRequest
+	(*SnapshotCreateResponse)(nil),  // 36: fvc.SnapshotCreateResponse
+	(*SnapshotListRequest)(nil),     // 37: fvc.SnapshotListRequest
+	(*SnapshotDetails)(nil),         // 38: fvc.SnapshotDetails
+	(*SnapshotListResponse)(nil),    // 39: fvc.SnapshotListResponse
+	(*SnapshotRestoreRequest)(nil),  // 40: fvc.SnapshotRestoreRequest
+	(*SnapshotRestoreResponse)(nil), // 41: fvc.SnapshotRestoreResponse
+	(*SnapshotRemoveRequest)(nil),   // 42: fvc.SnapshotRemoveRequest
+	(*SnapshotRemoveResponse)(nil),  // 43: fvc.SnapshotRemoveResponse
+	(*BuildImageRequest)(nil),       // 44: fvc.BuildImageRequest
+	(*BuildImageResponse)(nil),      // 45: fvc.BuildImageResponse
+	(*ImageInspectRequest)(nil),     // 46: fvc.ImageInspectRequest
+	(*ImageInspectResponse)(nil),    // 47: fvc.ImageInspectResponse
+	(*ImageRemoveRequest)(nil),      // 48: fvc.ImageRemoveRequest
+	(*ImageRemoveResponse)(nil),     // 49: fvc.ImageRemoveResponse
+	(*ImageTagRequest)(nil),         // 50: fvc.ImageTagRequest
+	(*ImageTagResponse)(nil),        // 51: fvc.ImageTagResponse
+	(*ImageImportRequest)(nil),      // 52: fvc.ImageImportRequest
+	(*ImageImportResponse)(nil),     // 53: fvc.ImageImportResponse
+	(*ImageExportRequest)(nil),      // 54: fvc.ImageExportRequest
+	(*ImageExportResponse)(nil),     // 55: fvc.ImageExportResponse
+	(*ImageHistoryRequest)(nil),     // 56: fvc.ImageHistoryRequest
+	(*ImageHistoryEntry)(nil),       // 57: fvc.ImageHistoryEntry
+	(*ImageHistoryResponse)(nil),    // 58: fvc.ImageHistoryResponse
+	(*ImagePruneRequest)(nil),       // 59: fvc.ImagePruneRequest
+	(*ImagePruneResponse)(nil),      // 60: fvc.ImagePruneResponse
+	(*VolumeCreateRequest)(nil),     // 61: fvc.VolumeCreateRequest
+	(*VolumeDetails)(nil),           // 62: fvc.VolumeDetails
+	(*VolumeCreateResponse)(nil),    // 63: fvc.VolumeCreateResponse
+	(*VolumeListRequest)(nil),       // 64: fvc.VolumeListRequest
+	(*VolumeListResponse)(nil),      // 65: fvc.VolumeListResponse
+	(*VolumeInspectRequest)(nil),    // 66: fvc.VolumeInspectRequest
+	(*VolumeInspectResponse)(nil),   // 67: fvc.VolumeInspectResponse
+	(*VolumeRemoveRequest)(nil),     // 68: fvc.VolumeRemoveRequest
+	(*VolumeRemoveResponse)(nil),    // 69: fvc.VolumeRemoveResponse
+	(*VolumePruneRequest)(nil),      // 70: fvc.VolumePruneRequest
+	(*VolumePruneResponse)(nil),     // 71: fvc.VolumePruneResponse
+	(*PsRequest)(nil),               // 72: fvc.PsRequest
+	(*VmConfig)(nil),                // 73: fvc.VmConfig
+	(*VmDetails)(nil),               // 74: fvc.VmDetails
+	(*PsResponse)(nil),              // 75: fvc.PsResponse
+	(*LogsRequest)(nil),             // 76: fvc.LogsRequest
+	(*LogsResponse)(nil),            // 77: fvc.LogsResponse
+	(*DiagnosticsRequest)(nil),      // 78: fvc.DiagnosticsRequest
+	(*DiagnosticCheck)(nil),         // 79: fvc.DiagnosticCheck
+	(*DiagnosticsResponse)(nil),     // 80: fvc.DiagnosticsResponse
+	nil,                             // 81: fvc.ImageDetails.LabelsEntry
+	(*timestamppb.Timestamp)(nil),   // 82: google.protobuf.Timestamp
 }
 var file_proto_fvc_proto_depIdxs = []int32{
-	58, // 0: fvc.RunRequest.config:type_name -> fvc.VmConfig
-	59, // 1: fvc.InspectResponse.vm:type_name -> fvc.VmDetails
-	67, // 2: fvc.ImageDetails.created_at:type_name -> google.protobuf.Timestamp
-	66, // 3: fvc.ImageDetails.labels:type_name -> fvc.ImageDetails.LabelsEntry
-	19, // 4: fvc.ListImagesResponse.images:type_name -> fvc.ImageDetails
-	22, // 5: fvc.PruneResponse.items:type_name -> fvc.PruneItem
-	25, // 6: fvc.StatsResponse.stats:type_name -> fvc.VmStats
-	34, // 7: fvc.SnapshotCreateResponse.snapshot:type_name -> fvc.SnapshotDetails
-	34, // 8: fvc.SnapshotListResponse.snapshots:type_name -> fvc.SnapshotDetails
-	34, // 9: fvc.SnapshotRestoreResponse.snapshot:type_name -> fvc.SnapshotDetails
-	19, // 10: fvc.ImageInspectResponse.image:type_name -> fvc.ImageDetails
-	19, // 11: fvc.ImageTagResponse.image:type_name -> fvc.ImageDetails
-	19, // 12: fvc.ImageImportResponse.image:type_name -> fvc.ImageDetails
-	67, // 13: fvc.ImageHistoryEntry.created_at:type_name -> google.protobuf.Timestamp
-	53, // 14: fvc.ImageHistoryResponse.entries:type_name -> fvc.ImageHistoryEntry
-	19, // 15: fvc.ImagePruneResponse.images:type_name -> fvc.ImageDetails
-	58, // 16: fvc.VmDetails.config:type_name -> fvc.VmConfig
-	67, // 17: fvc.VmDetails.created_at:type_name -> google.protobuf.Timestamp
-	59, // 18: fvc.PsResponse.vms:type_name -> fvc.VmDetails
-	67, // 19: fvc.LogsResponse.timestamp:type_name -> google.protobuf.Timestamp
-	64, // 20: fvc.DiagnosticsResponse.checks:type_name -> fvc.DiagnosticCheck
-	0,  // 21: fvc.FvcService.Run:input_type -> fvc.RunRequest
-	0,  // 22: fvc.FvcService.RunStream:input_type -> fvc.RunRequest
-	4,  // 23: fvc.FvcService.Stop:input_type -> fvc.StopRequest
-	6,  // 24: fvc.FvcService.Start:input_type -> fvc.StartRequest
-	8,  // 25: fvc.FvcService.Rm:input_type -> fvc.RmRequest
-	10, // 26: fvc.FvcService.ConsoleInfo:input_type -> fvc.ConsoleInfoRequest
-	12, // 27: fvc.FvcService.Exec:input_type -> fvc.ExecRequest
-	14, // 28: fvc.FvcService.Inspect:input_type -> fvc.InspectRequest
-	16, // 29: fvc.FvcService.PullImage:input_type -> fvc.PullImageRequest
-	16, // 30: fvc.FvcService.PullImageStream:input_type -> fvc.PullImageRequest
-	18, // 31: fvc.FvcService.ListImages:input_type -> fvc.ListImagesRequest
-	21, // 32: fvc.FvcService.Prune:input_type -> fvc.PruneRequest
-	24, // 33: fvc.FvcService.Stats:input_type -> fvc.StatsRequest
-	27, // 34: fvc.FvcService.Wait:input_type -> fvc.WaitRequest
-	29, // 35: fvc.FvcService.Kill:input_type -> fvc.KillRequest
-	31, // 36: fvc.FvcService.SnapshotCreate:input_type -> fvc.SnapshotCreateRequest
-	33, // 37: fvc.FvcService.SnapshotList:input_type -> fvc.SnapshotListRequest
-	36, // 38: fvc.FvcService.SnapshotRestore:input_type -> fvc.SnapshotRestoreRequest
-	38, // 39: fvc.FvcService.SnapshotRemove:input_type -> fvc.SnapshotRemoveRequest
-	40, // 40: fvc.FvcService.BuildImage:input_type -> fvc.BuildImageRequest
-	40, // 41: fvc.FvcService.BuildImageStream:input_type -> fvc.BuildImageRequest
-	42, // 42: fvc.FvcService.ImageInspect:input_type -> fvc.ImageInspectRequest
-	44, // 43: fvc.FvcService.ImageRemove:input_type -> fvc.ImageRemoveRequest
-	46, // 44: fvc.FvcService.ImageTag:input_type -> fvc.ImageTagRequest
-	48, // 45: fvc.FvcService.ImageImport:input_type -> fvc.ImageImportRequest
-	50, // 46: fvc.FvcService.ImageExport:input_type -> fvc.ImageExportRequest
-	52, // 47: fvc.FvcService.ImageHistory:input_type -> fvc.ImageHistoryRequest
-	55, // 48: fvc.FvcService.ImagePrune:input_type -> fvc.ImagePruneRequest
-	57, // 49: fvc.FvcService.Ps:input_type -> fvc.PsRequest
-	61, // 50: fvc.FvcService.StreamLogs:input_type -> fvc.LogsRequest
-	63, // 51: fvc.FvcService.Diagnostics:input_type -> fvc.DiagnosticsRequest
-	1,  // 52: fvc.FvcService.Run:output_type -> fvc.RunResponse
-	2,  // 53: fvc.FvcService.RunStream:output_type -> fvc.RunEvent
-	5,  // 54: fvc.FvcService.Stop:output_type -> fvc.StopResponse
-	7,  // 55: fvc.FvcService.Start:output_type -> fvc.StartResponse
-	9,  // 56: fvc.FvcService.Rm:output_type -> fvc.RmResponse
-	11, // 57: fvc.FvcService.ConsoleInfo:output_type -> fvc.ConsoleInfoResponse
-	13, // 58: fvc.FvcService.Exec:output_type -> fvc.ExecEvent
-	15, // 59: fvc.FvcService.Inspect:output_type -> fvc.InspectResponse
-	17, // 60: fvc.FvcService.PullImage:output_type -> fvc.PullImageResponse
-	3,  // 61: fvc.FvcService.PullImageStream:output_type -> fvc.OperationEvent
-	20, // 62: fvc.FvcService.ListImages:output_type -> fvc.ListImagesResponse
-	23, // 63: fvc.FvcService.Prune:output_type -> fvc.PruneResponse
-	26, // 64: fvc.FvcService.Stats:output_type -> fvc.StatsResponse
-	28, // 65: fvc.FvcService.Wait:output_type -> fvc.WaitResponse
-	30, // 66: fvc.FvcService.Kill:output_type -> fvc.KillResponse
-	32, // 67: fvc.FvcService.SnapshotCreate:output_type -> fvc.SnapshotCreateResponse
-	35, // 68: fvc.FvcService.SnapshotList:output_type -> fvc.SnapshotListResponse
-	37, // 69: fvc.FvcService.SnapshotRestore:output_type -> fvc.SnapshotRestoreResponse
-	39, // 70: fvc.FvcService.SnapshotRemove:output_type -> fvc.SnapshotRemoveResponse
-	41, // 71: fvc.FvcService.BuildImage:output_type -> fvc.BuildImageResponse
-	3,  // 72: fvc.FvcService.BuildImageStream:output_type -> fvc.OperationEvent
-	43, // 73: fvc.FvcService.ImageInspect:output_type -> fvc.ImageInspectResponse
-	45, // 74: fvc.FvcService.ImageRemove:output_type -> fvc.ImageRemoveResponse
-	47, // 75: fvc.FvcService.ImageTag:output_type -> fvc.ImageTagResponse
-	49, // 76: fvc.FvcService.ImageImport:output_type -> fvc.ImageImportResponse
-	51, // 77: fvc.FvcService.ImageExport:output_type -> fvc.ImageExportResponse
-	54, // 78: fvc.FvcService.ImageHistory:output_type -> fvc.ImageHistoryResponse
-	56, // 79: fvc.FvcService.ImagePrune:output_type -> fvc.ImagePruneResponse
-	60, // 80: fvc.FvcService.Ps:output_type -> fvc.PsResponse
-	62, // 81: fvc.FvcService.StreamLogs:output_type -> fvc.LogsResponse
-	65, // 82: fvc.FvcService.Diagnostics:output_type -> fvc.DiagnosticsResponse
-	52, // [52:83] is the sub-list for method output_type
-	21, // [21:52] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	73, // 0: fvc.RunRequest.config:type_name -> fvc.VmConfig
+	74, // 1: fvc.InspectResponse.vm:type_name -> fvc.VmDetails
+	82, // 2: fvc.ImageDetails.created_at:type_name -> google.protobuf.Timestamp
+	81, // 3: fvc.ImageDetails.labels:type_name -> fvc.ImageDetails.LabelsEntry
+	23, // 4: fvc.ListImagesResponse.images:type_name -> fvc.ImageDetails
+	26, // 5: fvc.PruneResponse.items:type_name -> fvc.PruneItem
+	29, // 6: fvc.StatsResponse.stats:type_name -> fvc.VmStats
+	38, // 7: fvc.SnapshotCreateResponse.snapshot:type_name -> fvc.SnapshotDetails
+	38, // 8: fvc.SnapshotListResponse.snapshots:type_name -> fvc.SnapshotDetails
+	38, // 9: fvc.SnapshotRestoreResponse.snapshot:type_name -> fvc.SnapshotDetails
+	23, // 10: fvc.ImageInspectResponse.image:type_name -> fvc.ImageDetails
+	23, // 11: fvc.ImageTagResponse.image:type_name -> fvc.ImageDetails
+	23, // 12: fvc.ImageImportResponse.image:type_name -> fvc.ImageDetails
+	82, // 13: fvc.ImageHistoryEntry.created_at:type_name -> google.protobuf.Timestamp
+	57, // 14: fvc.ImageHistoryResponse.entries:type_name -> fvc.ImageHistoryEntry
+	23, // 15: fvc.ImagePruneResponse.images:type_name -> fvc.ImageDetails
+	82, // 16: fvc.VolumeDetails.created_at:type_name -> google.protobuf.Timestamp
+	62, // 17: fvc.VolumeCreateResponse.volume:type_name -> fvc.VolumeDetails
+	62, // 18: fvc.VolumeListResponse.volumes:type_name -> fvc.VolumeDetails
+	62, // 19: fvc.VolumeInspectResponse.volume:type_name -> fvc.VolumeDetails
+	62, // 20: fvc.VolumeRemoveResponse.volume:type_name -> fvc.VolumeDetails
+	62, // 21: fvc.VolumePruneResponse.volumes:type_name -> fvc.VolumeDetails
+	73, // 22: fvc.VmDetails.config:type_name -> fvc.VmConfig
+	82, // 23: fvc.VmDetails.created_at:type_name -> google.protobuf.Timestamp
+	74, // 24: fvc.PsResponse.vms:type_name -> fvc.VmDetails
+	82, // 25: fvc.LogsResponse.timestamp:type_name -> google.protobuf.Timestamp
+	79, // 26: fvc.DiagnosticsResponse.checks:type_name -> fvc.DiagnosticCheck
+	0,  // 27: fvc.FvcService.Run:input_type -> fvc.RunRequest
+	0,  // 28: fvc.FvcService.RunStream:input_type -> fvc.RunRequest
+	4,  // 29: fvc.FvcService.Stop:input_type -> fvc.StopRequest
+	6,  // 30: fvc.FvcService.Start:input_type -> fvc.StartRequest
+	8,  // 31: fvc.FvcService.Rm:input_type -> fvc.RmRequest
+	10, // 32: fvc.FvcService.Rename:input_type -> fvc.RenameRequest
+	12, // 33: fvc.FvcService.Update:input_type -> fvc.UpdateRequest
+	14, // 34: fvc.FvcService.ConsoleInfo:input_type -> fvc.ConsoleInfoRequest
+	16, // 35: fvc.FvcService.Exec:input_type -> fvc.ExecRequest
+	18, // 36: fvc.FvcService.Inspect:input_type -> fvc.InspectRequest
+	20, // 37: fvc.FvcService.PullImage:input_type -> fvc.PullImageRequest
+	20, // 38: fvc.FvcService.PullImageStream:input_type -> fvc.PullImageRequest
+	22, // 39: fvc.FvcService.ListImages:input_type -> fvc.ListImagesRequest
+	25, // 40: fvc.FvcService.Prune:input_type -> fvc.PruneRequest
+	28, // 41: fvc.FvcService.Stats:input_type -> fvc.StatsRequest
+	31, // 42: fvc.FvcService.Wait:input_type -> fvc.WaitRequest
+	33, // 43: fvc.FvcService.Kill:input_type -> fvc.KillRequest
+	35, // 44: fvc.FvcService.SnapshotCreate:input_type -> fvc.SnapshotCreateRequest
+	37, // 45: fvc.FvcService.SnapshotList:input_type -> fvc.SnapshotListRequest
+	40, // 46: fvc.FvcService.SnapshotRestore:input_type -> fvc.SnapshotRestoreRequest
+	42, // 47: fvc.FvcService.SnapshotRemove:input_type -> fvc.SnapshotRemoveRequest
+	44, // 48: fvc.FvcService.BuildImage:input_type -> fvc.BuildImageRequest
+	44, // 49: fvc.FvcService.BuildImageStream:input_type -> fvc.BuildImageRequest
+	46, // 50: fvc.FvcService.ImageInspect:input_type -> fvc.ImageInspectRequest
+	48, // 51: fvc.FvcService.ImageRemove:input_type -> fvc.ImageRemoveRequest
+	50, // 52: fvc.FvcService.ImageTag:input_type -> fvc.ImageTagRequest
+	52, // 53: fvc.FvcService.ImageImport:input_type -> fvc.ImageImportRequest
+	54, // 54: fvc.FvcService.ImageExport:input_type -> fvc.ImageExportRequest
+	56, // 55: fvc.FvcService.ImageHistory:input_type -> fvc.ImageHistoryRequest
+	59, // 56: fvc.FvcService.ImagePrune:input_type -> fvc.ImagePruneRequest
+	61, // 57: fvc.FvcService.VolumeCreate:input_type -> fvc.VolumeCreateRequest
+	64, // 58: fvc.FvcService.VolumeList:input_type -> fvc.VolumeListRequest
+	66, // 59: fvc.FvcService.VolumeInspect:input_type -> fvc.VolumeInspectRequest
+	68, // 60: fvc.FvcService.VolumeRemove:input_type -> fvc.VolumeRemoveRequest
+	70, // 61: fvc.FvcService.VolumePrune:input_type -> fvc.VolumePruneRequest
+	72, // 62: fvc.FvcService.Ps:input_type -> fvc.PsRequest
+	76, // 63: fvc.FvcService.StreamLogs:input_type -> fvc.LogsRequest
+	78, // 64: fvc.FvcService.Diagnostics:input_type -> fvc.DiagnosticsRequest
+	1,  // 65: fvc.FvcService.Run:output_type -> fvc.RunResponse
+	2,  // 66: fvc.FvcService.RunStream:output_type -> fvc.RunEvent
+	5,  // 67: fvc.FvcService.Stop:output_type -> fvc.StopResponse
+	7,  // 68: fvc.FvcService.Start:output_type -> fvc.StartResponse
+	9,  // 69: fvc.FvcService.Rm:output_type -> fvc.RmResponse
+	11, // 70: fvc.FvcService.Rename:output_type -> fvc.RenameResponse
+	13, // 71: fvc.FvcService.Update:output_type -> fvc.UpdateResponse
+	15, // 72: fvc.FvcService.ConsoleInfo:output_type -> fvc.ConsoleInfoResponse
+	17, // 73: fvc.FvcService.Exec:output_type -> fvc.ExecEvent
+	19, // 74: fvc.FvcService.Inspect:output_type -> fvc.InspectResponse
+	21, // 75: fvc.FvcService.PullImage:output_type -> fvc.PullImageResponse
+	3,  // 76: fvc.FvcService.PullImageStream:output_type -> fvc.OperationEvent
+	24, // 77: fvc.FvcService.ListImages:output_type -> fvc.ListImagesResponse
+	27, // 78: fvc.FvcService.Prune:output_type -> fvc.PruneResponse
+	30, // 79: fvc.FvcService.Stats:output_type -> fvc.StatsResponse
+	32, // 80: fvc.FvcService.Wait:output_type -> fvc.WaitResponse
+	34, // 81: fvc.FvcService.Kill:output_type -> fvc.KillResponse
+	36, // 82: fvc.FvcService.SnapshotCreate:output_type -> fvc.SnapshotCreateResponse
+	39, // 83: fvc.FvcService.SnapshotList:output_type -> fvc.SnapshotListResponse
+	41, // 84: fvc.FvcService.SnapshotRestore:output_type -> fvc.SnapshotRestoreResponse
+	43, // 85: fvc.FvcService.SnapshotRemove:output_type -> fvc.SnapshotRemoveResponse
+	45, // 86: fvc.FvcService.BuildImage:output_type -> fvc.BuildImageResponse
+	3,  // 87: fvc.FvcService.BuildImageStream:output_type -> fvc.OperationEvent
+	47, // 88: fvc.FvcService.ImageInspect:output_type -> fvc.ImageInspectResponse
+	49, // 89: fvc.FvcService.ImageRemove:output_type -> fvc.ImageRemoveResponse
+	51, // 90: fvc.FvcService.ImageTag:output_type -> fvc.ImageTagResponse
+	53, // 91: fvc.FvcService.ImageImport:output_type -> fvc.ImageImportResponse
+	55, // 92: fvc.FvcService.ImageExport:output_type -> fvc.ImageExportResponse
+	58, // 93: fvc.FvcService.ImageHistory:output_type -> fvc.ImageHistoryResponse
+	60, // 94: fvc.FvcService.ImagePrune:output_type -> fvc.ImagePruneResponse
+	63, // 95: fvc.FvcService.VolumeCreate:output_type -> fvc.VolumeCreateResponse
+	65, // 96: fvc.FvcService.VolumeList:output_type -> fvc.VolumeListResponse
+	67, // 97: fvc.FvcService.VolumeInspect:output_type -> fvc.VolumeInspectResponse
+	69, // 98: fvc.FvcService.VolumeRemove:output_type -> fvc.VolumeRemoveResponse
+	71, // 99: fvc.FvcService.VolumePrune:output_type -> fvc.VolumePruneResponse
+	75, // 100: fvc.FvcService.Ps:output_type -> fvc.PsResponse
+	77, // 101: fvc.FvcService.StreamLogs:output_type -> fvc.LogsResponse
+	80, // 102: fvc.FvcService.Diagnostics:output_type -> fvc.DiagnosticsResponse
+	65, // [65:103] is the sub-list for method output_type
+	27, // [27:65] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_proto_fvc_proto_init() }
@@ -4485,7 +5493,7 @@ func file_proto_fvc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_fvc_proto_rawDesc), len(file_proto_fvc_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   67,
+			NumMessages:   82,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

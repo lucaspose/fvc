@@ -6,8 +6,8 @@ func TestFvcServiceDescriptor(t *testing.T) {
 	if FvcService_ServiceDesc.ServiceName != "fvc.FvcService" {
 		t.Fatalf("unexpected service name: %s", FvcService_ServiceDesc.ServiceName)
 	}
-	if len(FvcService_ServiceDesc.Methods) != 26 {
-		t.Fatalf("expected 26 unary methods, got %d", len(FvcService_ServiceDesc.Methods))
+	if len(FvcService_ServiceDesc.Methods) != 33 {
+		t.Fatalf("expected 33 unary methods, got %d", len(FvcService_ServiceDesc.Methods))
 	}
 	if len(FvcService_ServiceDesc.Streams) != 5 {
 		t.Fatalf("expected 5 stream methods, got %d", len(FvcService_ServiceDesc.Streams))
@@ -17,7 +17,7 @@ func TestFvcServiceDescriptor(t *testing.T) {
 	for _, method := range FvcService_ServiceDesc.Methods {
 		methods[method.MethodName] = true
 	}
-	for _, name := range []string{"Run", "Stop", "Start", "Rm", "ConsoleInfo", "Inspect", "PullImage", "ListImages", "Prune", "Stats", "Wait", "Kill", "SnapshotCreate", "SnapshotList", "SnapshotRestore", "SnapshotRemove", "BuildImage", "ImageInspect", "ImageRemove", "ImageTag", "ImageImport", "ImageExport", "ImageHistory", "ImagePrune", "Ps", "Diagnostics"} {
+	for _, name := range []string{"Run", "Stop", "Start", "Rm", "Rename", "Update", "ConsoleInfo", "Inspect", "PullImage", "ListImages", "Prune", "Stats", "Wait", "Kill", "SnapshotCreate", "SnapshotList", "SnapshotRestore", "SnapshotRemove", "BuildImage", "ImageInspect", "ImageRemove", "ImageTag", "ImageImport", "ImageExport", "ImageHistory", "ImagePrune", "VolumeCreate", "VolumeList", "VolumeInspect", "VolumeRemove", "VolumePrune", "Ps", "Diagnostics"} {
 		if !methods[name] {
 			t.Fatalf("missing unary method %s", name)
 		}
@@ -35,16 +35,28 @@ func TestFvcServiceDescriptor(t *testing.T) {
 
 func TestGeneratedMessageGetters(t *testing.T) {
 	req := &RunRequest{
-		Source: "ubuntu",
+		Source:       "ubuntu",
+		ImageSource:  "docker",
+		DockerSource: "ubuntu:24.04",
+		PullPolicy:   "missing",
+		AutoRemove:   true,
 		Config: &VmConfig{
-			Cpus:     2,
-			MemoryMb: 1024,
-			Ports:    []string{"8080:80"},
+			Cpus:        2,
+			MemoryMb:    1024,
+			Ports:       []string{"8080:80"},
+			NetworkMode: "nat",
+			Volumes:     []string{"data:/data"},
 		},
 	}
 
 	if req.GetSource() != "ubuntu" {
 		t.Fatalf("unexpected source: %s", req.GetSource())
+	}
+	if !req.GetAutoRemove() {
+		t.Fatalf("expected auto remove getter to be true")
+	}
+	if req.GetImageSource() != "docker" || req.GetDockerSource() != "ubuntu:24.04" || req.GetPullPolicy() != "missing" {
+		t.Fatalf("unexpected run source fields: %#v", req)
 	}
 	if req.GetConfig().GetCpus() != 2 {
 		t.Fatalf("unexpected cpu count: %d", req.GetConfig().GetCpus())
@@ -54,6 +66,12 @@ func TestGeneratedMessageGetters(t *testing.T) {
 	}
 	if got := req.GetConfig().GetPorts(); len(got) != 1 || got[0] != "8080:80" {
 		t.Fatalf("unexpected ports: %v", got)
+	}
+	if req.GetConfig().GetNetworkMode() != "nat" {
+		t.Fatalf("unexpected network mode: %s", req.GetConfig().GetNetworkMode())
+	}
+	if got := req.GetConfig().GetVolumes(); len(got) != 1 || got[0] != "data:/data" {
+		t.Fatalf("unexpected volumes: %v", got)
 	}
 
 	details := &VmDetails{

@@ -26,6 +26,8 @@ const (
 	FvcService_Stop_FullMethodName             = "/fvc.FvcService/Stop"
 	FvcService_Start_FullMethodName            = "/fvc.FvcService/Start"
 	FvcService_Rm_FullMethodName               = "/fvc.FvcService/Rm"
+	FvcService_Rename_FullMethodName           = "/fvc.FvcService/Rename"
+	FvcService_Update_FullMethodName           = "/fvc.FvcService/Update"
 	FvcService_ConsoleInfo_FullMethodName      = "/fvc.FvcService/ConsoleInfo"
 	FvcService_Exec_FullMethodName             = "/fvc.FvcService/Exec"
 	FvcService_Inspect_FullMethodName          = "/fvc.FvcService/Inspect"
@@ -49,6 +51,11 @@ const (
 	FvcService_ImageExport_FullMethodName      = "/fvc.FvcService/ImageExport"
 	FvcService_ImageHistory_FullMethodName     = "/fvc.FvcService/ImageHistory"
 	FvcService_ImagePrune_FullMethodName       = "/fvc.FvcService/ImagePrune"
+	FvcService_VolumeCreate_FullMethodName     = "/fvc.FvcService/VolumeCreate"
+	FvcService_VolumeList_FullMethodName       = "/fvc.FvcService/VolumeList"
+	FvcService_VolumeInspect_FullMethodName    = "/fvc.FvcService/VolumeInspect"
+	FvcService_VolumeRemove_FullMethodName     = "/fvc.FvcService/VolumeRemove"
+	FvcService_VolumePrune_FullMethodName      = "/fvc.FvcService/VolumePrune"
 	FvcService_Ps_FullMethodName               = "/fvc.FvcService/Ps"
 	FvcService_StreamLogs_FullMethodName       = "/fvc.FvcService/StreamLogs"
 	FvcService_Diagnostics_FullMethodName      = "/fvc.FvcService/Diagnostics"
@@ -70,6 +77,10 @@ type FvcServiceClient interface {
 	Start(ctx context.Context, in *StartRequest, opts ...grpc.CallOption) (*StartResponse, error)
 	// Supprime une microVM stoppée et ses fichiers locaux
 	Rm(ctx context.Context, in *RmRequest, opts ...grpc.CallOption) (*RmResponse, error)
+	// Renomme une microVM
+	Rename(ctx context.Context, in *RenameRequest, opts ...grpc.CallOption) (*RenameResponse, error)
+	// Met à jour les ressources persistées d'une microVM stoppée
+	Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
 	// Retourne les chemins locaux nécessaires à la console série
 	ConsoleInfo(ctx context.Context, in *ConsoleInfoRequest, opts ...grpc.CallOption) (*ConsoleInfoResponse, error)
 	// Exécute une commande dans une microVM via l'agent invité
@@ -116,6 +127,16 @@ type FvcServiceClient interface {
 	ImageHistory(ctx context.Context, in *ImageHistoryRequest, opts ...grpc.CallOption) (*ImageHistoryResponse, error)
 	// Supprime les images locales inutilisées
 	ImagePrune(ctx context.Context, in *ImagePruneRequest, opts ...grpc.CallOption) (*ImagePruneResponse, error)
+	// Crée un volume persistant local
+	VolumeCreate(ctx context.Context, in *VolumeCreateRequest, opts ...grpc.CallOption) (*VolumeCreateResponse, error)
+	// Liste les volumes persistants locaux
+	VolumeList(ctx context.Context, in *VolumeListRequest, opts ...grpc.CallOption) (*VolumeListResponse, error)
+	// Inspecte un volume persistant local
+	VolumeInspect(ctx context.Context, in *VolumeInspectRequest, opts ...grpc.CallOption) (*VolumeInspectResponse, error)
+	// Supprime un volume persistant local
+	VolumeRemove(ctx context.Context, in *VolumeRemoveRequest, opts ...grpc.CallOption) (*VolumeRemoveResponse, error)
+	// Supprime les volumes locaux inutilisés
+	VolumePrune(ctx context.Context, in *VolumePruneRequest, opts ...grpc.CallOption) (*VolumePruneResponse, error)
 	// Phase 1 & 5 : Liste toutes les microVMs
 	Ps(ctx context.Context, in *PsRequest, opts ...grpc.CallOption) (*PsResponse, error)
 	// Phase 5 : Stream les logs textuels en temps réel
@@ -185,6 +206,26 @@ func (c *fvcServiceClient) Rm(ctx context.Context, in *RmRequest, opts ...grpc.C
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RmResponse)
 	err := c.cc.Invoke(ctx, FvcService_Rm_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) Rename(ctx context.Context, in *RenameRequest, opts ...grpc.CallOption) (*RenameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RenameResponse)
+	err := c.cc.Invoke(ctx, FvcService_Rename_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateResponse)
+	err := c.cc.Invoke(ctx, FvcService_Update_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -448,6 +489,56 @@ func (c *fvcServiceClient) ImagePrune(ctx context.Context, in *ImagePruneRequest
 	return out, nil
 }
 
+func (c *fvcServiceClient) VolumeCreate(ctx context.Context, in *VolumeCreateRequest, opts ...grpc.CallOption) (*VolumeCreateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VolumeCreateResponse)
+	err := c.cc.Invoke(ctx, FvcService_VolumeCreate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) VolumeList(ctx context.Context, in *VolumeListRequest, opts ...grpc.CallOption) (*VolumeListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VolumeListResponse)
+	err := c.cc.Invoke(ctx, FvcService_VolumeList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) VolumeInspect(ctx context.Context, in *VolumeInspectRequest, opts ...grpc.CallOption) (*VolumeInspectResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VolumeInspectResponse)
+	err := c.cc.Invoke(ctx, FvcService_VolumeInspect_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) VolumeRemove(ctx context.Context, in *VolumeRemoveRequest, opts ...grpc.CallOption) (*VolumeRemoveResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VolumeRemoveResponse)
+	err := c.cc.Invoke(ctx, FvcService_VolumeRemove_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fvcServiceClient) VolumePrune(ctx context.Context, in *VolumePruneRequest, opts ...grpc.CallOption) (*VolumePruneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VolumePruneResponse)
+	err := c.cc.Invoke(ctx, FvcService_VolumePrune_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *fvcServiceClient) Ps(ctx context.Context, in *PsRequest, opts ...grpc.CallOption) (*PsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PsResponse)
@@ -503,6 +594,10 @@ type FvcServiceServer interface {
 	Start(context.Context, *StartRequest) (*StartResponse, error)
 	// Supprime une microVM stoppée et ses fichiers locaux
 	Rm(context.Context, *RmRequest) (*RmResponse, error)
+	// Renomme une microVM
+	Rename(context.Context, *RenameRequest) (*RenameResponse, error)
+	// Met à jour les ressources persistées d'une microVM stoppée
+	Update(context.Context, *UpdateRequest) (*UpdateResponse, error)
 	// Retourne les chemins locaux nécessaires à la console série
 	ConsoleInfo(context.Context, *ConsoleInfoRequest) (*ConsoleInfoResponse, error)
 	// Exécute une commande dans une microVM via l'agent invité
@@ -549,6 +644,16 @@ type FvcServiceServer interface {
 	ImageHistory(context.Context, *ImageHistoryRequest) (*ImageHistoryResponse, error)
 	// Supprime les images locales inutilisées
 	ImagePrune(context.Context, *ImagePruneRequest) (*ImagePruneResponse, error)
+	// Crée un volume persistant local
+	VolumeCreate(context.Context, *VolumeCreateRequest) (*VolumeCreateResponse, error)
+	// Liste les volumes persistants locaux
+	VolumeList(context.Context, *VolumeListRequest) (*VolumeListResponse, error)
+	// Inspecte un volume persistant local
+	VolumeInspect(context.Context, *VolumeInspectRequest) (*VolumeInspectResponse, error)
+	// Supprime un volume persistant local
+	VolumeRemove(context.Context, *VolumeRemoveRequest) (*VolumeRemoveResponse, error)
+	// Supprime les volumes locaux inutilisés
+	VolumePrune(context.Context, *VolumePruneRequest) (*VolumePruneResponse, error)
 	// Phase 1 & 5 : Liste toutes les microVMs
 	Ps(context.Context, *PsRequest) (*PsResponse, error)
 	// Phase 5 : Stream les logs textuels en temps réel
@@ -579,6 +684,12 @@ func (UnimplementedFvcServiceServer) Start(context.Context, *StartRequest) (*Sta
 }
 func (UnimplementedFvcServiceServer) Rm(context.Context, *RmRequest) (*RmResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Rm not implemented")
+}
+func (UnimplementedFvcServiceServer) Rename(context.Context, *RenameRequest) (*RenameResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Rename not implemented")
+}
+func (UnimplementedFvcServiceServer) Update(context.Context, *UpdateRequest) (*UpdateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Update not implemented")
 }
 func (UnimplementedFvcServiceServer) ConsoleInfo(context.Context, *ConsoleInfoRequest) (*ConsoleInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ConsoleInfo not implemented")
@@ -648,6 +759,21 @@ func (UnimplementedFvcServiceServer) ImageHistory(context.Context, *ImageHistory
 }
 func (UnimplementedFvcServiceServer) ImagePrune(context.Context, *ImagePruneRequest) (*ImagePruneResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ImagePrune not implemented")
+}
+func (UnimplementedFvcServiceServer) VolumeCreate(context.Context, *VolumeCreateRequest) (*VolumeCreateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VolumeCreate not implemented")
+}
+func (UnimplementedFvcServiceServer) VolumeList(context.Context, *VolumeListRequest) (*VolumeListResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VolumeList not implemented")
+}
+func (UnimplementedFvcServiceServer) VolumeInspect(context.Context, *VolumeInspectRequest) (*VolumeInspectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VolumeInspect not implemented")
+}
+func (UnimplementedFvcServiceServer) VolumeRemove(context.Context, *VolumeRemoveRequest) (*VolumeRemoveResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VolumeRemove not implemented")
+}
+func (UnimplementedFvcServiceServer) VolumePrune(context.Context, *VolumePruneRequest) (*VolumePruneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VolumePrune not implemented")
 }
 func (UnimplementedFvcServiceServer) Ps(context.Context, *PsRequest) (*PsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Ps not implemented")
@@ -758,6 +884,42 @@ func _FvcService_Rm_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(FvcServiceServer).Rm(ctx, req.(*RmRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_Rename_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RenameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).Rename(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_Rename_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).Rename(ctx, req.(*RenameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).Update(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_Update_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).Update(ctx, req.(*UpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1155,6 +1317,96 @@ func _FvcService_ImagePrune_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FvcService_VolumeCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VolumeCreateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).VolumeCreate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_VolumeCreate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).VolumeCreate(ctx, req.(*VolumeCreateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_VolumeList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VolumeListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).VolumeList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_VolumeList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).VolumeList(ctx, req.(*VolumeListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_VolumeInspect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VolumeInspectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).VolumeInspect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_VolumeInspect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).VolumeInspect(ctx, req.(*VolumeInspectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_VolumeRemove_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VolumeRemoveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).VolumeRemove(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_VolumeRemove_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).VolumeRemove(ctx, req.(*VolumeRemoveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FvcService_VolumePrune_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VolumePruneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FvcServiceServer).VolumePrune(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FvcService_VolumePrune_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FvcServiceServer).VolumePrune(ctx, req.(*VolumePruneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _FvcService_Ps_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PsRequest)
 	if err := dec(in); err != nil {
@@ -1224,6 +1476,14 @@ var FvcService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Rm",
 			Handler:    _FvcService_Rm_Handler,
+		},
+		{
+			MethodName: "Rename",
+			Handler:    _FvcService_Rename_Handler,
+		},
+		{
+			MethodName: "Update",
+			Handler:    _FvcService_Update_Handler,
 		},
 		{
 			MethodName: "ConsoleInfo",
@@ -1304,6 +1564,26 @@ var FvcService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImagePrune",
 			Handler:    _FvcService_ImagePrune_Handler,
+		},
+		{
+			MethodName: "VolumeCreate",
+			Handler:    _FvcService_VolumeCreate_Handler,
+		},
+		{
+			MethodName: "VolumeList",
+			Handler:    _FvcService_VolumeList_Handler,
+		},
+		{
+			MethodName: "VolumeInspect",
+			Handler:    _FvcService_VolumeInspect_Handler,
+		},
+		{
+			MethodName: "VolumeRemove",
+			Handler:    _FvcService_VolumeRemove_Handler,
+		},
+		{
+			MethodName: "VolumePrune",
+			Handler:    _FvcService_VolumePrune_Handler,
 		},
 		{
 			MethodName: "Ps",

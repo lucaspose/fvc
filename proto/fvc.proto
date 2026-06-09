@@ -26,6 +26,12 @@ service FvcService {
     // Supprime une microVM stoppée et ses fichiers locaux
     rpc Rm(RmRequest) returns (RmResponse);
 
+    // Renomme une microVM
+    rpc Rename(RenameRequest) returns (RenameResponse);
+
+    // Met à jour les ressources persistées d'une microVM stoppée
+    rpc Update(UpdateRequest) returns (UpdateResponse);
+
     // Retourne les chemins locaux nécessaires à la console série
     rpc ConsoleInfo(ConsoleInfoRequest) returns (ConsoleInfoResponse);
 
@@ -95,6 +101,21 @@ service FvcService {
     // Supprime les images locales inutilisées
     rpc ImagePrune(ImagePruneRequest) returns (ImagePruneResponse);
 
+    // Crée un volume persistant local
+    rpc VolumeCreate(VolumeCreateRequest) returns (VolumeCreateResponse);
+
+    // Liste les volumes persistants locaux
+    rpc VolumeList(VolumeListRequest) returns (VolumeListResponse);
+
+    // Inspecte un volume persistant local
+    rpc VolumeInspect(VolumeInspectRequest) returns (VolumeInspectResponse);
+
+    // Supprime un volume persistant local
+    rpc VolumeRemove(VolumeRemoveRequest) returns (VolumeRemoveResponse);
+
+    // Supprime les volumes locaux inutilisés
+    rpc VolumePrune(VolumePruneRequest) returns (VolumePruneResponse);
+
     // Phase 1 & 5 : Liste toutes les microVMs
     rpc Ps(PsRequest) returns (PsResponse);
 
@@ -110,6 +131,10 @@ message RunRequest {
     string source = 1; // Le chemin du Vmfile ou le nom de l'image
     VmConfig config = 2;
     string name = 3;
+    bool auto_remove = 4;
+    string image_source = 5;
+    string docker_source = 6;
+    string pull_policy = 7;
 }
 
 message RunResponse {
@@ -166,6 +191,27 @@ message RmRequest {
 }
 
 message RmResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message RenameRequest {
+    string vm_id = 1;
+    string name = 2;
+}
+
+message RenameResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message UpdateRequest {
+    string vm_id = 1;
+    int32 cpus = 2;
+    int32 memory_mb = 3;
+}
+
+message UpdateResponse {
     bool success = 1;
     string message = 2;
 }
@@ -439,6 +485,68 @@ message ImagePruneResponse {
     bool dry_run = 6;
 }
 
+message VolumeCreateRequest {
+    string name = 1;
+    int64 size_mb = 2;
+}
+
+message VolumeDetails {
+    string name = 1;
+    string path = 2;
+    int64 size_bytes = 3;
+    int32 used_by = 4;
+    bool attached_to_running = 5;
+    google.protobuf.Timestamp created_at = 6;
+}
+
+message VolumeCreateResponse {
+    bool success = 1;
+    string message = 2;
+    VolumeDetails volume = 3;
+}
+
+message VolumeListRequest {}
+
+message VolumeListResponse {
+    bool success = 1;
+    string message = 2;
+    repeated VolumeDetails volumes = 3;
+}
+
+message VolumeInspectRequest {
+    string name = 1;
+}
+
+message VolumeInspectResponse {
+    bool success = 1;
+    string message = 2;
+    VolumeDetails volume = 3;
+}
+
+message VolumeRemoveRequest {
+    string name = 1;
+    bool force = 2;
+}
+
+message VolumeRemoveResponse {
+    bool success = 1;
+    string message = 2;
+    VolumeDetails volume = 3;
+}
+
+message VolumePruneRequest {
+    bool dry_run = 1;
+}
+
+message VolumePruneResponse {
+    bool success = 1;
+    string message = 2;
+    int32 removed_volumes = 3;
+    int64 freed_bytes = 4;
+    repeated VolumeDetails volumes = 5;
+    bool dry_run = 6;
+}
+
 // --- Messages pour la commande PS ---
 message PsRequest {
     bool all = 1;
@@ -449,6 +557,8 @@ message VmConfig {
     int32 memory_mb = 2;
     repeated string ports = 3;
     bool publish_all = 4;
+    string network_mode = 5;
+    repeated string volumes = 6;
 }
 
 message VmDetails {
