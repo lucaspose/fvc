@@ -58,6 +58,7 @@ func TestAgentRejectsRelativeWorkdir(t *testing.T) {
 }
 
 func TestAgentServeBuildEndpoint(t *testing.T) {
+	t.Setenv("FVC_BUILD_AGENT_TOKEN", "secret")
 	root := t.TempDir()
 	var stdout, stderr bytes.Buffer
 	done := make(chan error, 1)
@@ -80,7 +81,13 @@ func TestAgentServeBuildEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal failed: %v", err)
 	}
-	resp, err := http.Post("http://127.0.0.1:19090/build", "application/json", bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPost, "http://127.0.0.1:19090/build", bytes.NewReader(data))
+	if err != nil {
+		t.Fatalf("request build failed: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-FVC-Build-Token", "secret")
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
@@ -104,6 +111,7 @@ func TestAgentServeBuildEndpoint(t *testing.T) {
 }
 
 func TestAgentServeBuildEndpointReturnsErrorStatus(t *testing.T) {
+	t.Setenv("FVC_BUILD_AGENT_TOKEN", "secret")
 	root := t.TempDir()
 	var stdout, stderr bytes.Buffer
 	done := make(chan error, 1)
@@ -126,7 +134,13 @@ func TestAgentServeBuildEndpointReturnsErrorStatus(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal failed: %v", err)
 	}
-	resp, err := http.Post("http://127.0.0.1:19091/build", "application/json", bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPost, "http://127.0.0.1:19091/build", bytes.NewReader(data))
+	if err != nil {
+		t.Fatalf("request build failed: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-FVC-Build-Token", "secret")
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("post failed: %v", err)
 	}
@@ -142,5 +156,16 @@ func TestAgentServeBuildEndpointReturnsErrorStatus(t *testing.T) {
 	case err := <-done:
 		t.Fatalf("server exited unexpectedly: %v", err)
 	default:
+	}
+}
+
+func TestAuthorizeBuildRequestRequiresToken(t *testing.T) {
+	t.Setenv("FVC_BUILD_AGENT_TOKEN", "")
+	req, err := http.NewRequest(http.MethodPost, "http://127.0.0.1/build", nil)
+	if err != nil {
+		t.Fatalf("request build failed: %v", err)
+	}
+	if err := authorizeBuildRequest(req); err == nil || !strings.Contains(err.Error(), "FVC_BUILD_AGENT_TOKEN") {
+		t.Fatalf("expected missing token config error, got %v", err)
 	}
 }

@@ -19,6 +19,11 @@ func TestConfigFromEnvDefaultsAndOverrides(t *testing.T) {
 	cfg := ConfigFromEnv(env(map[string]string{
 		"FVC_BUILDER_ROOTFS_PATH":                 "/builder.ext4",
 		"FVC_FIRECRACKER_PATH":                    "/bin/firecracker",
+		"FVC_JAILER_PATH":                         "/bin/jailer",
+		"FVC_JAILER_ENABLED":                      "true",
+		"FVC_JAILER_CHROOT_BASE_DIR":              "/jailer-root",
+		"FVC_JAILER_UID":                          "123",
+		"FVC_JAILER_GID":                          "456",
 		"FVC_BUILDER_AGENT_PORT":                  "9091",
 		"FVC_BUILDER_CPUS":                        "2",
 		"FVC_BUILDER_MEMORY_MB":                   "1024",
@@ -33,6 +38,9 @@ func TestConfigFromEnvDefaultsAndOverrides(t *testing.T) {
 	}
 	if cfg.AgentPort != 9091 || cfg.CPUs != 2 || cfg.MemoryMB != 1024 {
 		t.Fatalf("unexpected resources: %#v", cfg)
+	}
+	if !cfg.JailerEnabled || cfg.JailerPath != "/bin/jailer" || cfg.JailerChrootBaseDir != "/jailer-root" || cfg.JailerUID != 123 || cfg.JailerGID != 456 {
+		t.Fatalf("unexpected jailer config: %#v", cfg)
 	}
 	if cfg.TargetDevice != "/dev/vdc" || cfg.TargetRoot != "/target" || cfg.BootArgsExtra != "quiet" || cfg.AgentToken != "token" {
 		t.Fatalf("unexpected target/token config: %#v", cfg)
@@ -56,8 +64,8 @@ func TestBootArgs(t *testing.T) {
 		GuestIP: "172.16.0.2",
 		HostIP:  "172.16.0.1",
 		Netmask: "255.255.255.252",
-	}, "extra=1")
-	for _, want := range []string{"console=ttyS0", "ip=172.16.0.2::172.16.0.1:255.255.255.252::eth0:off", "root=/dev/vda", "init=/init", "extra=1"} {
+	}, "token", "extra=1")
+	for _, want := range []string{"console=ttyS0", "ip=172.16.0.2::172.16.0.1:255.255.255.252::eth0:off", "root=/dev/vda", "init=/init", "fvc_build_agent_token=token", "extra=1"} {
 		if !strings.Contains(args, want) {
 			t.Fatalf("boot args missing %q: %s", want, args)
 		}

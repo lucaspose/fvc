@@ -51,3 +51,18 @@ func TestApplyRuntimePermissionsSetsModeWithoutGroup(t *testing.T) {
 		t.Fatalf("unexpected mode: %v", info.Mode().Perm())
 	}
 }
+
+func TestApplyRuntimePermissionsRejectsSymlink(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target")
+	link := filepath.Join(dir, "link")
+	if err := os.WriteFile(target, []byte("x"), 0600); err != nil {
+		t.Fatalf("failed to write target: %v", err)
+	}
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatalf("failed to create symlink: %v", err)
+	}
+	if err := applyRuntimePermissions(link, "", 0660); err == nil {
+		t.Fatal("expected symlink permission update to be rejected")
+	}
+}

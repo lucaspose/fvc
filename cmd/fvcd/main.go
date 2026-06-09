@@ -1,14 +1,20 @@
 package main
 
 import (
+	"context"
+	"crypto/subtle"
 	"database/sql"
 	"fmt"
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/lucaspose/fvc/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	_ "modernc.org/sqlite"
 )
 
@@ -25,6 +31,9 @@ func validateListenConfig(cfg DaemonConfig) error {
 	if cfg.GRPCNetwork != "tcp" {
 		return nil
 	}
+	if strings.TrimSpace(cfg.GRPCToken) == "" && !cfg.AllowInsecureTCP {
+		return fmt.Errorf("refusing to listen on tcp without FVC_GRPC_TOKEN; set FVC_ALLOW_INSECURE_TCP=true only for isolated development")
+	}
 	host, _, err := net.SplitHostPort(cfg.GRPCAddr)
 	if err != nil {
 		return fmt.Errorf("invalid tcp gRPC address %q: %w", cfg.GRPCAddr, err)
@@ -35,6 +44,61 @@ func validateListenConfig(cfg DaemonConfig) error {
 		}
 	}
 	return nil
+}
+
+func grpcServerOptions(cfg DaemonConfig) []grpc.ServerOption {
+	token := strings.TrimSpace(cfg.GRPCToken)
+	if token == "" {
+		return nil
+	}
+	auth := grpcAuth{token: token}
+	return []grpc.ServerOption{
+		grpc.UnaryInterceptor(auth.unary),
+		grpc.StreamInterceptor(auth.stream),
+	}
+}
+
+type grpcAuth struct {
+	token string
+}
+
+func (a grpcAuth) unary(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	if err := a.authorize(ctx); err != nil {
+		return nil, err
+	}
+	return handler(ctx, req)
+}
+
+func (a grpcAuth) stream(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	if err := a.authorize(stream.Context()); err != nil {
+		return err
+	}
+	return handler(srv, stream)
+}
+
+func (a grpcAuth) authorize(ctx context.Context) error {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return status.Error(codes.Unauthenticated, "missing gRPC authorization")
+	}
+	for _, value := range md.Get("authorization") {
+		if token, ok := strings.CutPrefix(value, "Bearer "); ok && constantTimeEqual(token, a.token) {
+			return nil
+		}
+	}
+	for _, value := range md.Get("x-fvc-token") {
+		if constantTimeEqual(value, a.token) {
+			return nil
+		}
+	}
+	return status.Error(codes.Unauthenticated, "invalid gRPC authorization")
+}
+
+func constantTimeEqual(a, b string) bool {
+	if a == "" || b == "" {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
 
 func main() {
@@ -103,7 +167,7 @@ func main() {
 	}
 
 	log.Printf("fvcd listening on %s %s with data dir %s", cfg.GRPCNetwork, cfg.GRPCAddr, cfg.BaseDir)
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpcServerOptions(cfg)...)
 	proto.RegisterFvcServiceServer(grpcServer, &Server{DB: db, Config: cfg, Store: store, Net: network})
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("gRPC server error: %v", err)

@@ -31,6 +31,13 @@ func runtimeGID(groupName string) (int, bool, error) {
 }
 
 func applyRuntimePermissions(path string, groupName string, mode os.FileMode) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return fmt.Errorf("runtime permission path stat failed for %s: %w", path, err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("runtime permission path refuses symlink: %s", path)
+	}
 	gid, ok, err := runtimeGID(groupName)
 	if err != nil {
 		return err

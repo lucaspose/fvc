@@ -19,11 +19,19 @@ StateDirectory=fvc
 RuntimeDirectory=fvc
 RuntimeDirectoryMode=0770
 UMask=0007
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_SYS_ADMIN CAP_SYS_RESOURCE CAP_DAC_OVERRIDE
-AmbientCapabilities=CAP_NET_ADMIN CAP_SYS_ADMIN CAP_SYS_RESOURCE CAP_DAC_OVERRIDE
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_SYS_ADMIN CAP_SYS_RESOURCE CAP_DAC_OVERRIDE CAP_CHOWN CAP_SETUID CAP_SETGID CAP_SYS_CHROOT CAP_MKNOD
+AmbientCapabilities=CAP_NET_ADMIN CAP_SYS_ADMIN CAP_SYS_RESOURCE CAP_DAC_OVERRIDE CAP_CHOWN CAP_SETUID CAP_SETGID CAP_SYS_CHROOT CAP_MKNOD
 NoNewPrivileges=false
 PrivateTmp=true
 ProtectSystem=full
+ProtectHome=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
 ReadWritePaths=/var/lib/fvc /run/fvc
 
 [Install]

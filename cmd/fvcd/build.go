@@ -72,7 +72,7 @@ func (s *ImageStore) applyBuildRunsWithMicroVM(imagePath string, plan BuildPlan)
 }
 
 func builderBootArgs(cfg NetworkConfig) string {
-	return buildervm.BootArgs(cfg, os.Getenv("FVC_BUILDER_BOOT_ARGS_EXTRA"))
+	return buildervm.BootArgs(cfg, os.Getenv("FVC_BUILD_AGENT_TOKEN"), os.Getenv("FVC_BUILDER_BOOT_ARGS_EXTRA"))
 }
 
 func buildAgentRequestTimeout() time.Duration {

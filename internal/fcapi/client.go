@@ -42,13 +42,18 @@ func SendConfig(socketPath, method, path, jsonBody string) error {
 // connections.
 func WaitForSocket(socketPath string, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
+	var lastErr error
 	for time.Now().Before(deadline) {
 		conn, err := net.Dial("unix", socketPath)
 		if err == nil {
 			_ = conn.Close()
 			return nil
 		}
+		lastErr = err
 		time.Sleep(25 * time.Millisecond)
+	}
+	if lastErr != nil {
+		return fmt.Errorf("firecracker API socket not ready after %s: %w", timeout, lastErr)
 	}
 	return fmt.Errorf("firecracker API socket not ready after %s", timeout)
 }

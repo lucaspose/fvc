@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -104,10 +105,10 @@ func serve(args []string, stdout, stderr io.Writer) error {
 func authorizeBuildRequest(r *http.Request) error {
 	token := strings.TrimSpace(os.Getenv("FVC_BUILD_AGENT_TOKEN"))
 	if token == "" {
-		return nil
+		return errors.New("FVC_BUILD_AGENT_TOKEN is required")
 	}
 	got := strings.TrimSpace(r.Header.Get("X-FVC-Build-Token"))
-	if got == "" || got != token {
+	if got == "" || subtle.ConstantTimeCompare([]byte(got), []byte(token)) != 1 {
 		return errors.New("unauthorized build request")
 	}
 	return nil

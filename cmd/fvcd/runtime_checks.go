@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -20,6 +21,9 @@ func RuntimeDiagnostics(cfg DaemonConfig) []RuntimeDiagnostic {
 		checkDevice("/dev/kvm"),
 		checkCommand("mount"),
 		checkCommand("umount"),
+	}
+	if cfg.JailerEnabled {
+		checks = append(checks, checkExecutable("jailer", cfg.JailerPath))
 	}
 	if cfg.NetworkEnabled {
 		checks = append(checks,
@@ -49,6 +53,16 @@ func checkExecutable(name, path string) RuntimeDiagnostic {
 	if strings.TrimSpace(path) == "" {
 		return RuntimeDiagnostic{Name: name, OK: false, Message: "path is empty"}
 	}
+	if !filepath.IsAbs(path) {
+		return RuntimeDiagnostic{Name: name, OK: false, Message: "path must be absolute"}
+	}
+	linkInfo, err := os.Lstat(path)
+	if err != nil {
+		return RuntimeDiagnostic{Name: name, OK: false, Message: err.Error()}
+	}
+	if linkInfo.Mode()&os.ModeSymlink != 0 {
+		return RuntimeDiagnostic{Name: name, OK: false, Message: "path must not be a symlink"}
+	}
 	info, err := os.Stat(path)
 	if err != nil {
 		return RuntimeDiagnostic{Name: name, OK: false, Message: err.Error()}
@@ -60,6 +74,14 @@ func checkExecutable(name, path string) RuntimeDiagnostic {
 		return RuntimeDiagnostic{Name: name, OK: false, Message: "file is not executable"}
 	}
 	return RuntimeDiagnostic{Name: name, OK: true, Message: path}
+}
+
+func validateExecutablePath(name, path string) error {
+	check := checkExecutable(name, path)
+	if check.OK {
+		return nil
+	}
+	return fmt.Errorf("%s executable check failed: %s", name, check.Message)
 }
 
 func checkCommand(name string) RuntimeDiagnostic {
