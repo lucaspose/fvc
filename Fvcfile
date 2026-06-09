@@ -1,0 +1,16 @@
+[image]
+from = "ubuntu"
+tag = "ubuntu-web"
+
+[config]
+workdir = "/var/www/html"
+cmd = ["/usr/bin/python3", "-m", "http.server", "80"]
+env = ["PORT=80"]
+expose = [80]
+
+[labels]
+app = "ubuntu-web"
+
+[[copy]]
+src = "index.html"
+dest = "/var/www/html/index.html"

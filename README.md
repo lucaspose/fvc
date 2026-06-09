@@ -2,7 +2,12 @@
 
 `fvc` is an early Firecracker microVM manager written in Go. The project currently provides a daemon (`fvcd`) and a CLI (`fvc`) that can run, list, stop, and read logs from microVMs through gRPC.
 
-The current milestone is focused on making the foundation reliable before adding higher-level Docker-like features.
+The current milestone is focused on making the foundation reliable before adding higher-level container workflows.
+
+Additional docs:
+
+- [Architecture](docs/architecture.md)
+- [Security model](docs/security.md)
 
 ## Current Scope
 
@@ -13,6 +18,7 @@ The current milestone is focused on making the foundation reliable before adding
   a Firecracker-ready ext4 rootfs, and imports it as a local FVC image.
 - `fvc images`: lists locally cached images.
 - `fvc image`: inspects, tags, imports, exports, removes, and prunes local images.
+- `fvc volume`: creates, lists, inspects, removes, and prunes persistent named volumes.
 - `fvc prune`: removes unused local resources left behind by older cache formats or interrupted runs.
 - `fvc stats`: shows host-side CPU, memory usage/limit, PID, status, and uptime for microVMs.
 - `fvc ps`: lists known microVMs.
@@ -84,6 +90,17 @@ Use `FVC_TEST_GUEST_AGENT_MODE=vsock` to force the secure guest-agent path, or
 `FVC_TEST_REBUILD_ARTIFACTS=0` to skip the rebuild when iterating on an existing
 rootfs.
 
+Run the same functional matrix through the Firecracker jailer:
+
+```sh
+make test-functional-docker-jailer
+```
+
+This sets `FVC_TEST_JAILER=1`, configures `fvcd` with `/usr/bin/jailer`, verifies
+that the builder VM leaves no jailer chroot behind after `fvc build`, verifies
+that runtime VMs create a Firecracker API socket inside the jailer chroot, and
+checks final chroot cleanup after lifecycle, volume, and auto-remove paths.
+
 Run the optional Docker Hub import test:
 
 ```sh
@@ -96,6 +113,28 @@ Pull and convert a Docker Hub image into a local Firecracker rootfs:
 fvc pull --from docker ubuntu:24.04 -t ubuntu-fvc:24.04
 fvc run --image ubuntu-fvc:24.04
 ```
+
+Docker-style shortcuts are also supported:
+
+```sh
+fvc pull docker://nginx
+fvc run --from docker nginx --name web --publish-all
+fvc run docker://hello-world --rm
+```
+
+When a Docker image has no tag, FVC uses `:latest` for the local converted
+image name, for example `nginx` becomes `nginx:latest`. `fvc run` accepts a
+pull policy:
+
+```sh
+fvc run --from docker nginx --pull missing
+fvc run --from docker nginx --pull always
+fvc run --from docker nginx --pull never
+```
+
+`missing` is the default and reuses an existing converted image if present.
+`always` refreshes the converted image unless that image is referenced by an
+existing VM. `never` requires the converted image to already exist locally.
 
 When `--from docker` is used, FVC treats the source as a normal Docker image,
 downloads its OCI/Docker manifest and gzip layers from Docker Hub, applies
@@ -234,9 +273,27 @@ While a step is running, the spinner stays on that same line. When the daemon re
 - `FVC_GRPC_NETWORK`: gRPC listen network, defaults to `unix`.
 - `FVC_GRPC_ADDR`: gRPC bind address, defaults to `/run/fvc/fvcd.sock`.
 - `FVC_ALLOW_REMOTE_TCP`: allow `fvcd` to bind TCP on all interfaces, defaults to `false`.
+- `FVC_GRPC_TOKEN`: bearer token required by `fvcd` when set. TCP listeners
+  require this token unless `FVC_ALLOW_INSECURE_TCP=true` is set for isolated
+  development.
+- `FVC_ALLOW_INSECURE_TCP`: allow TCP gRPC without `FVC_GRPC_TOKEN`, defaults
+  to `false`.
 - `FVC_FIRECRACKER_PATH`: Firecracker binary path, defaults to `/usr/local/bin/firecracker`.
+- `FVC_JAILER_ENABLED`: launch Firecracker through the Firecracker jailer,
+  defaults to `false` for local development.
+- `FVC_JAILER_PATH`: jailer binary path, defaults to `/usr/local/bin/jailer`.
+- `FVC_JAILER_CHROOT_BASE_DIR`: base directory for per-VM jail roots, defaults
+  to `$FVC_HOME/jailer`.
+- `FVC_JAILER_UID` / `FVC_JAILER_GID`: uid/gid used by jailed Firecracker
+  processes, default to `65534`.
 - `FVC_KERNEL_PATH`: kernel path, defaults to `$FVC_HOME/vmlinux.bin`.
 - `FVC_IMAGE_BASE_URL`: base URL for images and kernel downloads.
+- `FVC_REQUIRE_IMAGE_CHECKSUMS`: require adjacent `.sha256` files for downloaded
+  FVC images and kernels, defaults to `true`.
+- `FVC_ALLOW_INSECURE_DOWNLOADS`: allow non-HTTPS image/kernel downloads when
+  checksum verification is enabled, defaults to `false`.
+- `FVC_ALLOW_HOST_IMAGE_PATHS`: allow `fvc image import/export` to read or write
+  host paths outside `FVC_HOME`, defaults to `false`.
 - `FVC_NETWORK_ENABLED`: automatic TAP/NAT networking, defaults to `true`.
 - `FVC_RUNTIME_DIR`: runtime socket and console FIFO directory, defaults to `/run/fvc`.
 - `FVC_RUNTIME_GROUP`: optional group that can access runtime logs and console FIFOs.
@@ -258,10 +315,12 @@ FVC_HOME=/tmp/fvc-dev FVC_RUNTIME_DIR=/tmp/fvc-run FVC_GRPC_ADDR=/tmp/fvc-run/fv
 
 ## Images
 
-`fvc run` expects two files to exist behind `FVC_IMAGE_BASE_URL`:
+`fvc run` expects these files to exist behind `FVC_IMAGE_BASE_URL`:
 
 - `<image>.ext4`, for example `ubuntu.ext4`.
+- `<image>.ext4.sha256`, containing the expected SHA-256 digest.
 - `vmlinux.bin`, the Firecracker-compatible kernel.
+- `vmlinux.bin.sha256`, containing the expected SHA-256 digest.
 
 With the default config, this command:
 
@@ -273,13 +332,15 @@ downloads:
 
 ```text
 https://fvchubstorage.blob.core.windows.net/images/ubuntu.ext4
+https://fvchubstorage.blob.core.windows.net/images/ubuntu.ext4.sha256
 https://fvchubstorage.blob.core.windows.net/images/vmlinux.bin
+https://fvchubstorage.blob.core.windows.net/images/vmlinux.bin.sha256
 ```
 
 If the image URL returns 404, either upload that image to the configured storage or point the daemon at another image host:
 
 ```sh
-FVC_IMAGE_BASE_URL=http://127.0.0.1:8080 FVC_HOME=/tmp/fvc-dev fvcd
+FVC_ALLOW_INSECURE_DOWNLOADS=true FVC_IMAGE_BASE_URL=http://127.0.0.1:8080 FVC_HOME=/tmp/fvc-dev fvcd
 ```
 
 The daemon caches images under `FVC_HOME/cache` using encoded filenames, so prefer changing `FVC_IMAGE_BASE_URL` over manually writing cache files.
@@ -356,7 +417,9 @@ Example:
 name = "api"
 cpu = 2
 ram = 1024
+network = "nat"
 ports = ["8080:80"]
+volumes = ["data:/var/lib/api"]
 
 [image]
 source = "ubuntu"
@@ -374,6 +437,42 @@ Override fields from the command line:
 fvc run --image ubuntu --name api -p 8080:80 --cpu 2 --ram 1024
 ```
 
+Run a short-lived microVM and remove its VM record, writable drive, log, console
+input, and vsock file automatically after it exits:
+
+```sh
+fvc run --rm --image hello-fvc:latest --name hello
+```
+
+Attach a persistent named volume:
+
+```sh
+fvc volume create --size 1024 web-data
+fvc run --image nginx-fvc:latest -v web-data:/usr/share/nginx/html
+fvc run --image busybox-fvc:latest --network none -v cache:/cache:ro
+```
+
+FVC volumes are named ext4 disk images stored under the daemon data directory
+and attached to Firecracker as secondary block devices. The guest runtime mounts
+them at the requested absolute guest path before starting the image command.
+The first run creates the volume automatically; later VMs using the same name
+reuse the same data. Host bind mounts such as `/host/path:/guest/path` are not
+supported yet.
+
+Manage volumes explicitly:
+
+```sh
+fvc volume ls
+fvc volume inspect web-data
+fvc volume rm web-data
+fvc volume prune --dry-run
+fvc volume prune --force
+```
+
+`fvc volume rm` refuses volumes attached to a running microVM. It also refuses
+volumes referenced by stopped VM records unless `--force` is used. `volume
+prune` only removes volumes that are not referenced by any VM.
+
 Commands that accept a VM identifier also accept the VM name or an unambiguous
 ID prefix:
 
@@ -381,6 +480,21 @@ ID prefix:
 fvc logs api
 fvc stop api
 ```
+
+Additional VM commands are available for common lifecycle and guest operations:
+
+```sh
+fvc restart api
+fvc rename api api-v2
+fvc update --cpu 2 --ram 1024 api-v2
+fvc top api-v2
+fvc cp ./config.json api-v2:/etc/app/config.json
+fvc cp api-v2:/var/log/app.log ./app.log
+```
+
+`fvc update` changes the resources used the next time a stopped microVM starts;
+running microVMs must be stopped first. `fvc cp` currently supports regular
+files and one VM endpoint per copy operation.
 
 ## Fvcfile Build
 
@@ -529,6 +643,12 @@ agent protocol, not as the production isolation boundary.
 
 ## Lifecycle
 
+`fvcd` keeps VM state in SQLite and refreshes it when lifecycle/query commands
+run. If a runtime-enabled guest prints `FVC_EXIT_CODE=<code>` and powers off,
+the daemon records the VM as `exited`, stores the exit code, cleans network and
+runtime sockets, and stops the Firecracker process if needed. If the host
+process disappears without a guest exit code, the VM becomes `stopped`.
+
 Stop a running microVM:
 
 ```sh
@@ -560,7 +680,9 @@ Remove a stopped microVM and its local files:
 fvc rm <vm-id>
 ```
 
-`fvc rm` refuses running microVMs. Stop the VM first, then remove it.
+`fvc rm` refuses running microVMs. Stop the VM first, then remove it. For
+one-shot workloads, prefer `fvc run --rm ...`; it performs the same local
+cleanup automatically after the VM reaches `exited` or `stopped`.
 
 ## Snapshots
 
@@ -615,6 +737,17 @@ The daemon reads host process metrics from `/proc`, so CPU and memory usage desc
 ## Network
 
 When networking is enabled, `fvcd` creates a TAP interface for each VM, assigns a small `/30` subnet, enables IPv4 forwarding, adds a NAT masquerade rule for the guest IP, and attaches the TAP to Firecracker before the VM starts.
+
+Each VM can choose its network mode at start time:
+
+```sh
+fvc run --image nginx-fvc:latest --network nat --publish-all
+fvc run --image hello-fvc:latest --network none --rm
+```
+
+- `nat` is the default when `FVC_NETWORK_ENABLED=true`. It creates the TAP device, assigns the guest IP, enables outbound NAT, and allows `-p` or `--publish-all`.
+- `none` starts the microVM without a Firecracker network interface. Port publishing is rejected in this mode.
+- When `FVC_NETWORK_ENABLED=false`, the default mode becomes `none`. Explicit `--network nat` requires the daemon network support to be enabled.
 
 The daemon generates per-VM values:
 

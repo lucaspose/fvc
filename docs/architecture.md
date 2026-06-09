@@ -16,10 +16,19 @@ The user-facing CLI lives in `cmd/fvc` and is grouped by command surface:
 - `workflows.go`: high-level `run`, `build`, and `pull` workflows with streamed progress output.
 - `image.go`: image subcommands and image detail rendering.
 - `snapshot.go`: snapshot subcommands.
-- `vm.go`: VM lifecycle, listing, inspection, stats, and wait/kill command handlers with parser/output coverage.
+- `vm_lifecycle.go`: VM state-changing commands such as `stop`, `start`, `restart`, `rm`, `kill`, `wait`, `rename`, and `update`.
+- `vm_query.go`: VM read-only commands and renderers for `ps`, `inspect`, and `stats`.
+- `cp.go`: host-to-guest and guest-to-host file copy command handling.
+- `guest_process.go`: guest process inspection command handling.
+- `guest_exec_stream.go`: shared guest exec streaming used by commands that need process output.
 - `maintenance.go`: top-level image listing and local prune commands.
 - `exec.go`, `logs.go`, `console.go`, `doctor.go`: focused command handlers.
 - `vmfile.go`, `flags.go`, `prompt.go`: shared CLI parsing and prompt helpers.
+
+The CLI command handlers intentionally stay in the `cmd/fvc` package because it
+is the executable `main` package. Cross-command behavior that is not tied to
+argument parsing or gRPC calls should move to `internal/<domain>` packages
+instead of creating broad helper packages under `cmd`.
 
 ## Daemon Layout
 
@@ -34,6 +43,7 @@ The daemon code currently lives in `cmd/fvcd` and is grouped by responsibility:
 - `pull_prune_service.go`: daemon pull flow, Docker import dispatch, image listing, and local prune operations.
 - `image_service.go`: image inspect/tag/import/export/remove/prune/history adapters and VM/image usage checks.
 - `snapshot_service.go`: stopped-VM snapshot create/list/restore/remove adapters and snapshot drive path resolution.
+- `volumes.go`: named ext4 volume creation, inspection, usage tracking, protected remove, and prune.
 - `proto_mapping.go`: daemon-owned conversion from image and snapshot domain structs to protobuf details.
 - `logs_service.go`: log streaming, tail/follow helpers, and daemon diagnostics RPC.
 - `state.go`: thin adapter around VM state persistence and startup reconciliation.

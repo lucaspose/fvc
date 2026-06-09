@@ -1,0 +1,6 @@
+[vm]
+cpu = 2
+ram = 1024
+
+[image]
+source = "ubuntu"
