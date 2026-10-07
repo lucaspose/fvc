@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
+
+	"github.com/lucaspose/fvc/internal/jailfs"
 )
 
 const (
@@ -45,7 +46,7 @@ func (s *Server) firecrackerCommand(vmID string) (*exec.Cmd, firecrackerRuntime,
 	if err := validateJailerConfig(s.Config); err != nil {
 		return nil, firecrackerRuntime{}, err
 	}
-	if err := ensureJailerChrootBaseDir(s.Config.JailerChrootBaseDir); err != nil {
+	if err := jailfs.EnsureChrootBaseDir(s.Config.JailerChrootBaseDir); err != nil {
 		return nil, firecrackerRuntime{}, err
 	}
 	jailerID := jailerID(vmID)
@@ -142,13 +143,6 @@ func validateJailerConfig(cfg DaemonConfig) error {
 	return nil
 }
 
-func ensureJailerChrootBaseDir(path string) error {
-	if err := os.MkdirAll(path, 0755); err != nil {
-		return fmt.Errorf("jailer chroot base directory setup failed: %w", err)
-	}
-	return nil
-}
-
 func bindMountFile(runner CommandRunner, source, target string, uid, gid int, mode os.FileMode) error {
 	if runner == nil {
 		return fmt.Errorf("command runner is required")
@@ -163,7 +157,7 @@ func bindMountFile(runner CommandRunner, source, target string, uid, gid int, mo
 	if !info.Mode().IsRegular() {
 		return fmt.Errorf("source must be a regular file: %s", source)
 	}
-	if err := prepareJailerFileAccess(source, uid, gid, mode); err != nil {
+	if err := jailfs.PrepareFileAccess(source, uid, gid, mode); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
@@ -186,40 +180,6 @@ func bindMountFile(runner CommandRunner, source, target string, uid, gid int, mo
 		return err
 	}
 	return nil
-}
-
-func prepareJailerFileAccess(path string, uid, gid int, mode os.FileMode) error {
-	info, err := os.Stat(path)
-	if err != nil {
-		return fmt.Errorf("source stat failed: %w", err)
-	}
-	if fileAccessibleByJailer(info, uid, gid, mode) {
-		return nil
-	}
-	if err := os.Chmod(path, mode); err != nil {
-		return fmt.Errorf("source chmod failed: %w", err)
-	}
-	if err := os.Chown(path, uid, gid); err != nil {
-		return fmt.Errorf("source chown failed: %w", err)
-	}
-	return nil
-}
-
-func fileAccessibleByJailer(info os.FileInfo, uid, gid int, mode os.FileMode) bool {
-	stat, ok := info.Sys().(*syscall.Stat_t)
-	if !ok {
-		return false
-	}
-	perm := info.Mode().Perm()
-	readNeeded := mode&0444 != 0
-	writeNeeded := mode&0222 != 0
-	canRead := stat.Uid == uint32(uid) && perm&0400 != 0 ||
-		stat.Gid == uint32(gid) && perm&0040 != 0 ||
-		perm&0004 != 0
-	canWrite := stat.Uid == uint32(uid) && perm&0200 != 0 ||
-		stat.Gid == uint32(gid) && perm&0020 != 0 ||
-		perm&0002 != 0
-	return (!readNeeded || canRead) && (!writeNeeded || canWrite)
 }
 
 func waitForJailerRoot(path string, timeout time.Duration) error {
@@ -295,48 +255,6 @@ func jailerRootPath(cfg DaemonConfig, jailerID string) string {
 	return filepath.Join(cfg.JailerChrootBaseDir, "firecracker", jailerID, "root")
 }
 
-func findJailedFirecrackerProcess(jailerID string) (*os.Process, int32, string, error) {
-	pid, err := findJailedFirecrackerPID("/proc", jailerID)
-	if err != nil {
-		return nil, 0, "", err
-	}
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		return nil, 0, "", fmt.Errorf("jailed firecracker process lookup failed for pid %d: %w", pid, err)
-	}
-	return process, int32(pid), processStartTimeValue(pid), nil
-}
-
-func findJailedFirecrackerPID(procRoot, jailerID string) (int, error) {
-	entries, err := os.ReadDir(procRoot)
-	if err != nil {
-		return 0, fmt.Errorf("proc scan failed: %w", err)
-	}
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		pid, err := strconv.Atoi(entry.Name())
-		if err != nil {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Join(procRoot, entry.Name(), "cmdline"))
-		if err != nil || len(data) == 0 {
-			continue
-		}
-		args := strings.Split(strings.TrimRight(string(data), "\x00"), "\x00")
-		if len(args) == 0 || filepath.Base(args[0]) != "firecracker" {
-			continue
-		}
-		for i := 0; i+1 < len(args); i++ {
-			if args[i] == "--id" && args[i+1] == jailerID {
-				return pid, nil
-			}
-		}
-	}
-	return 0, fmt.Errorf("jailed firecracker process not found for id %s", jailerID)
-}
-
 func safeJailerPath(base, path string) bool {
 	base = filepath.Clean(base)
 	path = filepath.Clean(path)
@@ -345,4 +263,16 @@ func safeJailerPath(base, path string) bool {
 		return false
 	}
 	return rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+func (s *Server) findJailedFirecrackerProcess(jailerID string) (*os.Process, int32, string, error) {
+	pid, err := jailfs.FindFirecrackerPID("/proc", jailerID, s.Config.JailerUID, jailerRootPath(s.Config, jailerID))
+	if err != nil {
+		return nil, 0, "", err
+	}
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return nil, 0, "", fmt.Errorf("jailed firecracker process lookup failed for pid %d: %w", pid, err)
+	}
+	return process, int32(pid), processStartTimeValue(pid), nil
 }

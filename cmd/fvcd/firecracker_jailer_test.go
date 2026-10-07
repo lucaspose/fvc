@@ -64,50 +64,6 @@ func TestPrepareFirecrackerRuntimeDirectKeepsHostPaths(t *testing.T) {
 	}
 }
 
-func TestPrepareJailerFileAccessUpdatesSourceMode(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "kernel.bin")
-	if err := os.WriteFile(path, []byte("kernel"), 0600); err != nil {
-		t.Fatalf("write source failed: %v", err)
-	}
-	if err := prepareJailerFileAccess(path, os.Getuid(), os.Getgid(), 0440); err != nil {
-		t.Fatalf("prepareJailerFileAccess failed: %v", err)
-	}
-	if err := prepareJailerFileAccess(path, os.Getuid(), os.Getgid(), 0440); err != nil {
-		t.Fatalf("second prepareJailerFileAccess failed: %v", err)
-	}
-	info, err := os.Stat(path)
-	if err != nil {
-		t.Fatalf("stat source failed: %v", err)
-	}
-	if !fileAccessibleByJailer(info, os.Getuid(), os.Getgid(), 0440) {
-		t.Fatalf("source is not accessible by jailer uid/gid: mode=%o", info.Mode().Perm())
-	}
-}
-
-func TestFindJailedFirecrackerPID(t *testing.T) {
-	procRoot := t.TempDir()
-	for _, dir := range []string{"self", "abc"} {
-		if err := os.Mkdir(filepath.Join(procRoot, dir), 0755); err != nil {
-			t.Fatalf("mkdir fake proc entry failed: %v", err)
-		}
-	}
-	pidDir := filepath.Join(procRoot, "1234")
-	if err := os.Mkdir(pidDir, 0755); err != nil {
-		t.Fatalf("mkdir fake pid failed: %v", err)
-	}
-	cmdline := strings.Join([]string{"/firecracker", "--id", "fvc-vm-1", "--api-sock", "/run/firecracker.socket"}, "\x00") + "\x00"
-	if err := os.WriteFile(filepath.Join(pidDir, "cmdline"), []byte(cmdline), 0644); err != nil {
-		t.Fatalf("write fake cmdline failed: %v", err)
-	}
-	pid, err := findJailedFirecrackerPID(procRoot, "fvc-vm-1")
-	if err != nil {
-		t.Fatalf("findJailedFirecrackerPID failed: %v", err)
-	}
-	if pid != 1234 {
-		t.Fatalf("unexpected pid: %d", pid)
-	}
-}
-
 func writeExecutable(t *testing.T, path string) string {
 	t.Helper()
 	if err := os.WriteFile(path, []byte("#!/bin/sh\nexit 0\n"), 0755); err != nil {

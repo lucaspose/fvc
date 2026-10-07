@@ -59,7 +59,7 @@ func (s *Server) launchFirecracker(vmID, kernelPath, drivePath, logPath, console
 		return 0, "", "", fmt.Errorf("firecracker API socket not ready: %v", err)
 	}
 	if fcRuntime.JailerID != "" {
-		process, processPid, processStartTime, err = findJailedFirecrackerProcess(fcRuntime.JailerID)
+		process, processPid, processStartTime, err = s.findJailedFirecrackerProcess(fcRuntime.JailerID)
 		if err != nil {
 			_ = cmd.Process.Kill()
 			return 0, "", "", err

@@ -62,6 +62,7 @@ The daemon package still owns host state and policy. Code that can be isolated w
 - `internal/cliui`: reusable terminal rendering for the CLI, including colored status labels, key/value rows, byte/duration formatting, and streamed progress lines.
 - `internal/guestruntime`: guest runtime config, random seed generation, and mounted-rootfs installation of `fvc-init` plus `/etc/fvc/runtime.json`.
 - `internal/hostprune`: host filesystem cleanup for orphan active drives and stale runtime files based on daemon SQLite state. The daemon `Prune` RPC adapts these package results into protobuf output.
+- `internal/jailfs`: jailer filesystem helpers shared by the daemon and the builder: chroot base directory checks, file ownership for bind-mounted files, and identification of jailed Firecracker processes.
 - `internal/hostnet`: host TAP/NAT/port publishing setup, deterministic guest IP/MAC derivation, network cleanup, and permission-hint wrapping.
 - `internal/imagestore`: on-disk Firecracker image cache, image metadata sidecars, kernel downloads, VM drive snapshots, and image/cache pruning helpers.
 - `internal/rootfs`: mounted-rootfs file operations with symlink-safe path creation and no-follow writes used by build copies and runtime init injection.

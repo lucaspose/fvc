@@ -184,7 +184,9 @@ func (n *NetworkManager) ensureJump(table, from, to string) error {
 	if err := n.runner.Run("iptables", check...); err == nil {
 		return nil
 	}
-	add := iptablesArgs(table, "-I", from, "1", "-j", to)
+	// Append, never insert: rules already in the host chains (firewall
+	// policies, DROP rules) keep precedence over FVC rules.
+	add := iptablesArgs(table, "-A", from, "-j", to)
 	if err := n.runner.Run("iptables", add...); err != nil {
 		return fmt.Errorf("iptables jump %s -> %s setup failed: %w", from, to, err)
 	}

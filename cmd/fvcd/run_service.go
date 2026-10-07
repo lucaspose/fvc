@@ -262,7 +262,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		return fail("firecracker", "firecracker API socket not ready: %v", err)
 	}
 	if fcRuntime.JailerID != "" {
-		process, processPid, processStartTime, err = findJailedFirecrackerProcess(fcRuntime.JailerID)
+		process, processPid, processStartTime, err = s.findJailedFirecrackerProcess(fcRuntime.JailerID)
 		if err != nil {
 			_ = cmd.Process.Kill()
 			return fail("firecracker", "%v", err)

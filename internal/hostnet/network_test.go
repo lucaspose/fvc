@@ -102,10 +102,10 @@ func TestNetworkSetupCreatesMissingDedicatedChainsAndJumps(t *testing.T) {
 		"iptables -t nat -N FVC-OUTPUT",
 		"iptables -t nat -N FVC-POSTROUTING",
 		"iptables -N FVC-FORWARD",
-		"iptables -t nat -I PREROUTING 1 -j FVC-PREROUTING",
-		"iptables -t nat -I OUTPUT 1 -j FVC-OUTPUT",
-		"iptables -t nat -I POSTROUTING 1 -j FVC-POSTROUTING",
-		"iptables -I FORWARD 1 -j FVC-FORWARD",
+		"iptables -t nat -A PREROUTING -j FVC-PREROUTING",
+		"iptables -t nat -A OUTPUT -j FVC-OUTPUT",
+		"iptables -t nat -A POSTROUTING -j FVC-POSTROUTING",
+		"iptables -A FORWARD -j FVC-FORWARD",
 	} {
 		if !containsCall(runner.calls, expected) {
 			t.Fatalf("missing command %q in calls %#v", expected, runner.calls)

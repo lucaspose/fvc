@@ -1,8 +1,6 @@
 package buildervm
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -91,35 +89,5 @@ func TestRunRequiresBuilderRootfsBeforeNetwork(t *testing.T) {
 	}
 	if called {
 		t.Fatal("network setup should not be called before config validation")
-	}
-}
-
-func TestEnsureJailerChrootBaseDirCreatesMissingDirectory(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "missing", "jailer")
-	if err := ensureJailerChrootBaseDir(path); err != nil {
-		t.Fatalf("ensureJailerChrootBaseDir failed: %v", err)
-	}
-	if info, err := os.Stat(path); err != nil || !info.IsDir() {
-		t.Fatalf("expected jailer chroot base directory to be created, info=%v err=%v", info, err)
-	}
-}
-
-func TestPrepareJailerFileAccessUpdatesSourceMode(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "rootfs.ext4")
-	if err := os.WriteFile(path, []byte("rootfs"), 0600); err != nil {
-		t.Fatalf("write source failed: %v", err)
-	}
-	if err := prepareJailerFileAccess(path, os.Getuid(), os.Getgid(), 0660); err != nil {
-		t.Fatalf("prepareJailerFileAccess failed: %v", err)
-	}
-	if err := prepareJailerFileAccess(path, os.Getuid(), os.Getgid(), 0660); err != nil {
-		t.Fatalf("second prepareJailerFileAccess failed: %v", err)
-	}
-	info, err := os.Stat(path)
-	if err != nil {
-		t.Fatalf("stat source failed: %v", err)
-	}
-	if !fileAccessibleByJailer(info, os.Getuid(), os.Getgid(), 0660) {
-		t.Fatalf("source is not accessible by jailer uid/gid: mode=%o", info.Mode().Perm())
 	}
 }
