@@ -1,0 +1,53 @@
+name: KVM functional
+
+on:
+  workflow_dispatch:
+    inputs:
+      jailer:
+        description: Run the Firecracker jailer matrix
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: read
+
+jobs:
+  docker-functional:
+    name: Docker functional
+    runs-on:
+      - self-hosted
+      - linux
+      - kvm
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Check host prerequisites
+        run: |
+          test -e /dev/kvm
+          test -e /dev/net/tun
+          docker version
+          docker compose version
+          grep -q '^ *7 loop$' /proc/devices
+
+      - name: Start fvcd container
+        run: docker compose -f compose.firecracker.yml up -d --build
+
+      - name: Run functional matrix
+        if: ${{ inputs.jailer == 'false' }}
+        run: make test-functional-docker
+
+      - name: Run jailer functional matrix
+        if: ${{ inputs.jailer == 'true' }}
+        run: make test-functional-docker-jailer
