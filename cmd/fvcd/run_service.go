@@ -241,7 +241,9 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		return fail("firecracker", "firecracker launch failed: %v", err)
 	}
 
-	processPid := int32(cmd.Process.Pid)
+	launcherPid := int32(cmd.Process.Pid)
+	process := cmd.Process
+	processPid := launcherPid
 	processStartTime := processStartTimeValue(int(processPid))
 	useVsock := useRuntimeInit && shouldConfigureVsock(s.Config.GuestAgentMode)
 	if err := s.prepareFirecrackerRuntime(&fcRuntime, kernelPath, vmDrivePath, vsockPath, preparedVolumes, useVsock); err != nil {
@@ -251,11 +253,22 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		s.cleanupJailerRuntime(vmID)
 		return fail("firecracker", "%v", err)
 	}
-	go s.watchVM(cmd, vmID, fcRuntime.SocketPath, logPath, vmDrivePath, consolePath, fcRuntime.VSockHostPath, processPid, netCfg, runCfg.Ports, runCfg.AutoRemove)
+	if fcRuntime.JailerID != "" {
+		go s.reapFirecrackerLauncher(cmd, vmID, launcherPid)
+	}
 
 	if err := waitForSocket(fcRuntime.SocketPath, 3*time.Second); err != nil {
 		_ = cmd.Process.Kill()
 		return fail("firecracker", "firecracker API socket not ready: %v", err)
+	}
+	if fcRuntime.JailerID != "" {
+		process, processPid, processStartTime, err = findJailedFirecrackerProcess(fcRuntime.JailerID)
+		if err != nil {
+			_ = cmd.Process.Kill()
+			return fail("firecracker", "%v", err)
+		}
+	} else {
+		go s.watchVM(cmd, vmID, fcRuntime.SocketPath, logPath, vmDrivePath, consolePath, fcRuntime.VSockHostPath, processPid, netCfg, runCfg.Ports, runCfg.AutoRemove)
 	}
 	if err := complete("firecracker", "Firecracker API ready"); err != nil {
 		return nil, err
@@ -266,7 +279,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 	}
 	agentToken := uuid.NewString()
 	if err := fcapi.ConfigureBootSource(fcRuntime.SocketPath, fcRuntime.KernelPath, runtimeBootArgs(netCfg, s.Config.RuntimeRootDev, useRuntimeInit, agentToken, s.Config.GuestAgentMode)); err != nil {
-		_ = cmd.Process.Kill()
+		_ = process.Kill()
 		return fail("boot", "boot source config failed: %v", err)
 	}
 	if err := complete("boot", "Boot source configured"); err != nil {
@@ -277,7 +290,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		return nil, err
 	}
 	if err := fcapi.ConfigureDrive(fcRuntime.SocketPath, "rootfs", fcRuntime.RootDrivePath, true, false); err != nil {
-		_ = cmd.Process.Kill()
+		_ = process.Kill()
 		return fail("drive", "rootfs drive config failed: %v", err)
 	}
 	if err := complete("drive", "Root filesystem attached"); err != nil {
@@ -288,7 +301,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 			return nil, err
 		}
 		if err := fcapi.ConfigureDrive(fcRuntime.SocketPath, volume.DriveID, fcRuntime.VolumePaths[volume.DriveID], false, volume.Spec.ReadOnly); err != nil {
-			_ = cmd.Process.Kill()
+			_ = process.Kill()
 			return fail("volume", "volume attach failed: %v", err)
 		}
 		if err := complete("volume", fmt.Sprintf("Volume attached: %s", internal.FormatVolumeSpec(volume.Spec))); err != nil {
@@ -301,7 +314,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 			return nil, err
 		}
 		if err := configureFirecrackerNetwork(fcRuntime.SocketPath, *netCfg); err != nil {
-			_ = cmd.Process.Kill()
+			_ = process.Kill()
 			return fail("netif", "network interface config failed: %v", err)
 		}
 		if err := complete("netif", "Network interface attached"); err != nil {
@@ -313,7 +326,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 			return nil, err
 		}
 		if err := configureFirecrackerVsock(fcRuntime.SocketPath, fcRuntime.VSockConfigPath, guestAgentCID(vmID)); err != nil {
-			_ = cmd.Process.Kill()
+			_ = process.Kill()
 			return fail("vsock", "guest agent vsock config failed: %v", err)
 		}
 		if err := complete("vsock", "Guest agent vsock attached"); err != nil {
@@ -325,7 +338,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		return nil, err
 	}
 	if err = fcapi.ConfigureMachine(fcRuntime.SocketPath, runCfg.CPUs, runCfg.MemoryMB); err != nil {
-		_ = cmd.Process.Kill()
+		_ = process.Kill()
 		return fail("resources", "machine resource config failed: %v", err)
 	}
 	if err := complete("resources", "Resources configured"); err != nil {
@@ -336,7 +349,7 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		return nil, err
 	}
 	if err = fcapi.StartInstance(fcRuntime.SocketPath); err != nil {
-		_ = cmd.Process.Kill()
+		_ = process.Kill()
 		return fail("start", "instance start failed: %v", err)
 	}
 
@@ -364,10 +377,14 @@ func (s *Server) runMicroVM(ctx context.Context, req *proto.RunRequest, emit fun
 		VsockPath:        storedVsockPath,
 		AutoRemove:       runCfg.AutoRemove,
 	}); err != nil {
-		_ = cmd.Process.Kill()
+		_ = process.Kill()
 		return fail("state", "state save failed: %v", err)
 	}
-	go s.monitorGuestExit(cmd.Process, vmID, fcRuntime.SocketPath, logPath, vmDrivePath, consolePath, storedVsockPath, processPid, processStartTime, netCfg, runCfg.Ports, runCfg.AutoRemove)
+	go s.monitorGuestExit(process, vmID, fcRuntime.SocketPath, logPath, vmDrivePath, consolePath, storedVsockPath, processPid, processStartTime, netCfg, runCfg.Ports, runCfg.AutoRemove)
+	if fcRuntime.JailerID != "" {
+		go reapProcess(process)
+		go s.watchExternalVMProcess(vmID, fcRuntime.SocketPath, logPath, vmDrivePath, consolePath, fcRuntime.VSockHostPath, processPid, processStartTime, netCfg, runCfg.Ports, runCfg.AutoRemove)
+	}
 	log.Printf("run %s: started successfully", vmID)
 	if err := sendEvent("done", "complete", "MicroVM started", ""); err != nil {
 		return nil, err

@@ -47,6 +47,12 @@ Run the test suite:
 make test
 ```
 
+GitHub Actions runs the same unit test suite, `go vet ./...`, and binary builds
+on pushes to `main` and pull requests. A separate manual `KVM functional`
+workflow targets self-hosted Linux runners labelled `kvm` so the Firecracker
+Docker and jailer matrices can run only on hosts with `/dev/kvm`, `/dev/net/tun`,
+Docker Compose, and the loop block driver available.
+
 Run the Firecracker end-to-end suite on a Linux host with KVM:
 
 ```sh
@@ -736,7 +742,16 @@ The daemon reads host process metrics from `/proc`, so CPU and memory usage desc
 
 ## Network
 
-When networking is enabled, `fvcd` creates a TAP interface for each VM, assigns a small `/30` subnet, enables IPv4 forwarding, adds a NAT masquerade rule for the guest IP, and attaches the TAP to Firecracker before the VM starts.
+When networking is enabled, `fvcd` creates a TAP interface for each VM, assigns a small `/30` subnet, enables IPv4 forwarding, and attaches the TAP to Firecracker before the VM starts. Host firewall rules are isolated behind dedicated `iptables` chains:
+
+- `FVC-PREROUTING`, jumped from `PREROUTING` in the `nat` table.
+- `FVC-OUTPUT`, jumped from `OUTPUT` in the `nat` table.
+- `FVC-POSTROUTING`, jumped from `POSTROUTING` in the `nat` table.
+- `FVC-FORWARD`, jumped from the host `FORWARD` chain.
+
+Per-VM masquerade, published-port DNAT/SNAT, and forwarding rules live in those
+dedicated chains so FVC-owned rules are easier to inspect and clean without
+mixing them directly into the global host chains.
 
 Each VM can choose its network mode at start time:
 

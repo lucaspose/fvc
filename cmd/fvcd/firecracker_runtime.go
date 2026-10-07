@@ -40,7 +40,9 @@ func (s *Server) launchFirecracker(vmID, kernelPath, drivePath, logPath, console
 		return 0, "", "", fmt.Errorf("firecracker launch failed: %v", err)
 	}
 
-	processPid := int32(cmd.Process.Pid)
+	launcherPid := int32(cmd.Process.Pid)
+	process := cmd.Process
+	processPid := launcherPid
 	processStartTime := processStartTimeValue(int(processPid))
 	useVsock := useRuntimeInit && shouldConfigureVsock(s.Config.GuestAgentMode)
 	if err := s.prepareFirecrackerRuntime(&fcRuntime, kernelPath, drivePath, vsockPath, volumes, useVsock); err != nil {
@@ -48,55 +50,70 @@ func (s *Server) launchFirecracker(vmID, kernelPath, drivePath, logPath, console
 		s.cleanupJailerRuntime(vmID)
 		return 0, "", "", err
 	}
-	go s.watchVM(cmd, vmID, fcRuntime.SocketPath, logPath, drivePath, consolePath, fcRuntime.VSockHostPath, processPid, netCfg, ports, false)
+	if fcRuntime.JailerID != "" {
+		go s.reapFirecrackerLauncher(cmd, vmID, launcherPid)
+	}
 
 	if err := waitForSocket(fcRuntime.SocketPath, 3*time.Second); err != nil {
 		_ = cmd.Process.Kill()
 		return 0, "", "", fmt.Errorf("firecracker API socket not ready: %v", err)
 	}
+	if fcRuntime.JailerID != "" {
+		process, processPid, processStartTime, err = findJailedFirecrackerProcess(fcRuntime.JailerID)
+		if err != nil {
+			_ = cmd.Process.Kill()
+			return 0, "", "", err
+		}
+	} else {
+		go s.watchVM(cmd, vmID, fcRuntime.SocketPath, logPath, drivePath, consolePath, fcRuntime.VSockHostPath, processPid, netCfg, ports, false)
+	}
 
 	if err := fcapi.ConfigureBootSource(fcRuntime.SocketPath, fcRuntime.KernelPath, runtimeBootArgs(netCfg, s.Config.RuntimeRootDev, useRuntimeInit, agentToken, s.Config.GuestAgentMode)); err != nil {
-		_ = cmd.Process.Kill()
+		_ = process.Kill()
 		return 0, "", "", fmt.Errorf("boot source config failed: %v", err)
 	}
 
 	if err := fcapi.ConfigureDrive(fcRuntime.SocketPath, "rootfs", fcRuntime.RootDrivePath, true, false); err != nil {
-		_ = cmd.Process.Kill()
+		_ = process.Kill()
 		return 0, "", "", fmt.Errorf("rootfs drive config failed: %v", err)
 	}
 	for _, volume := range volumes {
 		if err := fcapi.ConfigureDrive(fcRuntime.SocketPath, volume.DriveID, fcRuntime.VolumePaths[volume.DriveID], false, volume.Spec.ReadOnly); err != nil {
-			_ = cmd.Process.Kill()
+			_ = process.Kill()
 			return 0, "", "", fmt.Errorf("volume drive config failed: %v", err)
 		}
 	}
 
 	if netCfg != nil {
 		if err := configureFirecrackerNetwork(fcRuntime.SocketPath, *netCfg); err != nil {
-			_ = cmd.Process.Kill()
+			_ = process.Kill()
 			return 0, "", "", fmt.Errorf("network interface config failed: %v", err)
 		}
 	}
 	if useVsock {
 		if err := configureFirecrackerVsock(fcRuntime.SocketPath, fcRuntime.VSockConfigPath, guestAgentCID(vmID)); err != nil {
-			_ = cmd.Process.Kill()
+			_ = process.Kill()
 			return 0, "", "", fmt.Errorf("guest agent vsock config failed: %v", err)
 		}
 	}
 
 	if err = fcapi.ConfigureMachine(fcRuntime.SocketPath, cpus, memoryMb); err != nil {
-		_ = cmd.Process.Kill()
+		_ = process.Kill()
 		return 0, "", "", fmt.Errorf("machine resource config failed: %v", err)
 	}
 
 	if err = fcapi.StartInstance(fcRuntime.SocketPath); err != nil {
-		_ = cmd.Process.Kill()
+		_ = process.Kill()
 		return 0, "", "", fmt.Errorf("instance start failed: %v", err)
 	}
 	storedVsockPath := ""
 	if useVsock {
 		storedVsockPath = fcRuntime.VSockHostPath
 	}
-	go s.monitorGuestExit(cmd.Process, vmID, fcRuntime.SocketPath, logPath, drivePath, consolePath, storedVsockPath, processPid, processStartTime, netCfg, ports, false)
+	go s.monitorGuestExit(process, vmID, fcRuntime.SocketPath, logPath, drivePath, consolePath, storedVsockPath, processPid, processStartTime, netCfg, ports, false)
+	if fcRuntime.JailerID != "" {
+		go reapProcess(process)
+		go s.watchExternalVMProcess(vmID, fcRuntime.SocketPath, logPath, drivePath, consolePath, fcRuntime.VSockHostPath, processPid, processStartTime, netCfg, ports, false)
+	}
 	return processPid, processStartTime, storedVsockPath, nil
 }

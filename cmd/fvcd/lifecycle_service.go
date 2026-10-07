@@ -27,6 +27,31 @@ type runtimeRefreshResult struct {
 
 func (s *Server) watchVM(cmd *exec.Cmd, id string, sock string, logPath string, drivePath string, consolePath string, vsockPath string, pid int32, netCfg *NetworkConfig, ports []string, autoRemove bool) {
 	_ = cmd.Wait()
+	s.handleFirecrackerStopped(id, sock, logPath, drivePath, consolePath, vsockPath, pid, netCfg, ports, autoRemove)
+}
+
+func (s *Server) watchExternalVMProcess(id string, sock string, logPath string, drivePath string, consolePath string, vsockPath string, pid int32, processStartTime string, netCfg *NetworkConfig, ports []string, autoRemove bool) {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+	for range ticker.C {
+		if processMatches(int(pid), processStartTime) {
+			continue
+		}
+		s.handleFirecrackerStopped(id, sock, logPath, drivePath, consolePath, vsockPath, pid, netCfg, ports, autoRemove)
+		return
+	}
+}
+
+func (s *Server) reapFirecrackerLauncher(cmd *exec.Cmd, id string, pid int32) {
+	_ = cmd.Wait()
+	log.Printf("vm %s: firecracker launcher process %d stopped", id, pid)
+}
+
+func reapProcess(process *os.Process) {
+	_, _ = process.Wait()
+}
+
+func (s *Server) handleFirecrackerStopped(id string, sock string, logPath string, drivePath string, consolePath string, vsockPath string, pid int32, netCfg *NetworkConfig, ports []string, autoRemove bool) {
 	log.Printf("vm %s: firecracker process %d stopped", id, pid)
 	exitCode := exitCodeFromLog(logPath)
 	s.cleanupRuntimeFiles(sock, consolePath, vsockPath)

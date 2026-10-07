@@ -49,7 +49,15 @@ func TestNetworkSetupRunsExpectedCommands(t *testing.T) {
 		"ip tuntap add dev " + cfg.TapName + " mode tap",
 		"ip addr replace " + cfg.HostIP + "/30 dev " + cfg.TapName,
 		"ip link set " + cfg.TapName + " up",
-		"iptables -t nat -C POSTROUTING -s " + cfg.GuestIP + "/32 -j MASQUERADE",
+		"iptables -t nat -L FVC-PREROUTING",
+		"iptables -t nat -L FVC-OUTPUT",
+		"iptables -t nat -L FVC-POSTROUTING",
+		"iptables -L FVC-FORWARD",
+		"iptables -t nat -C PREROUTING -j FVC-PREROUTING",
+		"iptables -t nat -C OUTPUT -j FVC-OUTPUT",
+		"iptables -t nat -C POSTROUTING -j FVC-POSTROUTING",
+		"iptables -C FORWARD -j FVC-FORWARD",
+		"iptables -t nat -C FVC-POSTROUTING -s " + cfg.GuestIP + "/32 -j MASQUERADE",
 	}
 	for _, expected := range expectedParts {
 		if !containsCall(runner.calls, expected) {
@@ -60,8 +68,8 @@ func TestNetworkSetupRunsExpectedCommands(t *testing.T) {
 
 func TestNetworkSetupAddsNatRuleWhenMissing(t *testing.T) {
 	cfg := BuildNetworkConfig("vm-nat")
-	checkCall := "iptables -t nat -C POSTROUTING -s " + cfg.GuestIP + "/32 -j MASQUERADE"
-	addCall := "iptables -t nat -A POSTROUTING -s " + cfg.GuestIP + "/32 -j MASQUERADE"
+	checkCall := "iptables -t nat -C FVC-POSTROUTING -s " + cfg.GuestIP + "/32 -j MASQUERADE"
+	addCall := "iptables -t nat -A FVC-POSTROUTING -s " + cfg.GuestIP + "/32 -j MASQUERADE"
 	runner := &fakeRunner{fail: map[string]bool{checkCall: true}}
 	manager := NewNetworkManager(runner)
 
@@ -73,10 +81,42 @@ func TestNetworkSetupAddsNatRuleWhenMissing(t *testing.T) {
 	}
 }
 
+func TestNetworkSetupCreatesMissingDedicatedChainsAndJumps(t *testing.T) {
+	runner := &fakeRunner{fail: map[string]bool{
+		"iptables -t nat -L FVC-PREROUTING":                 true,
+		"iptables -t nat -L FVC-OUTPUT":                     true,
+		"iptables -t nat -L FVC-POSTROUTING":                true,
+		"iptables -L FVC-FORWARD":                           true,
+		"iptables -t nat -C PREROUTING -j FVC-PREROUTING":   true,
+		"iptables -t nat -C OUTPUT -j FVC-OUTPUT":           true,
+		"iptables -t nat -C POSTROUTING -j FVC-POSTROUTING": true,
+		"iptables -C FORWARD -j FVC-FORWARD":                true,
+	}}
+	manager := NewNetworkManager(runner)
+
+	if _, err := manager.Setup("vm-chain"); err != nil {
+		t.Fatalf("Setup failed: %v", err)
+	}
+	for _, expected := range []string{
+		"iptables -t nat -N FVC-PREROUTING",
+		"iptables -t nat -N FVC-OUTPUT",
+		"iptables -t nat -N FVC-POSTROUTING",
+		"iptables -N FVC-FORWARD",
+		"iptables -t nat -I PREROUTING 1 -j FVC-PREROUTING",
+		"iptables -t nat -I OUTPUT 1 -j FVC-OUTPUT",
+		"iptables -t nat -I POSTROUTING 1 -j FVC-POSTROUTING",
+		"iptables -I FORWARD 1 -j FVC-FORWARD",
+	} {
+		if !containsCall(runner.calls, expected) {
+			t.Fatalf("missing command %q in calls %#v", expected, runner.calls)
+		}
+	}
+}
+
 func TestPublishPortsAddsExpectedRules(t *testing.T) {
 	cfg := BuildNetworkConfig("vm-port")
-	checkCall := "iptables -t nat -C PREROUTING -p tcp --dport 8080 -j DNAT --to-destination " + cfg.GuestIP + ":80"
-	addCall := "iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination " + cfg.GuestIP + ":80"
+	checkCall := "iptables -t nat -C FVC-PREROUTING -p tcp --dport 8080 -j DNAT --to-destination " + cfg.GuestIP + ":80"
+	addCall := "iptables -t nat -A FVC-PREROUTING -p tcp --dport 8080 -j DNAT --to-destination " + cfg.GuestIP + ":80"
 	runner := &fakeRunner{fail: map[string]bool{checkCall: true}}
 	manager := NewNetworkManager(runner)
 
@@ -90,9 +130,17 @@ func TestPublishPortsAddsExpectedRules(t *testing.T) {
 	if !containsCall(runner.calls, addCall) {
 		t.Fatalf("expected publish add rule %q in calls %#v", addCall, runner.calls)
 	}
-	snatCall := "iptables -t nat -C POSTROUTING -p tcp -d " + cfg.GuestIP + " --dport 80 -j SNAT --to-source " + cfg.HostIP
+	outputCall := "iptables -t nat -C FVC-OUTPUT -p tcp -o lo --dport 8080 -j DNAT --to-destination " + cfg.GuestIP + ":80"
+	if !containsCall(runner.calls, outputCall) {
+		t.Fatalf("expected output DNAT check rule %q in calls %#v", outputCall, runner.calls)
+	}
+	snatCall := "iptables -t nat -C FVC-POSTROUTING -p tcp -d " + cfg.GuestIP + " --dport 80 -j SNAT --to-source " + cfg.HostIP
 	if !containsCall(runner.calls, snatCall) {
 		t.Fatalf("expected SNAT check rule %q in calls %#v", snatCall, runner.calls)
+	}
+	forwardCall := "iptables -C FVC-FORWARD -p tcp -d " + cfg.GuestIP + " --dport 80 -j ACCEPT"
+	if !containsCall(runner.calls, forwardCall) {
+		t.Fatalf("expected forward check rule %q in calls %#v", forwardCall, runner.calls)
 	}
 }
 
@@ -104,13 +152,21 @@ func TestCleanupPublishedPortsDeletesRules(t *testing.T) {
 	if err := manager.CleanupPublishedPorts(cfg, []string{"8080:80"}); err != nil {
 		t.Fatalf("CleanupPublishedPorts failed: %v", err)
 	}
-	expected := "iptables -t nat -D PREROUTING -p tcp --dport 8080 -j DNAT --to-destination " + cfg.GuestIP + ":80"
+	expected := "iptables -t nat -D FVC-PREROUTING -p tcp --dport 8080 -j DNAT --to-destination " + cfg.GuestIP + ":80"
 	if !containsCall(runner.calls, expected) {
 		t.Fatalf("expected cleanup rule %q in calls %#v", expected, runner.calls)
 	}
-	snatExpected := "iptables -t nat -D POSTROUTING -p tcp -d " + cfg.GuestIP + " --dport 80 -j SNAT --to-source " + cfg.HostIP
+	outputExpected := "iptables -t nat -D FVC-OUTPUT -p tcp -o lo --dport 8080 -j DNAT --to-destination " + cfg.GuestIP + ":80"
+	if !containsCall(runner.calls, outputExpected) {
+		t.Fatalf("expected output DNAT cleanup rule %q in calls %#v", outputExpected, runner.calls)
+	}
+	snatExpected := "iptables -t nat -D FVC-POSTROUTING -p tcp -d " + cfg.GuestIP + " --dport 80 -j SNAT --to-source " + cfg.HostIP
 	if !containsCall(runner.calls, snatExpected) {
 		t.Fatalf("expected SNAT cleanup rule %q in calls %#v", snatExpected, runner.calls)
+	}
+	forwardExpected := "iptables -D FVC-FORWARD -p tcp -d " + cfg.GuestIP + " --dport 80 -j ACCEPT"
+	if !containsCall(runner.calls, forwardExpected) {
+		t.Fatalf("expected forward cleanup rule %q in calls %#v", forwardExpected, runner.calls)
 	}
 }
 

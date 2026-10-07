@@ -37,6 +37,13 @@ Host command execution is limited to the commands required by the runtime:
 - `truncate`
 - `mkfs.ext4`
 
+Network setup keeps FVC-owned rules in dedicated `iptables` chains. The daemon
+creates `FVC-PREROUTING`, `FVC-OUTPUT`, and `FVC-POSTROUTING` in the `nat`
+table plus `FVC-FORWARD` in the filter table, then installs idempotent jumps
+from the global host chains. VM-specific NAT, DNAT, SNAT, and forwarding entries
+are added to those FVC chains instead of directly into `PREROUTING`, `OUTPUT`,
+`POSTROUTING`, or `FORWARD`.
+
 The Firecracker, jailer, and runtime-init binaries are launched from configured
 absolute paths. FVC refuses symlink paths and non-executable files for those
 host binaries before VM startup.

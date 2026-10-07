@@ -122,6 +122,9 @@ func (r *Runner) Run(targetImage string, plan buildplan.Plan) error {
 		if err := validateJailerConfig(cfg); err != nil {
 			return err
 		}
+		if err := ensureJailerChrootBaseDir(cfg.JailerChrootBaseDir); err != nil {
+			return err
+		}
 		cleanupBuilderJailer(cfg.JailerChrootBaseDir, jailerID)
 		jailerRoot := filepath.Join(cfg.JailerChrootBaseDir, "firecracker", jailerID, "root")
 		socketPath = filepath.Join(jailerRoot, "run", "firecracker.socket")
@@ -289,6 +292,13 @@ func validateJailerConfig(cfg Config) error {
 	return nil
 }
 
+func ensureJailerChrootBaseDir(path string) error {
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return fmt.Errorf("jailer chroot base directory setup failed: %w", err)
+	}
+	return nil
+}
+
 func validateExecutable(label, path string) error {
 	if strings.TrimSpace(path) == "" || !filepath.IsAbs(path) {
 		return fmt.Errorf("%s path must be absolute", label)
@@ -317,6 +327,9 @@ func bindMountFile(source, target string, uid, gid int, mode os.FileMode) error 
 	if !info.Mode().IsRegular() {
 		return fmt.Errorf("source must be a regular file: %s", source)
 	}
+	if err := prepareJailerFileAccess(source, uid, gid, mode); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
 		return fmt.Errorf("target parent setup failed: %w", err)
 	}
@@ -327,17 +340,51 @@ func bindMountFile(source, target string, uid, gid int, mode os.FileMode) error 
 	if err := file.Close(); err != nil {
 		return fmt.Errorf("target placeholder close failed: %w", err)
 	}
-	if err := os.Chown(target, uid, gid); err != nil {
-		return fmt.Errorf("target chown failed: %w", err)
-	}
 	if err := os.Chmod(target, mode); err != nil {
 		return fmt.Errorf("target chmod failed: %w", err)
+	}
+	if err := os.Chown(target, uid, gid); err != nil {
+		return fmt.Errorf("target chown failed: %w", err)
 	}
 	output, err := exec.Command("mount", "--bind", source, target).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("mount --bind failed: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 	return nil
+}
+
+func prepareJailerFileAccess(path string, uid, gid int, mode os.FileMode) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("source stat failed: %w", err)
+	}
+	if fileAccessibleByJailer(info, uid, gid, mode) {
+		return nil
+	}
+	if err := os.Chmod(path, mode); err != nil {
+		return fmt.Errorf("source chmod failed: %w", err)
+	}
+	if err := os.Chown(path, uid, gid); err != nil {
+		return fmt.Errorf("source chown failed: %w", err)
+	}
+	return nil
+}
+
+func fileAccessibleByJailer(info os.FileInfo, uid, gid int, mode os.FileMode) bool {
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !ok {
+		return false
+	}
+	perm := info.Mode().Perm()
+	readNeeded := mode&0444 != 0
+	writeNeeded := mode&0222 != 0
+	canRead := stat.Uid == uint32(uid) && perm&0400 != 0 ||
+		stat.Gid == uint32(gid) && perm&0040 != 0 ||
+		perm&0004 != 0
+	canWrite := stat.Uid == uint32(uid) && perm&0200 != 0 ||
+		stat.Gid == uint32(gid) && perm&0020 != 0 ||
+		perm&0002 != 0
+	return (!readNeeded || canRead) && (!writeNeeded || canWrite)
 }
 
 func waitForJailerRoot(path string, timeout time.Duration) error {
