@@ -16,6 +16,7 @@ import (
 	"github.com/lucaspose/fvc/internal/buildplan"
 	"github.com/lucaspose/fvc/internal/fcapi"
 	"github.com/lucaspose/fvc/internal/hostnet"
+	"github.com/lucaspose/fvc/internal/jailfs"
 )
 
 // EnvFunc reads environment-like configuration values.
@@ -120,6 +121,9 @@ func (r *Runner) Run(targetImage string, plan buildplan.Plan) error {
 	if cfg.JailerEnabled {
 		jailerID := "fvc-" + buildID
 		if err := validateJailerConfig(cfg); err != nil {
+			return err
+		}
+		if err := jailfs.EnsureChrootBaseDir(cfg.JailerChrootBaseDir); err != nil {
 			return err
 		}
 		cleanupBuilderJailer(cfg.JailerChrootBaseDir, jailerID)
@@ -317,6 +321,9 @@ func bindMountFile(source, target string, uid, gid int, mode os.FileMode) error 
 	if !info.Mode().IsRegular() {
 		return fmt.Errorf("source must be a regular file: %s", source)
 	}
+	if err := jailfs.PrepareFileAccess(source, uid, gid, mode); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
 		return fmt.Errorf("target parent setup failed: %w", err)
 	}
@@ -327,11 +334,11 @@ func bindMountFile(source, target string, uid, gid int, mode os.FileMode) error 
 	if err := file.Close(); err != nil {
 		return fmt.Errorf("target placeholder close failed: %w", err)
 	}
-	if err := os.Chown(target, uid, gid); err != nil {
-		return fmt.Errorf("target chown failed: %w", err)
-	}
 	if err := os.Chmod(target, mode); err != nil {
 		return fmt.Errorf("target chmod failed: %w", err)
+	}
+	if err := os.Chown(target, uid, gid); err != nil {
+		return fmt.Errorf("target chown failed: %w", err)
 	}
 	output, err := exec.Command("mount", "--bind", source, target).CombinedOutput()
 	if err != nil {

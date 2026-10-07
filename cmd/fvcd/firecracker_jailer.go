@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/lucaspose/fvc/internal/jailfs"
 )
 
 const (
@@ -42,6 +44,9 @@ func (s *Server) firecrackerCommand(vmID string) (*exec.Cmd, firecrackerRuntime,
 		return exec.Command(s.Config.FirecrackerPath, "--api-sock", runtime.SocketPath), runtime, nil
 	}
 	if err := validateJailerConfig(s.Config); err != nil {
+		return nil, firecrackerRuntime{}, err
+	}
+	if err := jailfs.EnsureChrootBaseDir(s.Config.JailerChrootBaseDir); err != nil {
 		return nil, firecrackerRuntime{}, err
 	}
 	jailerID := jailerID(vmID)
@@ -152,6 +157,9 @@ func bindMountFile(runner CommandRunner, source, target string, uid, gid int, mo
 	if !info.Mode().IsRegular() {
 		return fmt.Errorf("source must be a regular file: %s", source)
 	}
+	if err := jailfs.PrepareFileAccess(source, uid, gid, mode); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
 		return fmt.Errorf("target parent setup failed: %w", err)
 	}
@@ -162,11 +170,11 @@ func bindMountFile(runner CommandRunner, source, target string, uid, gid int, mo
 	if err := file.Close(); err != nil {
 		return fmt.Errorf("target placeholder close failed: %w", err)
 	}
-	if err := os.Chown(target, uid, gid); err != nil {
-		return fmt.Errorf("target chown failed: %w", err)
-	}
 	if err := os.Chmod(target, mode); err != nil {
 		return fmt.Errorf("target chmod failed: %w", err)
+	}
+	if err := os.Chown(target, uid, gid); err != nil {
+		return fmt.Errorf("target chown failed: %w", err)
 	}
 	if err := runner.Run("mount", "--bind", source, target); err != nil {
 		return err
@@ -255,4 +263,16 @@ func safeJailerPath(base, path string) bool {
 		return false
 	}
 	return rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+func (s *Server) findJailedFirecrackerProcess(jailerID string) (*os.Process, int32, string, error) {
+	pid, err := jailfs.FindFirecrackerPID("/proc", jailerID, s.Config.JailerUID, jailerRootPath(s.Config, jailerID))
+	if err != nil {
+		return nil, 0, "", err
+	}
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return nil, 0, "", fmt.Errorf("jailed firecracker process lookup failed for pid %d: %w", pid, err)
+	}
+	return process, int32(pid), processStartTimeValue(pid), nil
 }

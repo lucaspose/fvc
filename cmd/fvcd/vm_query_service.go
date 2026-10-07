@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/lucaspose/fvc/internal"
@@ -17,7 +16,8 @@ import (
 )
 
 func processExists(pid int) bool {
-	return syscall.Kill(pid, 0) == nil
+	_, err := readProcessStartTicks(pid)
+	return err == nil
 }
 
 func processMatches(pid int, expectedStartTime string) bool {

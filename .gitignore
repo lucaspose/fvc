@@ -1,42 +1,27 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
+# Binaries (make build)
 /fvc
 /fvcd
 /fvc-build-agent
 /fvc-init
 /dist/
-/fvm_roadmap.docx
-/index.html
 *.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, built with `go test -c`
 *.test
 
-# Code coverage profiles and other test artifacts
+# Coverage
 *.out
 coverage.*
 *.coverprofile
 profile.cov
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Local files
+/index.html
+/fvm_roadmap.docx
+.env
+*.db
 
-# Go workspace file
+# Go workspace
 go.work
 go.work.sum
 
-# env file
-.env
-
-# Runtime state
-*.db
-
-# Editor/IDE
-# .idea/
+# Editors
 .vscode/

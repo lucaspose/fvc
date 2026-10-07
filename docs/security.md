@@ -24,6 +24,21 @@ command handling must stay narrow.
   `FVC_JAILER_CHROOT_BASE_DIR`; the daemon bind-mounts only the kernel, VM
   rootfs, and attached volume images into that chroot, then configures
   Firecracker with chroot-local paths.
+- Files shared between VMs and only read by Firecracker (kernel, builder rootfs)
+  stay owned by the daemon user and are exposed to the jailer through the group
+  with read-only permissions, so a jailed process cannot modify or `chmod`
+  them. Only per-VM writable files (VM drive, volumes) are handed to the jailer
+  uid. Files are changed through an `O_NOFOLLOW` descriptor to defeat symlink
+  swaps.
+- The chroot base directory must be a real directory owned by the daemon user
+  and not writable by group or others; `fvcd` refuses to start jails otherwise.
+- A jailed Firecracker process is only adopted if its command line, real uid
+  and `/proc/<pid>/root` all match the expected jail, so a look-alike process
+  started by another user is ignored.
+- Known limitation: all jailed VMs currently share `FVC_JAILER_UID` /
+  `FVC_JAILER_GID`. A process escaping one jail could reach the drives of other
+  VMs. Allocating a distinct uid/gid per VM, as recommended by Firecracker, is
+  the next hardening step.
 
 ## Host Command Allowlist
 
@@ -36,6 +51,15 @@ Host command execution is limited to the commands required by the runtime:
 - `umount`
 - `truncate`
 - `mkfs.ext4`
+
+Network setup keeps FVC-owned rules in dedicated `iptables` chains. The daemon
+creates `FVC-PREROUTING`, `FVC-OUTPUT`, and `FVC-POSTROUTING` in the `nat`
+table plus `FVC-FORWARD` in the filter table, then installs idempotent jumps
+from the global host chains. VM-specific NAT, DNAT, SNAT, and forwarding entries
+are added to those FVC chains instead of directly into `PREROUTING`, `OUTPUT`,
+`POSTROUTING`, or `FORWARD`.
+The jumps are appended, not inserted first, so existing host firewall rules
+(policies, DROP rules) keep precedence over FVC rules.
 
 The Firecracker, jailer, and runtime-init binaries are launched from configured
 absolute paths. FVC refuses symlink paths and non-executable files for those

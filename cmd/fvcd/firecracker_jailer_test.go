@@ -44,6 +44,9 @@ func TestFirecrackerCommandUsesJailerWhenEnabled(t *testing.T) {
 	if !strings.Contains(runtime.SocketPath, filepath.Join("firecracker", "fvc-vm-1", "root", "run", "firecracker.socket")) {
 		t.Fatalf("unexpected socket path: %s", runtime.SocketPath)
 	}
+	if info, err := os.Stat(server.Config.JailerChrootBaseDir); err != nil || !info.IsDir() {
+		t.Fatalf("expected jailer chroot base directory to be created, info=%v err=%v", info, err)
+	}
 }
 
 func TestPrepareFirecrackerRuntimeDirectKeepsHostPaths(t *testing.T) {

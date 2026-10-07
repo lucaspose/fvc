@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go
+    runs-on: ubuntu-latest
+    env:
+      GOCACHE: /tmp/fvc-go-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test
+        run: make test
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build binaries
+        run: go build ./cmd/fvc ./cmd/fvcd ./cmd/fvc-init ./cmd/fvc-build-agent
