@@ -1,227 +1,72 @@
 # fvc
 
-`fvc` is an early Firecracker microVM manager written in Go. The project currently provides a daemon (`fvcd`) and a CLI (`fvc`) that can run, list, stop, and read logs from microVMs through gRPC.
+![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)
+![Firecracker](https://img.shields.io/badge/Firecracker-microVMs-FF9900)
+![gRPC](https://img.shields.io/badge/API-gRPC-244c5a)
 
-The current milestone is focused on making the foundation reliable before adding higher-level container workflows.
+**fvc** runs [Firecracker](https://firecracker-microvm.github.io/) microVMs with the ergonomics of a container tool.
+Each workload gets the isolation of a real virtual machine, but you build, run and manage it with commands that feel like Docker: `fvc build`, `fvc run`, `fvc ps`, `fvc exec`, `fvc logs`.
 
-Additional docs:
+It is made of a daemon, **`fvcd`**, that owns Firecracker processes, images, networking and state (SQLite), and a CLI, **`fvc`**, that talks to it over gRPC.
 
-- [Architecture](docs/architecture.md)
-- [Security model](docs/security.md)
+---
 
-## Current Scope
+## Features
 
-- `fvc run`: starts a Firecracker microVM from an image reference or a `Vmfile`.
-- `fvc build`: builds a local image from a TOML `Fvcfile`.
-- `fvc pull`: downloads an image into the local cache.
-- `fvc pull --from docker`: pulls a Docker Hub image, converts its layers into
-  a Firecracker-ready ext4 rootfs, and imports it as a local FVC image.
-- `fvc images`: lists locally cached images.
-- `fvc image`: inspects, tags, imports, exports, removes, and prunes local images.
-- `fvc volume`: creates, lists, inspects, removes, and prunes persistent named volumes.
-- `fvc prune`: removes unused local resources left behind by older cache formats or interrupted runs.
-- `fvc stats`: shows host-side CPU, memory usage/limit, PID, status, and uptime for microVMs.
-- `fvc ps`: lists known microVMs.
-- `fvc inspect`: prints detailed state for one microVM.
-- `fvc stop`: stops a microVM by ID.
-- `fvc start`: restarts a stopped microVM if its local drive still exists.
-- `fvc wait`: waits until a microVM stops.
-- `fvc kill`: force-kills a running microVM and cleans host resources.
-- `fvc snapshot`: creates, lists, restores, and removes stopped microVM disk snapshots.
-- `fvc rm`: removes a stopped microVM and its local files.
-- `fvc console`: opens an interactive serial console to a running microVM.
-- `fvc exec`: runs a command in a running runtime-managed microVM through the guest agent.
-- `fvc logs`: prints VM logs, with `--tail` and `--follow`.
-- `fvc doctor`: checks daemon connectivity and Firecracker host requirements.
-- `fvcd`: persistent gRPC daemon with SQLite state.
-- Image cache with validated image references and atomic downloads.
-- Server-side validation for run requests.
+- **Lifecycle** — `run`, `ps`, `inspect`, `stop`, `start`, `wait`, `kill`, `rm`, with live progress streamed from the daemon
+- **Images** — local image cache with checksum-verified, atomic downloads; `fvc build` from a TOML `Fvcfile`; Docker Hub images converted into Firecracker-ready ext4 root filesystems (`fvc pull --from docker`)
+- **Access** — interactive serial console (`fvc console`) and command execution through a guest agent over vsock (`fvc exec`)
+- **Storage** — persistent named volumes and disk snapshots
+- **Networking** — per-VM TAP device, NAT and published ports, isolated in dedicated `FVC-*` iptables chains
+- **Observability** — `fvc logs --follow`, `fvc stats --watch`, `fvc doctor` to check host requirements
+- **Hardening** — optional Firecracker jailer, unix-socket gRPC by default, token auth for TCP, strict validation of image references, paths and resources
 
-Not implemented yet: a real registry protocol.
+---
 
-## Development
+## Requirements
 
-Run the test suite:
+- Linux with KVM (`/dev/kvm`) and `/dev/net/tun`
+- [Firecracker](https://github.com/firecracker-microvm/firecracker/releases) (and optionally its `jailer`)
+- Root privileges for `fvcd` (TAP devices, iptables, loop mounts)
+- Go 1.26+ to build from source, or Docker to build with `make build`
+
+---
+
+## Quick start
 
 ```sh
-make test
-```
-
-GitHub Actions runs the same unit test suite, `go vet ./...`, and binary builds
-on pushes to `main` and pull requests. A separate manual `KVM functional`
-workflow targets self-hosted Linux runners labelled `kvm` so the Firecracker
-Docker and jailer matrices can run only on hosts with `/dev/kvm`, `/dev/net/tun`,
-Docker Compose, and the loop block driver available.
-
-Run the Firecracker end-to-end suite on a Linux host with KVM:
-
-```sh
+# build fvc, fvcd, fvc-init and fvc-build-agent (uses Docker)
 make build
-make builder-rootfs
-sudo FVC_E2E=1 \
-  FVC_E2E_BASE_IMAGE=/path/to/base.ext4 \
-  FVC_E2E_KERNEL=/path/to/vmlinux.bin \
-  make test-e2e
+
+# terminal 1: start the daemon with writable dev directories
+sudo FVC_HOME=/tmp/fvc-dev FVC_RUNTIME_DIR=/tmp/fvc-run FVC_GRPC_ADDR=/tmp/fvc-run/fvcd.sock ./fvcd
+
+# terminal 2: point the CLI at the daemon, check the host, then boot a VM
+export FVC_GRPC_ADDR=/tmp/fvc-run/fvcd.sock
+./fvc doctor
+./fvc pull --from docker ubuntu:24.04 -t ubuntu-fvc:24.04
+./fvc run --image ubuntu-fvc:24.04
+./fvc ps
+./fvc console <vm-id>
 ```
 
-The e2e suite starts a temporary `fvcd`, imports the base image, builds an image
-with `COPY` and `[[run]]`, boots it with Firecracker, waits for the guest agent,
-runs `fvc exec`, checks logs, then stops and removes the VM. It skips by default
-unless `FVC_E2E=1` is set, and it requires `/dev/kvm`, `/dev/net/tun`,
-Firecracker, a compatible kernel, a compatible base ext4 image, and the builder
-rootfs. Override binary and asset paths with `FVC_E2E_FVC`, `FVC_E2E_FVCD`,
-`FVC_E2E_FIRECRACKER`, `FVC_E2E_BUILDER_ROOTFS`, and
-`FVC_E2E_RUNTIME_INIT`.
+The CLI needs access to the daemon socket: run it as root, or see [Runtime Permissions](#runtime-permissions).
 
-Run the functional Docker smoke test against the `fvcd` compose container:
+A small web example lives in [`examples/web`](examples/web): an `Fvcfile` that copies a page into an Ubuntu image and serves it, and a `Vmfile` for `fvc run`.
 
-```sh
-docker compose -f compose.firecracker.yml up -d --build
-make test-functional-docker
-```
+To install `fvc` and `fvcd` as a systemd service, see `make install-systemd`.
 
-The script rebuilds local binaries and the builder rootfs by default, copies
-rootfs images into the container, configures the builder VM, creates a minimal
-`Fvcfile`, imports a base image, builds with `COPY` and `[[run]]`, boots the VM,
-runs `fvc exec`, verifies the published HTTP port, checks logs, prints a
-`PASS`/`FAIL`/`SKIP` summary, and cleans up. By default it uses
-`dist/builder.ext4` both as the builder rootfs and as a minimal test base image.
-Use a real runtime rootfs with:
+---
 
-```sh
-FVC_TEST_BASE_IMAGE=/path/to/base.ext4 make test-functional-docker
-```
+## Documentation
 
-Use `FVC_TEST_GUEST_AGENT_MODE=vsock` to force the secure guest-agent path, or
-`FVC_TEST_REBUILD_ARTIFACTS=0` to skip the rebuild when iterating on an existing
-rootfs.
+- [Architecture](docs/architecture.md) — components, packages and data flow
+- [Security model](docs/security.md) — threat model, jailer, networking and gRPC access
+- [Development](docs/development.md) — unit, end-to-end and functional test suites
+- [History](docs/history.md) — what each development sprint delivered
+- Usage reference below: [CLI output](#cli-output) · [Configuration](#configuration) · [Images](#images) · [Vmfile](#vmfile) · [Fvcfile](#fvcfile-build) · [Lifecycle](#lifecycle) · [Snapshots](#snapshots) · [Stats](#stats) · [Network](#network) · [Access](#access) · [Logs](#logs)
 
-Run the same functional matrix through the Firecracker jailer:
-
-```sh
-make test-functional-docker-jailer
-```
-
-This sets `FVC_TEST_JAILER=1`, configures `fvcd` with `/usr/bin/jailer`, verifies
-that the builder VM leaves no jailer chroot behind after `fvc build`, verifies
-that runtime VMs create a Firecracker API socket inside the jailer chroot, and
-checks final chroot cleanup after lifecycle, volume, and auto-remove paths.
-
-Run the optional Docker Hub import test:
-
-```sh
-make test-docker-import
-```
-
-Pull and convert a Docker Hub image into a local Firecracker rootfs:
-
-```sh
-fvc pull --from docker ubuntu:24.04 -t ubuntu-fvc:24.04
-fvc run --image ubuntu-fvc:24.04
-```
-
-Docker-style shortcuts are also supported:
-
-```sh
-fvc pull docker://nginx
-fvc run --from docker nginx --name web --publish-all
-fvc run docker://hello-world --rm
-```
-
-When a Docker image has no tag, FVC uses `:latest` for the local converted
-image name, for example `nginx` becomes `nginx:latest`. `fvc run` accepts a
-pull policy:
-
-```sh
-fvc run --from docker nginx --pull missing
-fvc run --from docker nginx --pull always
-fvc run --from docker nginx --pull never
-```
-
-`missing` is the default and reuses an existing converted image if present.
-`always` refreshes the converted image unless that image is referenced by an
-existing VM. `never` requires the converted image to already exist locally.
-
-When `--from docker` is used, FVC treats the source as a normal Docker image,
-downloads its OCI/Docker manifest and gzip layers from Docker Hub, applies
-Docker whiteouts, creates an ext4 filesystem, imports it into the local image
-cache, and stores Docker config metadata such as `Cmd`, `Env`, `WorkingDir`,
-labels, and exposed TCP ports.
-
-Build the local binaries through Docker:
-
-```sh
-make build
-```
-
-Build a runnable container image:
-
-```sh
-make docker-build
-```
-
-Run `fvcd` in Docker for local Firecracker testing:
-
-```sh
-docker compose -f compose.firecracker.yml up --build
-```
-
-The compose file builds the `systemd-test` image target, boots systemd inside
-the container, enables `fvcd.service`, installs `fvc` and `fvcd` in `/usr/bin`,
-persists daemon state in the `fvc-data` volume, mounts `/dev/kvm` and
-`/dev/net/tun`, and grants the network and mount capabilities required by the
-current runtime.
-
-Run CLI checks inside that container:
-
-```sh
-docker exec -it fvcd /usr/bin/systemctl status fvcd --no-pager
-docker exec -it fvcd /usr/bin/fvc doctor
-docker exec -it fvcd /usr/bin/fvc run --image ubuntu --name test-vm --cpu 1 --ram 512
-```
-
-Manual Docker run equivalent:
-
-```sh
-docker run --rm -it \
-  --name fvcd \
-  --privileged \
-  --cgroupns=host \
-  --device /dev/kvm \
-  --device /dev/net/tun \
-  --sysctl net.ipv4.ip_forward=1 \
-  -v fvc-data:/var/lib/fvc \
-  -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
-  --tmpfs /run \
-  --tmpfs /run/lock \
-  fvc:dev
-```
-
-Docker is useful for development and release testing. For a long-running host
-install, `fvcd` is expected to run as a Linux daemon under systemd so it can
-manage KVM, TAP devices, NAT rules, loop mounts, and persistent state directly
-on the host.
-
-Install the host daemon under systemd after building local binaries:
-
-```sh
-make build
-sudo make install-systemd
-sudo systemctl start fvcd
-fvc doctor
-```
-
-The systemd unit listens on the Unix socket `/run/fvc/fvcd.sock` by default.
-The CLI uses that socket automatically when it exists, and falls back to
-`127.0.0.1:50051` for Docker/dev setups. Override the transport with
-`FVC_GRPC_NETWORK=tcp FVC_GRPC_ADDR=127.0.0.1:50051` or
-`FVC_GRPC_TARGET=unix:///run/fvc/fvcd.sock`.
-
-Clean generated local binaries:
-
-```sh
-make clean
-```
+---
 
 ## CLI Output
 
@@ -898,92 +743,3 @@ Combine flags:
 ```sh
 fvc logs --tail 20 --follow <vm-id>
 ```
-
-## Sprint 1 Done
-
-- Shared validation for image references, VM names, CPU, and memory.
-- Validation enforced in both CLI and daemon.
-- Local image cache no longer uses raw user input as a filesystem path.
-- Downloads are written to temporary files and published atomically.
-- Unit tests cover validation, daemon run request checks, and storage path behavior.
-
-## Sprint 2 Done
-
-- Daemon implements the `StreamLogs` gRPC endpoint.
-- CLI exposes `fvc logs <id>`.
-- `--tail` controls how many previous lines are printed.
-- `--follow` streams new log lines until interrupted.
-- Unit tests cover log tailing and VM log path lookup.
-
-## Sprint 3 Done
-
-- Proto exposes `RunStream`.
-- Daemon streams run progress events for image, kernel, rootfs, Firecracker, boot, drive, resources, and start.
-- CLI displays real daemon progress instead of a generic spinner.
-- Legacy unary `Run` remains available for compatibility.
-
-## Sprint 4 Done
-
-- Stopped microVMs keep their local root filesystem.
-- Daemon persists `drive_path` in SQLite.
-- CLI exposes `fvc start <id>` and `fvc rm <id>`.
-- `fvc rm` cleans the local drive, log file, and database row for stopped VMs.
-
-## Sprint 5 Done
-
-- Daemon creates TAP networking automatically.
-- Firecracker receives a network interface before VM start.
-- Guest IP, TAP name, and MAC are deterministic per VM.
-- `stop`, `start`, `rm`, and daemon reconciliation clean up network resources.
-- Network setup is covered by tests through a fake command runner.
-
-## Sprint 6 Done
-
-- `fvc ps` includes guest IP and TAP name.
-- `fvc inspect <id>` displays status, PID, image, resources, network identity, and runtime paths.
-- `Inspect` is exposed through the daemon API.
-
-## Sprint 7 Done
-
-- `fvc pull <image>` preloads an image and kernel through the daemon.
-- `fvc images` lists cached images with size and path.
-- Image cache listing decodes the safe on-disk filenames back to image references.
-
-## Sprint 8 Done
-
-- `fvc prune` cleans unused local files through the daemon.
-- Image listing deduplicates legacy cache files and prefers the safe encoded cache format.
-- Prune preserves running VM sockets, console FIFOs, and referenced active drives.
-
-## Sprint 9 Done
-
-- `fvc stats` reports CPU, memory usage/limit, PID, status, and uptime.
-- `fvc stats --watch` refreshes the metrics table.
-- `fvc wait <id>` blocks until a VM is no longer running.
-- `fvc kill <id>` force-stops a VM and cleans host-side runtime/network resources.
-- `fvc prune --dry-run` previews cleanup, and `fvc prune --force` skips confirmation.
-
-## Sprint 10 Done
-
-- `fvc snapshot create <id> <name>` copies a stopped VM drive into `FVC_HOME/snapshots`.
-- `fvc snapshot ls <id>` lists snapshots with size and path.
-- `fvc snapshot restore <id> <name>` restores a snapshot onto a stopped VM drive.
-- `fvc snapshot rm <id> <name>` removes a snapshot.
-- Snapshot names are validated and snapshot operations are covered by tests.
-
-## Sprint 11 Done
-
-- `fvc build [-t image] [path]` builds a local image from a TOML `Fvcfile`.
-- `Fvcfile` supports `[image].from`, `[image].tag`, and `[[copy]]`.
-- Build contexts reject path traversal and require absolute guest destinations.
-- Built images are published atomically into the local image cache.
-
-## Sprint 12 Done
-
-- `fvc image inspect <image>` reports size, path, digest, source, labels, and creation time.
-- `fvc image rm <image>` removes local images and protects images referenced by VMs.
-- `fvc image tag <source> <target>` creates a local image tag with history metadata.
-- `fvc image import <rootfs.ext4> <image>` imports a regular ext4 rootfs atomically.
-- `fvc image export <image> <rootfs.ext4>` exports a cached image atomically.
-- `fvc image history <image>` displays metadata history.
-- `fvc image prune` removes unused local images with `--dry-run` and `--force`.
