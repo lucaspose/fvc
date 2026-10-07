@@ -3,6 +3,7 @@
 ![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)
 ![Firecracker](https://img.shields.io/badge/Firecracker-microVMs-FF9900)
 ![gRPC](https://img.shields.io/badge/API-gRPC-244c5a)
+![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 
 **fvc** runs [Firecracker](https://firecracker-microvm.github.io/) microVMs with the ergonomics of a container tool.
 Each workload gets the isolation of a real virtual machine, but you build, run and manage it with commands that feel like Docker: `fvc build`, `fvc run`, `fvc ps`, `fvc exec`, `fvc logs`.
@@ -743,3 +744,13 @@ Combine flags:
 ```sh
 fvc logs --tail 20 --follow <vm-id>
 ```
+
+---
+
+## License
+
+Copyright (C) 2026 Lucas POSE
+
+Licensed under the [GNU Affero General Public License v3.0](LICENSE).
+You may use, modify and share this project, but any modified version, including
+one offered as a network service, must be released under the same license.
